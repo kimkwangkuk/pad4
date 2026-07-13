@@ -1,0 +1,36 @@
+/* ── Modal/Sheet Header (navbar) ──────────────────
+   Shared by all bottom-sheet / centered-modal popups.
+   Compose with one of: .bsm-close-btn, .bsm-back-btn, .bsm-spacer
+   on each side of a .bsm-title, inside a .bsm-header. */
+.bsm-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 16px 10px;
+  position: relative; height: 64px;
+}
+.bsm-grabber-row { height: 16px; } /* spacer for grabber area */
+.bsm-title {
+  position: absolute; left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  font-family: 'Pretendard', sans-serif;
+  font-size: 17px; font-weight: 600;
+  color: rgba(0,0,0,0.86); letter-spacing: -0.3px;
+  white-space: nowrap;
+}
+.bsm-close-btn {
+  width: 38px; height: 38px;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.05); border: none;
+  border-radius: 100px; cursor: pointer; flex-shrink: 0;
+  font-size: 16px; color: rgba(0,0,0,0.6);
+}
+.bsm-close-btn:hover { background: rgba(0,0,0,0.09); }
+.bsm-back-btn {
+  width: 38px; height: 38px;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.05); border: none;
+  border-radius: 100px; cursor: pointer; flex-shrink: 0;
+  font-size: 22px; color: rgba(0,0,0,0.6); line-height: 1;
+  padding-bottom: 1px;
+}
+.bsm-back-btn:hover { background: rgba(0,0,0,0.09); }
+.bsm-spacer { width: 38px; flex-shrink: 0; }

@@ -1,0 +1,10 @@
+/* ── Panel Slider Component ────────────────────── */
+.pnl-slider {
+  display: flex;
+  transition: transform 0.32s cubic-bezier(0.4,0,0.2,1);
+}
+.pnl-panel {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+}

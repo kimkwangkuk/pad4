@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1200">
+  <title>Card Preview</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:           #e0e0e0;
+      --surface:      #FFFFFF;
+      --border:       #E9E9E7;
+      --border-light: #F1F0EE;
+      --text-1:       #37352F;
+      --text-2:       #787672;
+      --text-3:       #ACABA8;
+      --hover:        #F7F6F3;
+      --pink-1:       #FBCFE8;
+      --pink-2:       #F9A8D4;
+      --purple-1:     #E9D5FF;
+      --purple-2:     #D8B4FE;
+      --play-bg:      #FF6B81;
+    }
+
+    html, body {
+      width: 600px;
+      height: 800px;
+      overflow: hidden;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text-1);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ─── CARD  (600×800px) ──────────────────────── */
+    .card {
+      position: relative;
+      width: 600px;
+      height: 800px;
+      background: var(--surface);
+      border-radius: 14px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 4px 20px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.03);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card-inner {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 16px;
+      overflow: hidden;
+    }
+
+    /* ─── HEADER  (106px) ────────────────────────── */
+    .card-header {
+      width: 568px;
+      height: 106px;
+      display: flex;
+      flex-shrink: 0;
+    }
+
+    .hd-left {
+      width: 373px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding-top: 2px;
+      border-top: 1px solid rgba(0,0,0,0.08);
+      border-bottom: 1px solid rgba(0,0,0,0.08);
+    }
+    .hd-date-label {
+      font-family: 'Pretendard', sans-serif;
+      font-size: 7px;
+      font-weight: 600;
+      color: rgba(0,0,0,0.4);
+      line-height: 1.4;
+      width: 100%;
+      flex-shrink: 0;
+    }
+    .hd-date-wrap {
+      flex: 1 0 0;
+      min-height: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+    }
+    .hd-date-val {
+      font-family: 'Pretendard', sans-serif;
+      font-size: 34px;
+      font-weight: 600;
+      color: rgba(0,0,0,0.86);
+      letter-spacing: -0.102px;
+      line-height: 1.4;
+      text-align: center;
+      width: 100%;
+    }
+    .hd-date-val.placeholder {
+      color: rgba(0,0,0,0.25);
+    }
+
+    .hd-right {
+      margin-left: 20px;
+      width: 175px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      border-bottom: 1px solid rgba(0,0,0,0.08);
+    }
+    .hd-right-section {
+      height: 53px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      padding-top: 2px;
+      border-top: 1px solid rgba(0,0,0,0.05);
+    }
+    .hd-small-label {
+      font-family: 'Pretendard', sans-serif;
+      font-size: 7px;
+      font-weight: 600;
+      color: rgba(0,0,0,0.4);
+      line-height: 1.4;
+      width: 100%;
+    }
+    .hd-dday-val {
+      font-family: 'Pretendard', sans-serif;
+      font-size: 24px;
+      font-weight: 600;
+      color: rgba(0,0,0,0.86);
+      letter-spacing: -0.072px;
+      line-height: 1.4;
+      text-align: center;
+      width: 100%;
+      flex: 1;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+    }
+    .hd-time-val {
+      font-family: 'Pretendard', sans-serif;
+      font-size: 24px;
+      font-weight: 600;
+      color: rgba(0,0,0,0.86);
+      letter-spacing: -0.072px;
+      line-height: 1.4;
+      text-align: center;
+      width: 100%;
+      flex: 1;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .card-gap { height: 8px; flex-shrink: 0; }
+
+    /* ─── LIST AREA  (658px) ─────────────────────── */
+    .list-area {
+      width: 568px;
+      height: 658px;
+      display: flex;
+      flex-shrink: 0;
+    }
+
+    .left-panel {
+      width: 373px;
+      flex-shrink: 0;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .row-subj {
+      height: 34px;
+      display: flex;
+      align-items: center;
+      border-top: 1px solid rgba(0,0,0,0.08);
+      border-bottom: 1px solid rgba(0,0,0,0.08);
+      overflow: hidden;
+    }
+    .subj-inner {
+      flex: 1 0 0;
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding-right: 8px;
+    }
+    .play-btn {
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      background: rgba(255,0,0,0.08);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+    .subj-name {
+      flex: 1 0 0;
+      min-width: 0;
+      font-family: 'Pretendard', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      color: rgba(0,0,0,0.86);
+      letter-spacing: -0.042px;
+      line-height: 1.4;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .subj-time {
+      font-family: 'Pretendard', sans-serif;
+      font-size: 14px;
+      font-weight: 400;
+      color: rgba(0,0,0,0.4);
+      letter-spacing: -0.042px;
+      line-height: 1.4;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .subj-add {
+      width: 34px;
+      height: 34px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: rgba(0,0,0,0.4);
+      border-left: 1px solid rgba(0,0,0,0.05);
+      flex-shrink: 0;
+    }
+
+    .row-sub {
+      height: 34px;
+      display: flex;
+      align-items: center;
+      border-bottom: 1px solid rgba(0,0,0,0.08);
+    }
+    .sub-inner {
+      flex: 1 0 0;
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      padding: 0 8px;
+    }
+    .sub-name {
+      font-family: 'Pretendard', sans-serif;
+      font-size: 13px;
+      font-weight: 400;
+      color: rgba(0,0,0,0.59);
+      letter-spacing: -0.039px;
+      line-height: 1.4;
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .sub-check-wrap {
+      width: 34px;
+      height: 34px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-left: 1px solid rgba(0,0,0,0.08);
+      flex-shrink: 0;
+      padding: 7px;
+    }
+    .checkbox {
+      width: 18px;
+      height: 18px;
+      border: 1.5px solid rgba(0,0,0,0.2);
+      border-radius: 6px;
+    }
+
+    .panel-gap { width: 20px; flex-shrink: 0; }
+
+    .right-panel {
+      width: 175px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    .grid-wrap {
+      height: 625px;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .grid-tbl {
+      width: 175px;
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+    .g-row { height: 26px; }
+    .g-row td { height: 26px; border-top: 1px solid var(--border-light); }
+    .g-label {
+      width: 25px;
+      font-size: 8px;
+      font-weight: 500;
+      color: var(--text-3);
+      text-align: right;
+      padding-right: 3px;
+      vertical-align: middle;
+      font-variant-numeric: tabular-nums;
+    }
+    .g-cell { width: 25px; border-left: 0.5px solid var(--border-light); }
+    .g-cell.pk1 { background: var(--pink-1); }
+    .g-cell.pk2 { background: var(--pink-2); }
+    .g-cell.pu1 { background: var(--purple-1); }
+    .g-cell.pu2 { background: var(--purple-2); }
+
+    .grid-bottom-rule {
+      width: 175px;
+      height: 1px;
+      background: var(--border-light);
+      flex-shrink: 0;
+    }
+    .review-bar {
+      height: 32px;
+      display: flex;
+      align-items: center;
+      gap: 0;
+      flex-shrink: 0;
+    }
+    .review-label {
+      font-size: 10px;
+      font-weight: 500;
+      color: var(--text-3);
+      width: 43px;
+      display: flex;
+      align-items: center;
+    }
+    .emoji-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      height: 20px;
+    }
+    .emoji-btn {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      border: 1.5px solid transparent;
+    }
+
+    /* ─── CANVAS STATE: empty ─────────────────────── */
+    [data-canvas-state="empty"] .hd-dday-val,
+    [data-canvas-state="empty"] .hd-time-val { visibility: hidden; }
+    [data-canvas-state="empty"] .play-btn,
+    [data-canvas-state="empty"] .subj-name,
+    [data-canvas-state="empty"] .subj-time,
+    [data-canvas-state="empty"] .subj-add { visibility: hidden; }
+    [data-canvas-state="empty"] .sub-name,
+    [data-canvas-state="empty"] .sub-check-wrap { visibility: hidden; }
+    [data-canvas-state="empty"] .g-cell.pk1,
+    [data-canvas-state="empty"] .g-cell.pk2,
+    [data-canvas-state="empty"] .g-cell.pu1,
+    [data-canvas-state="empty"] .g-cell.pu2 { background: none; }
+    [data-canvas-state="empty"] .review-bar { visibility: hidden; }
+  </style>
+</head>
+<body>
+
+<div id="cardMount"></div>
+
+<script>
+  const params = new URLSearchParams(location.search);
+  const state  = params.get('state') || 'with-date';
+  const isEmpty = state === 'empty';
+
+  const GRID_LABELS = [
+    '5','6','7','8','9','10','11',
+    '12','1','2','3','4',
+    '5','6','7','8','9','10','11',
+    '12','1','2','3','4'
+  ];
+
+  const FILLS = {
+    7:  ['pk1','pk1','pk1','pk1','pk1','pk1'],
+    8:  ['pk2','pk2','',   'pk1','pk2','pk1'],
+    10: ['pu1','pu1','pu1','pu1','pu1','pu1'],
+    11: ['pu2','pu1','pu2','pu1','pu2','pu1'],
+  };
+
+  function subjGroupsHTML() {
+    const sub = n => `<div class="row-sub"><div class="sub-inner"><span class="sub-name">오답노트</span></div><div class="sub-check-wrap"><div class="checkbox"></div></div></div>`.repeat(n);
+    const subj = (name, subs) => `
+      <div class="subj-group">
+        <div class="row-subj">
+          <div class="subj-inner">
+            <div class="play-btn"><i data-lucide="play" style="width:12px;height:12px;fill:rgba(255,0,0,0.86);stroke:none;margin-left:1px;"></i></div>
+            <span class="subj-name">${name}</span>
+            <span class="subj-time">2:30:25</span>
+          </div>
+          <div class="subj-add"><i data-lucide="plus" style="width:20px;height:20px;"></i></div>
+        </div>
+        ${sub(subs)}
+      </div>`;
+    return subj('사회와 탐구', 3) + subj('국어', 0) + subj('국어', 5);
+  }
+
+  const dateVal  = isEmpty ? '날짜 선택' : '24.06.24';
+  const dateCls  = isEmpty ? 'hd-date-val placeholder' : 'hd-date-val';
+  const canvasState = isEmpty ? 'empty' : 'with-date';
+
+  document.getElementById('cardMount').innerHTML = `
+<div class="card" data-canvas-state="${canvasState}">
+  <div class="card-inner">
+    <div class="card-header">
+      <div class="hd-left">
+        <span class="hd-date-label">Date</span>
+        <div class="hd-date-wrap">
+          <span class="${dateCls}">${dateVal}</span>
+        </div>
+      </div>
+      <div class="hd-right">
+        <div class="hd-right-section">
+          <span class="hd-small-label">Dday</span>
+          <span class="hd-dday-val">D-3</span>
+        </div>
+        <div class="hd-right-section">
+          <span class="hd-small-label">Total Time</span>
+          <span class="hd-time-val">5:30:24</span>
+        </div>
+      </div>
+    </div>
+    <div class="card-gap"></div>
+    <div class="list-area">
+      <div class="left-panel">${subjGroupsHTML()}</div>
+      <div class="panel-gap"></div>
+      <div class="right-panel">
+        <div class="grid-wrap">
+          <table class="grid-tbl"><tbody id="gridBody"></tbody></table>
+        </div>
+        <div class="grid-bottom-rule"></div>
+        <div class="review-bar">
+          <span class="review-label">Review.</span>
+          <div class="emoji-wrap">
+            <div class="emoji-btn">😣</div>
+            <div class="emoji-btn">😟</div>
+            <div class="emoji-btn">😐</div>
+            <div class="emoji-btn">🙂</div>
+            <div class="emoji-btn">😊</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>`;
+
+  const tbody = document.getElementById('gridBody');
+  GRID_LABELS.forEach((lbl, i) => {
+    const tr = document.createElement('tr');
+    tr.className = 'g-row';
+    const th = document.createElement('td');
+    th.className = 'g-label';
+    th.textContent = lbl;
+    tr.appendChild(th);
+    for (let c = 0; c < 6; c++) {
+      const td = document.createElement('td');
+      td.className = 'g-cell' + ((!isEmpty && FILLS[i]?.[c]) ? ' ' + FILLS[i][c] : '');
+      tr.appendChild(td);
+    }
+    tbody.appendChild(tr);
+  });
+
+  lucide.createIcons();
+</script>
+</body>
+</html>

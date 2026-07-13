@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UI Kit</title>
+  <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="stylesheet" href="components/date-picker.css">
+  <link rel="stylesheet" href="components/overlay-menu.css">
+  <link rel="stylesheet" href="components/dialog.css">
+  <link rel="stylesheet" href="components/panel-slider.css">
+  <link rel="stylesheet" href="components/modal-header.css">
+  <script src="components/date-picker.js"></script>
+  <script src="components/overlay-menu.js"></script>
+  <script src="components/dialog.js"></script>
+  <script src="components/panel-slider.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Pretendard', sans-serif;
+      background: #f5f5f5;
+      min-height: 100vh;
+      padding: 40px;
+    }
+
+    /* ── LAYOUT ── */
+    .page-title {
+      font-size: 28px; font-weight: 700;
+      color: rgba(0,0,0,0.86);
+      letter-spacing: -0.5px;
+      margin-bottom: 32px;
+    }
+    .section {
+      margin-bottom: 48px;
+    }
+    .section-title {
+      font-size: 12px; font-weight: 600;
+      color: rgba(0,0,0,0.4);
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+    .component-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 24px;
+      align-items: flex-start;
+    }
+    .component-card {
+      background: white;
+      border-radius: 20px;
+      padding: 24px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .component-label {
+      font-size: 11px; font-weight: 500;
+      color: rgba(0,0,0,0.35);
+      letter-spacing: 0.3px;
+    }
+
+  </style>
+</head>
+<body>
+
+  <a href="study-planner.html" style="display:inline-flex;align-items:center;gap:6px;background:rgba(0,0,0,0.08);color:rgba(0,0,0,0.86);font-family:'Pretendard',sans-serif;font-size:13px;font-weight:600;padding:8px 14px;border-radius:20px;text-decoration:none;margin-bottom:24px;">← 뒤로</a>
+  <div class="page-title">UI Kit</div>
+
+  <!-- DATE PICKER -->
+  <div class="section">
+    <div class="section-title">Date Picker</div>
+    <div class="component-row">
+      <div id="dpMount"></div>
+    </div>
+  </div>
+
+  <!-- PLANNER CANVAS -->
+  <div class="section">
+    <div class="section-title">Planner Canvas</div>
+    <div class="component-row" style="gap:32px;align-items:flex-start;">
+      <div>
+        <div class="component-label" style="margin-bottom:8px;">with-date</div>
+        <div style="width:360px;height:480px;overflow:hidden;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,0.1);">
+          <iframe src="card-preview?state=with-date" style="width:600px;height:800px;border:none;transform:scale(0.6);transform-origin:top left;pointer-events:none;"></iframe>
+        </div>
+      </div>
+      <div>
+        <div class="component-label" style="margin-bottom:8px;">empty</div>
+        <div style="width:360px;height:480px;overflow:hidden;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,0.1);">
+          <iframe src="card-preview?state=empty" style="width:600px;height:800px;border:none;transform:scale(0.6);transform-origin:top left;pointer-events:none;"></iframe>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STUDY PLANNER CANVAS -->
+  <div class="section">
+    <div class="section-title">Study Planner Canvas</div>
+    <div class="component-row" style="gap:32px;align-items:flex-start;">
+      <div>
+        <div class="component-label" style="margin-bottom:8px;">with-date</div>
+        <div style="width:360px;height:480px;overflow:hidden;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,0.1);">
+          <iframe src="card-preview-study.html?state=with-date" style="width:600px;height:800px;border:none;transform:scale(0.6);transform-origin:top left;pointer-events:none;"></iframe>
+        </div>
+      </div>
+      <div>
+        <div class="component-label" style="margin-bottom:8px;">empty</div>
+        <div style="width:360px;height:480px;overflow:hidden;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,0.1);">
+          <iframe src="card-preview-study.html?state=empty" style="width:600px;height:800px;border:none;transform:scale(0.6);transform-origin:top left;pointer-events:none;"></iframe>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OVERLAY MENU -->
+  <div class="section">
+    <div class="section-title">Overlay Menu</div>
+    <div class="component-row">
+      <div id="omMount" style="position:relative;width:258px;height:108px;"></div>
+    </div>
+  </div>
+
+  <!-- POPUP HEADER (navbar) -->
+  <div class="section">
+    <div class="section-title">Popup Header (navbar)</div>
+    <div class="component-row">
+      <div class="component-card" style="width:220px; padding:0; overflow:hidden;">
+        <div style="padding:12px 16px 0;">
+          <div class="component-label">닫기 · 우측</div>
+        </div>
+        <div class="bsm-header">
+          <div class="bsm-spacer"></div>
+          <span class="bsm-title">속지 변경</span>
+          <button class="bsm-close-btn">✕</button>
+        </div>
+      </div>
+      <div class="component-card" style="width:220px; padding:0; overflow:hidden;">
+        <div style="padding:12px 16px 0;">
+          <div class="component-label">닫기 · 좌측</div>
+        </div>
+        <div class="bsm-header">
+          <button class="bsm-close-btn"><i data-lucide="x" style="width:20px;height:20px;color:rgba(0,0,0,0.6);"></i></button>
+          <span class="bsm-title">속지 설정</span>
+          <div class="bsm-spacer"></div>
+        </div>
+      </div>
+      <div class="component-card" style="width:220px; padding:0; overflow:hidden;">
+        <div style="padding:12px 16px 0;">
+          <div class="component-label">뒤로 + 닫기</div>
+        </div>
+        <div class="bsm-header">
+          <button class="bsm-back-btn">‹</button>
+          <span class="bsm-title">수량 선택</span>
+          <button class="bsm-close-btn">✕</button>
+        </div>
+      </div>
+      <div class="component-card" style="width:220px; padding:0; overflow:hidden;">
+        <div style="padding:12px 16px 0;">
+          <div class="component-label">뒤로만 · 제목 없음</div>
+        </div>
+        <div class="bsm-header">
+          <button class="bsm-back-btn">‹</button>
+          <span class="bsm-title"></span>
+          <div class="bsm-spacer"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DIALOG -->
+  <div class="section">
+    <div class="section-title">Dialog</div>
+    <div class="component-row">
+      <div class="component-card">
+        <div class="component-label">삭제 확인</div>
+        <button id="dlgTrigger" style="height:44px;padding:0 20px;background:rgba(0,0,0,0.08);border:none;border-radius:100px;font-family:'Pretendard',sans-serif;font-size:15px;font-weight:600;color:rgba(0,0,0,0.86);cursor:pointer;">다이얼로그 열기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANEL SLIDER -->
+  <div class="section">
+    <div class="section-title">Panel Slider</div>
+    <div class="component-row">
+      <div class="component-card" style="width:280px;">
+        <div class="component-label">push / back (N-panel)</div>
+        <div style="width:100%;overflow:hidden;border:1px solid rgba(0,0,0,0.08);border-radius:12px;">
+          <div class="pnl-slider" id="pnlDemoSlider">
+            <div class="pnl-panel" style="padding:20px;gap:12px;">
+              <div style="font-family:'Pretendard',sans-serif;font-size:14px;font-weight:600;color:rgba(0,0,0,0.86);">패널 1</div>
+              <button id="pnlDemoNext" style="align-self:flex-start;height:36px;padding:0 14px;background:rgba(0,0,0,0.86);color:white;border:none;border-radius:8px;font-family:'Pretendard',sans-serif;font-size:13px;font-weight:600;cursor:pointer;">다음 →</button>
+            </div>
+            <div class="pnl-panel" style="padding:20px;gap:12px;">
+              <div style="font-family:'Pretendard',sans-serif;font-size:14px;font-weight:600;color:rgba(0,0,0,0.86);">패널 2</div>
+              <button id="pnlDemoBack" style="align-self:flex-start;height:36px;padding:0 14px;background:rgba(0,0,0,0.08);border:none;border-radius:8px;font-family:'Pretendard',sans-serif;font-size:13px;font-weight:600;color:rgba(0,0,0,0.86);cursor:pointer;">← 뒤로</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  lucide.createIcons();
+
+  const picker = new DatePicker({ year: 2026, month: 6, selected: 23 });
+  picker.mount(document.getElementById('dpMount'));
+
+  const iconUrl = 'http://localhost:3845/assets/9ec14e8d914767ede5073ee6f8cc97883439218a.svg';
+  const menu = new OverlayMenu({
+    items: [
+      { icon: iconUrl, label: '탭 이름 변경' },
+      { icon: iconUrl, label: '보관' },
+    ]
+  });
+  menu.mount(document.getElementById('omMount'));
+
+  const dlg = new Dialog({
+    title: '페이지를 삭제하시겠어요?',
+    message: '삭제된 페이지는 복구할 수 없어요.',
+    confirmLabel: '삭제',
+    cancelLabel: '취소',
+    onConfirm: () => {},
+    onCancel: () => {},
+  });
+  document.getElementById('dlgTrigger').addEventListener('click', () => dlg.open());
+
+  const pnlDemo = new PanelSlider(document.getElementById('pnlDemoSlider'));
+  document.getElementById('pnlDemoNext').addEventListener('click', () => pnlDemo.goTo(1));
+  document.getElementById('pnlDemoBack').addEventListener('click', () => pnlDemo.goTo(0));
+</script>
+</body>
+</html>
