@@ -932,6 +932,7 @@
     .sp-note-info {
       display: flex; align-items: center; gap: 10px;
       padding: 8px 16px 14px; flex-shrink: 0;
+      border-bottom: 1px solid rgba(0,0,0,0.08);
     }
     .sp-note-cover {
       width: 34px; flex-shrink: 0;
@@ -2590,6 +2591,23 @@
       font-family:'Pretendard',sans-serif; font-size:15px; font-weight:600; cursor:pointer;
     }
 
+    /* 노트 생성 마지막 단계 팝업 — 마무리 느낌을 강하게: 더 큰 팝업 + 완성될 노트 표지 미리보기 +
+       "기간이 있는 플래너"임을 강조하는 타임라인 커넥터·총 일수 표시. spPeriodEditPop과는
+       .nc-format-pop 클래스를 공유하지만, 이 확대 스타일은 #ncFormatPop에만 적용해 분리한다 */
+    #ncFormatPop { width:360px; padding:28px 24px 24px; gap:14px; }
+    .nc-format-cover-preview {
+      display:flex; justify-content:center; padding-bottom:6px;
+    }
+    .nc-format-pop-final .nc-format-title { font-size:19px; text-align:center; margin-bottom:0; }
+    .nc-period-connector {
+      width:20px; height:2px; flex-shrink:0; background:rgba(0,0,0,.15); border-radius:1px;
+    }
+    .nc-period-days-sub {
+      text-align:center; margin-top:-4px;
+      font-family:'Pretendard',sans-serif; font-size:12.5px; font-weight:600;
+      color:rgba(0,0,0,.4); letter-spacing:-0.03px;
+    }
+
     /* ══════════════ 속지 상세 바텀시트 (참고: Figma 4791:616876) ══════════════ */
     .nc-detail-scrim {
       position:fixed; inset:0; z-index:950; background:rgba(0,0,0,.34);
@@ -2947,16 +2965,25 @@
        transform이 걸린 .nc-screen 안에 두지 않고 형제로 빼서 position:fixed가 뷰포트
        기준으로 정확히 동작하게 한다 -->
   <div class="nc-format-backdrop" id="ncFormatBackdrop">
-    <div class="nc-format-pop" id="ncFormatPop" onclick="event.stopPropagation()">
+    <div class="nc-format-pop nc-format-pop-final" id="ncFormatPop" onclick="event.stopPropagation()">
+      <div class="nc-format-cover-preview">
+        <div class="nb" id="ncFormatCoverNb">
+          <div class="nb-cover" id="ncFormatCoverBg"></div>
+          <div class="nb-band1"></div><div class="nb-band2"></div>
+          <div class="nb-spine"><i></i><i></i><i></i><i></i><i></i></div>
+          <div class="nb-inset"></div>
+        </div>
+      </div>
       <div class="nc-format-title">노트 만들기</div>
       <div class="nc-format-label">노트 이름</div>
       <input class="nc-format-name-input" id="ncNameInput" type="text" placeholder="노트 이름">
-      <div class="nc-format-label">노트 기간</div>
-      <div class="nc-period-row">
+      <div class="nc-format-label">플래너 기간</div>
+      <div class="nc-period-row nc-period-row-final">
         <button class="nc-period-field" id="ncPeriodStartBtn" type="button"></button>
-        <span class="nc-period-sep">~</span>
+        <span class="nc-period-connector"></span>
         <button class="nc-period-field" id="ncPeriodEndBtn" type="button"></button>
       </div>
+      <div class="nc-period-days-sub" id="ncPeriodDaysSub"></div>
       <button class="nc-format-create-btn" id="ncCreateBtn">만들기</button>
     </div>
   </div>
@@ -4574,9 +4601,23 @@
   // 확인(✓) → 노트 기간 미니팝업
   const ncPeriodStartBtn = document.getElementById('ncPeriodStartBtn');
   const ncPeriodEndBtn = document.getElementById('ncPeriodEndBtn');
+  const ncPeriodDaysSub = document.getElementById('ncPeriodDaysSub');
   function ncUpdatePeriodLabels() {
     ncPeriodStartBtn.textContent = formatPeriodDate(ncState.periodStart);
     ncPeriodEndBtn.textContent = formatPeriodDate(ncState.periodEnd);
+    const s = new Date(ncState.periodStart.year, ncState.periodStart.month - 1, ncState.periodStart.day);
+    const e = new Date(ncState.periodEnd.year, ncState.periodEnd.month - 1, ncState.periodEnd.day);
+    const totalDays = Math.round((e - s) / 86400000) + 1;
+    ncPeriodDaysSub.textContent = `총 ${totalDays}일 플래너`;
+  }
+  // 완성될 노트의 표지를 미리보기에 반영 — 지금까지 고른 컬러/패턴을 그대로 쓴다
+  function ncUpdateCoverPreview() {
+    const cover = NW_COVERS.find(c => c.id === ncState.coverId);
+    if (!cover) return;
+    const nb = document.getElementById('ncFormatCoverNb');
+    const coverBg = ncState.coverPattern !== 'none' ? patternCSS(ncState.coverPattern, cover.bg) : cover.bg;
+    nb.querySelector('.nb-cover').style.background = coverBg;
+    nb.querySelector('.nb-spine').style.background = darkenHex(cover.bg, 0.32);
   }
   const ncFormatBackdrop = document.getElementById('ncFormatBackdrop');
   const ncNameInput = document.getElementById('ncNameInput');
@@ -4586,6 +4627,7 @@
   document.getElementById('ncConfirmBtn').addEventListener('click', () => {
     ncNameInput.value = ncSubtitleEl.textContent;
     ncUpdatePeriodLabels();
+    ncUpdateCoverPreview();
     ncFormatBackdrop.classList.add('show');
     ncNameInput.focus();
     ncNameInput.select();
