@@ -876,11 +876,7 @@
        .sp-content의 위쪽 padding을 없애고 그만큼을 이 바 자체의 padding-top으로 옮겨서,
        바의 불투명한 배경이 상단 여백까지 완전히 덮도록 한다(그 틈으로 목록이 비쳐 보이는 문제 방지). */
     .sp-sticky-filter-bar {
-      position: sticky; top: 0; z-index: 25;
-      background: white;
-      display: flex; justify-content: flex-end;
-      padding: 12px 0 8px;
-      flex-shrink: 0;
+      display: none;
     }
     .sp-filter-toggle {
       display: flex; align-items: center; gap: 4px;
@@ -911,10 +907,7 @@
     }
     /* 패널 고정 헤더 우측 상단의 필터 닫기 버튼 — 필터 상태와 무관하게 항상 표시된다 */
     .sp-filter-close-btn {
-      width: 26px; height: 26px; flex-shrink: 0;
-      display: flex; align-items: center; justify-content: center;
-      background: rgba(0,0,0,0.06); border: none; border-radius: 50%;
-      color: rgba(0,0,0,0.6); cursor: pointer;
+      display: none;
     }
     .sp-filter-close-btn:hover { background: rgba(0,0,0,0.1); }
     .sp-filter-option {
