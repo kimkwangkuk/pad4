@@ -88,9 +88,9 @@
 }
 .sp-card.sp-selected .sp-thumb { border-color: #242424; }
 
-/* "오늘" badge */
+/* "오늘" badge — 섬네일 우측 하단 */
 .sp-badge {
-  position: absolute; top: 5px; right: 5px;
+  position: absolute; bottom: 5px; right: 5px;
   background: rgba(0,0,0,0.68);
   padding: 2px 6px; border-radius: 4px;
   font-family: 'Pretendard', sans-serif;
