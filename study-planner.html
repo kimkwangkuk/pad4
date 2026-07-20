@@ -871,32 +871,35 @@
 
     /* ─── SIDE PANEL: 다중 선택 필터 ───────────
        "필터" 버튼은 스크롤 목록(.sp-content) 맨 위에 고정(position:sticky)되어, 월 타이틀들이
-       그 아래로 스크롤되어도 항상 최상단에 붙어있다. 누르면 바로 아래에 체크박스 팝오버가 뜨고,
-       "기록 있는 날/기록 없는 날/빈 날짜"를 각각 켜고 끌 수 있다(단일 토글이 아니라 다중 선택).
-       닫기(X) 버튼은 패널 고정 헤더 우측 상단에 따로 두어, 스크롤 위치와 무관하게 항상 같은
-       자리에서 필터를 닫을 수 있게 한다. */
+       그 아래로 스크롤되어도 항상 최상단에 붙어있다. 우측 정렬된 고스트(배경 없는) 버튼이며,
+       누르면 바로 아래에 체크박스 팝오버가 뜨고 "기록 있는 날/기록 없는 날/빈 날짜"를 각각
+       켜고 끌 수 있다(단일 토글이 아니라 다중 선택). 패널 고정 헤더 우측 상단의 X 버튼은
+       필터 상태와 무관하게 항상 표시되며, 눌렀을 때 필터가 열려 있으면 닫는다.
+       .sp-content의 위쪽 padding을 없애고 그만큼을 이 바 자체의 padding-top으로 옮겨서,
+       바의 불투명한 배경이 상단 여백까지 완전히 덮도록 한다(그 틈으로 목록이 비쳐 보이는 문제 방지). */
     .sp-sticky-filter-bar {
       position: sticky; top: 0; z-index: 25;
       background: white;
-      padding-bottom: 8px; margin-bottom: 4px;
+      display: flex; justify-content: flex-end;
+      padding: 12px 0 8px;
       flex-shrink: 0;
     }
     .sp-filter-toggle {
       display: flex; align-items: center; gap: 4px;
-      background: rgba(0,0,0,0.05); border: none; border-radius: 100px;
-      padding: 5px 10px;
+      background: none; border: none;
+      padding: 4px 2px;
       font-family: 'Pretendard', sans-serif; font-size: 12px; font-weight: 500;
-      color: rgba(0,0,0,0.5); letter-spacing: -0.036px;
+      color: rgba(0,0,0,0.4); letter-spacing: -0.036px;
       cursor: pointer; white-space: nowrap;
     }
-    .sp-filter-toggle.active { color: rgba(0,0,0,0.86); font-weight: 600; background: rgba(0,0,0,0.09); }
+    .sp-filter-toggle.active { color: rgba(0,0,0,0.86); font-weight: 600; }
     .sp-filter-toggle-chevron {
       width: 12px; height: 12px; flex-shrink: 0;
       transition: transform 0.15s ease;
     }
     .sp-filter-toggle[aria-expanded="true"] .sp-filter-toggle-chevron { transform: rotate(180deg); }
     .sp-filter-popover {
-      position: absolute; top: calc(100% + 2px); left: 0; z-index: 30;
+      position: absolute; top: calc(100% + 2px); right: 0; z-index: 30;
       background: white; border-radius: 14px;
       box-shadow: 0 4px 24px rgba(0,0,0,0.16), 0 0 0 1px rgba(0,0,0,0.06);
       padding: 8px; min-width: 160px;
@@ -908,16 +911,13 @@
       opacity: 1; transform: translateY(0) scale(1);
       pointer-events: auto;
     }
-    /* 패널 고정 헤더 우측 상단의 필터 닫기 버튼 — 필터가 펼쳐졌을 때만 보인다 */
+    /* 패널 고정 헤더 우측 상단의 필터 닫기 버튼 — 필터 상태와 무관하게 항상 표시된다 */
     .sp-filter-close-btn {
       width: 26px; height: 26px; flex-shrink: 0;
       display: flex; align-items: center; justify-content: center;
       background: rgba(0,0,0,0.06); border: none; border-radius: 50%;
       color: rgba(0,0,0,0.6); cursor: pointer;
-      opacity: 0; pointer-events: none;
-      transition: opacity 0.15s ease;
     }
-    .sp-filter-close-btn.show { opacity: 1; pointer-events: auto; }
     .sp-filter-close-btn:hover { background: rgba(0,0,0,0.1); }
     .sp-filter-option {
       display: flex; align-items: center; gap: 8px;
@@ -3550,14 +3550,12 @@
   function closeSpFilterPopover() {
     spFilterPopover.classList.remove('show');
     spFilterToggle.setAttribute('aria-expanded', 'false');
-    spFilterCloseBtn.classList.remove('show');
   }
   spFilterToggle.addEventListener('click', (e) => {
     e.stopPropagation();
     const willShow = !spFilterPopover.classList.contains('show');
     spFilterPopover.classList.toggle('show', willShow);
     spFilterToggle.setAttribute('aria-expanded', String(willShow));
-    spFilterCloseBtn.classList.toggle('show', willShow);
   });
   spFilterCloseBtn.addEventListener('click', closeSpFilterPopover);
   document.addEventListener('click', (e) => {
