@@ -973,7 +973,7 @@
       transition: background 0.12s;
     }
     .sp-add-page-btn:hover { background: rgba(0,0,0,0.72); }
-    .sp-add-page-btn.active { background: rgba(0,0,0,0.6); }
+    .sp-panel.sp-add-mode .sp-add-page-btn { display: none; }
 
     /* ─── SHOP / ITEM SCREENS ─────────────────────── */
     .shop-screen, .item-screen {
@@ -3360,8 +3360,10 @@
   function dateKey(date) { return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`; }
 
   // 빈 날짜("+")는 평소엔 아예 표시하지 않는다 — 패널 하단의 "페이지 추가" 버튼을 눌렀을 때만
-  // 켜지는 "어디에 추가할지 고르는" 모드. 페이지를 하나 고르면 다시 꺼진다.
+  // 켜지는 "어디에 추가할지 고르는" 모드. 빈 칸을 눌러도 바로 만들어지지 않고 선택만 되며,
+  // 헤더의 완료(체크) 버튼을 눌러야 그 날짜로 페이지가 실제로 생성되고 모드가 끝난다.
   let spAddModeActive = false;
+  let spSelectedBlank = null; // { y, m, d, isToday } | null
 
   // 접힌 월(예: "2026-7") 목록 — rebuildPanel이 다시 그려도 접힘 상태가 유지되도록 여기서 관리한다
   const spCollapsedMonths = new Set();
@@ -3436,8 +3438,10 @@
         row.className = 'sp-row';
         for (let j = i; j < Math.min(i + 2, group.items.length); j++) {
           const item = group.items[j];
+          const isSelectedBlank = item.isBlank && spSelectedBlank &&
+            spSelectedBlank.y === item.y && spSelectedBlank.m === item.m && spSelectedBlank.d === item.d;
           const spCard = document.createElement('div');
-          spCard.className = 'sp-card' + (item.card && item.card === selectedCard ? ' sp-selected' : '');
+          spCard.className = 'sp-card' + ((item.card && item.card === selectedCard) || isSelectedBlank ? ' sp-selected' : '');
           if (item.isBlank) {
             spCard.classList.add('sp-blank');
             spCard.dataset.y = item.y; spCard.dataset.m = item.m; spCard.dataset.d = item.d;
@@ -3461,18 +3465,32 @@
   }
 
   // ── 페이지 추가 모드 진입/이탈 — 패널 전체가 "어디에 추가할지 고르는" 화면으로 바뀐다:
-  // 노트 정보가 숨겨지고 헤더 우측에 완료(체크) 버튼이 나타난다. 날짜를 하나 고르거나
-  // 완료 버튼을 누르면 원래 화면으로 돌아온다.
+  // 노트 정보와 하단 "페이지 추가" 버튼이 숨겨지고 헤더 우측에 완료(체크) 버튼이 나타난다.
+  // 빈 칸을 눌러도 바로 페이지가 만들어지지 않고 선택 표시만 된다 — 완료 버튼을 눌러야
+  // 그 시점에 고른 날짜로 실제 페이지가 생성되고 한 번에 모드가 끝난다.
   const spAddPageBtn = document.getElementById('spAddPageBtn');
   const spAddDoneBtn = document.getElementById('spAddDoneBtn');
   function setAddMode(active) {
     spAddModeActive = active;
+    spSelectedBlank = null;
     document.getElementById('sidePanel').classList.toggle('sp-add-mode', active);
-    spAddPageBtn.classList.toggle('active', active);
     sortPages();
   }
-  spAddPageBtn.addEventListener('click', () => setAddMode(!spAddModeActive));
-  spAddDoneBtn.addEventListener('click', () => setAddMode(false));
+  spAddPageBtn.addEventListener('click', () => setAddMode(true));
+  spAddDoneBtn.addEventListener('click', () => {
+    if (spSelectedBlank) {
+      const { y, m, d, isToday } = spSelectedBlank;
+      if (isToday) {
+        // 오늘 선택 → 이미 캔버스에 떠 있는 "오늘' 페이지 추가" 미리보기를 그대로 활성화한다
+        const gc = document.querySelector('.card.card-ghost');
+        const frame = gc && gc.closest('.ghost-frame');
+        if (gc && frame) activateGhostCard(frame, gc, gc.dataset.dateText);
+      } else {
+        createPage(y, m, d);
+      }
+    }
+    setAddMode(false);
+  });
 
   // ── 노트 표지·이름·기간 요약 + 우측 "수정" 버튼 → 기간(시작일~종료일) 수정 팝업 ──
   const spNoteCover = document.getElementById('spNoteCover');
@@ -3869,18 +3887,12 @@
 
     const blank = e.target.closest('.sp-blank');
     if (blank) {
-      // 날짜를 하나 골랐으니 "어디에 추가할지 고르는" 모드는 끝 — 다음 렌더부터 빈 칸을 다시 숨긴다
-      spAddModeActive = false;
-      document.getElementById('sidePanel').classList.remove('sp-add-mode');
-      document.getElementById('spAddPageBtn').classList.remove('active');
-      if (blank.dataset.today === '1') {
-        // 오늘 빈칸 → 이미 캔버스에 떠 있는 "오늘' 페이지 추가" 미리보기를 그대로 활성화한다
-        const gc = document.querySelector('.card.card-ghost');
-        const frame = gc && gc.closest('.ghost-frame');
-        if (gc && frame) activateGhostCard(frame, gc, gc.dataset.dateText);
-      } else {
-        createPage(parseInt(blank.dataset.y, 10), parseInt(blank.dataset.m, 10), parseInt(blank.dataset.d, 10));
-      }
+      // 빈 칸을 눌러도 바로 페이지를 만들지 않는다 — 선택 표시만 하고, 다시 같은 칸을 누르면
+      // 선택이 풀린다. 실제 생성은 헤더의 완료 버튼을 눌러야 한 번에 반영된다.
+      const y = parseInt(blank.dataset.y, 10), m = parseInt(blank.dataset.m, 10), d = parseInt(blank.dataset.d, 10);
+      const isSame = spSelectedBlank && spSelectedBlank.y === y && spSelectedBlank.m === m && spSelectedBlank.d === d;
+      spSelectedBlank = isSame ? null : { y, m, d, isToday: blank.dataset.today === '1' };
+      sortPages();
       return;
     }
 
