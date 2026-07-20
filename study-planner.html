@@ -3322,7 +3322,7 @@
       const hasRecord = existingCard ? cardHasRecord(existingCard) : false;
       if (existingCard) {
         if (!spFilterRecordsOnly || hasRecord) {
-          items.push({ card: existingCard, time: t, label: `${cursor.getMonth() + 1}/${cursor.getDate()}` });
+          items.push({ card: existingCard, time: t, isToday: t === today.getTime(), label: `${cursor.getMonth() + 1}/${cursor.getDate()}` });
         }
       } else if (!spFilterRecordsOnly && t >= today.getTime()) {
         items.push({
@@ -3364,15 +3364,16 @@
       group.items.forEach(item => {
         const spCard = document.createElement('div');
         spCard.className = 'sp-card' + (item.card && item.card === selectedCard ? ' sp-selected' : '');
+        const todayBadge = item.isToday ? '<span class="sp-today-badge">오늘</span>' : '';
         if (item.isBlank) {
           spCard.classList.add('sp-blank');
           spCard.dataset.y = item.y; spCard.dataset.m = item.m; spCard.dataset.d = item.d;
           if (item.isToday) spCard.dataset.today = '1';
-          spCard.innerHTML = `<div class="sp-thumb sp-thumb-add"><span class="sp-add-icon">+</span></div><div class="sp-list-info"><span class="sp-list-title">${item.label}</span></div>`;
+          spCard.innerHTML = `<div class="sp-thumb sp-thumb-add"><span class="sp-add-icon">+</span></div><div class="sp-list-info"><div class="sp-list-title-row"><span class="sp-list-title">${item.label}</span>${todayBadge}</div></div>`;
         } else {
           const studyTime = item.card.querySelector('.hd-time-val')?.textContent?.trim() || '0:00:00';
           spCard.dataset.dateKey = dateKey(parseCardDate(item.card));
-          spCard.innerHTML = `<div class="sp-thumb"></div><div class="sp-list-info"><span class="sp-list-title">${item.label}</span><span class="sp-list-subtitle">${studyTime}</span></div><i data-lucide="more-horizontal" class="sp-more-icon"></i>`;
+          spCard.innerHTML = `<div class="sp-thumb"></div><div class="sp-list-info"><div class="sp-list-title-row"><span class="sp-list-title">${item.label}</span>${todayBadge}</div><span class="sp-list-subtitle">${studyTime}</span></div><i data-lucide="more-horizontal" class="sp-more-icon"></i>`;
         }
         body.appendChild(spCard);
       });

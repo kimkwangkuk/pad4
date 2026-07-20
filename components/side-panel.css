@@ -106,11 +106,25 @@
   flex: 1; min-width: 0;
   display: flex; flex-direction: column; gap: 2px;
 }
+.sp-list-title-row {
+  display: flex; align-items: center; gap: 6px; min-width: 0;
+}
 .sp-list-title {
+  min-width: 0;
   font-family: 'Pretendard', sans-serif;
   font-size: 15px; font-weight: 600;
   color: rgba(0,0,0,0.86); letter-spacing: -0.045px; line-height: 1.4;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.sp-today-badge {
+  flex-shrink: 0;
+  font-family: 'Pretendard', sans-serif;
+  font-size: 10px; font-weight: 700;
+  color: white;
+  background: rgba(0,0,0,0.86);
+  padding: 2px 6px;
+  border-radius: 4px;
+  letter-spacing: -0.03px; line-height: 1.4;
 }
 .sp-list-subtitle {
   font-family: 'Pretendard', sans-serif;
