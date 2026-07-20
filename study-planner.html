@@ -455,7 +455,6 @@
       display: flex;
       flex-direction: column;
     }
-    .card.card-out-of-period { display: none; }
 
     /* Card has 16px padding; the two panels sit side by side */
     .card-inner {
@@ -867,77 +866,23 @@
 
     /* ─── SIDE PANEL THUMBNAIL CLICK ─────────────── */
     .sp-card[data-date-key] { cursor: pointer; }
+    .sp-blank { cursor: pointer; }
+    .sp-thumb-add { cursor: pointer; }
 
-    /* ─── SIDE PANEL: 다중 선택 필터 ───────────
-       "필터" 버튼은 스크롤 목록(.sp-content) 맨 위에 고정(position:sticky)되어, 월 타이틀들이
-       그 아래로 스크롤되어도 항상 최상단에 붙어있다. 우측 정렬된 고스트(배경 없는) 버튼이며,
-       누르면 바로 아래에 체크박스 팝오버가 뜨고 "기록 있는 날/기록 없는 날/빈 날짜"를 각각
-       켜고 끌 수 있다(단일 토글이 아니라 다중 선택). 패널 고정 헤더 우측 상단의 X 버튼은
-       필터 상태와 무관하게 항상 표시되며, 눌렀을 때 필터가 열려 있으면 닫는다.
-       .sp-content의 위쪽 padding을 없애고 그만큼을 이 바 자체의 padding-top으로 옮겨서,
-       바의 불투명한 배경이 상단 여백까지 완전히 덮도록 한다(그 틈으로 목록이 비쳐 보이는 문제 방지). */
-    .sp-sticky-filter-bar {
-      display: none;
-    }
-    .sp-filter-toggle {
-      display: flex; align-items: center; gap: 4px;
-      background: none; border: none;
-      padding: 4px 2px;
-      font-family: 'Pretendard', sans-serif; font-size: 12px; font-weight: 500;
-      color: rgba(0,0,0,0.4); letter-spacing: -0.036px;
-      cursor: pointer; white-space: nowrap;
-    }
-    .sp-filter-toggle.active { color: rgba(0,0,0,0.86); font-weight: 600; }
-    .sp-filter-toggle-chevron {
-      width: 12px; height: 12px; flex-shrink: 0;
-      transition: transform 0.15s ease;
-    }
-    .sp-filter-toggle[aria-expanded="true"] .sp-filter-toggle-chevron { transform: rotate(180deg); }
-    .sp-filter-popover {
-      position: absolute; top: calc(100% + 2px); right: 0; z-index: 30;
-      background: white; border-radius: 14px;
-      box-shadow: 0 4px 24px rgba(0,0,0,0.16), 0 0 0 1px rgba(0,0,0,0.06);
-      padding: 8px; min-width: 160px;
-      opacity: 0; transform: translateY(-4px) scale(0.98);
-      pointer-events: none;
-      transition: opacity 0.18s ease, transform 0.18s ease;
-    }
-    .sp-filter-popover.show {
-      opacity: 1; transform: translateY(0) scale(1);
-      pointer-events: auto;
-    }
-    /* 패널 고정 헤더 우측 상단의 필터 닫기 버튼 — 필터 상태와 무관하게 항상 표시된다 */
-    .sp-filter-close-btn {
-      display: none;
-    }
-    .sp-filter-close-btn:hover { background: rgba(0,0,0,0.1); }
-    .sp-filter-option {
-      display: flex; align-items: center; gap: 8px;
-      padding: 8px 8px; border-radius: 8px;
-      cursor: pointer; -webkit-tap-highlight-color: transparent;
-    }
-    .sp-filter-option:hover { background: rgba(0,0,0,0.05); }
-    .sp-filter-option input { display: none; }
-    .sp-filter-option span:last-child {
-      font-family: 'Pretendard', sans-serif; font-size: 13px; font-weight: 500;
-      color: rgba(0,0,0,0.8); letter-spacing: -0.039px; white-space: nowrap;
-    }
-    .sp-filter-check {
-      width: 16px; height: 16px; border-radius: 4px; flex-shrink: 0;
-      border: 1.5px solid rgba(0,0,0,0.3);
+    /* ─── SIDE PANEL: 페이지 추가 모드 ───────────
+       하단 "페이지 추가" 버튼을 누르면 패널 전체가 "어디에 추가할지 고르는" 모드로 전환된다:
+       노트 정보 요약(.sp-note-info)이 숨겨져 목록(.sp-content)이 패널 전체를 채우고, 헤더
+       우측에 체크(완료) 버튼이 나타난다 — 누르면 모드를 빠져나와 원래 화면으로 돌아간다. */
+    .sp-panel.sp-add-mode .sp-note-info { display: none; }
+    .sp-add-done-btn {
+      width: 30px; height: 30px; flex-shrink: 0;
       display: flex; align-items: center; justify-content: center;
-      transition: background 0.12s, border-color 0.12s;
+      background: rgba(0,0,0,0.86); border: none; border-radius: 50%;
+      color: #fff; cursor: pointer;
+      visibility: hidden;
     }
-    .sp-filter-option input:checked ~ .sp-filter-check {
-      background: rgba(0,0,0,0.86); border-color: rgba(0,0,0,0.86);
-    }
-    .sp-filter-check::after {
-      content: ''; width: 7px; height: 4px;
-      border-left: 1.5px solid white; border-bottom: 1.5px solid white;
-      transform: rotate(-45deg) translateY(-1px);
-      opacity: 0;
-    }
-    .sp-filter-option input:checked ~ .sp-filter-check::after { opacity: 1; }
+    .sp-add-done-btn:hover { background: rgba(0,0,0,0.72); }
+    .sp-panel.sp-add-mode .sp-add-done-btn { visibility: visible; }
 
     /* ─── SIDE PANEL: 노트 표지·이름·기간 요약 ──────────────
        기간은 왼쪽 텍스트로, 수정은 오른쪽 별도 버튼으로 분리(전체를 하나의 버튼으로 묶지 않는다) */
@@ -2758,11 +2703,11 @@
     <!-- SIDE PANEL (sibling of main-area, so it doesn't scroll with canvas) -->
     <div class="sp-panel" id="sidePanel">
       <div class="sp-header">
-        <span class="sp-header-spacer" id="spHeaderSpacerLeft">구매</span>
+        <span class="sp-header-spacer" id="spHeaderSpacerLeft"></span>
         <span class="sp-header-title" id="spHeaderTitle">페이지</span>
-        <!-- 필터가 펼쳐졌을 때만 나타나는 닫기 버튼. 패널 우측 상단 고정 위치라 스크롤해도 항상 같은 자리 -->
-        <button class="sp-filter-close-btn" id="spFilterCloseBtn" type="button" aria-label="필터 닫기">
-          <i data-lucide="x" style="width:14px;height:14px;"></i>
+        <!-- 페이지 추가 모드일 때만 나타나는 완료 버튼 — 누르면 모드를 빠져나온다 -->
+        <button class="sp-add-done-btn" id="spAddDoneBtn" type="button" aria-label="완료">
+          <i data-lucide="check" style="width:16px;height:16px;"></i>
         </button>
       </div>
       <!-- 노트 표지·이름·기간 요약. 기간은 왼쪽에 텍스트로, 수정은 오른쪽 버튼으로 분리 -->
@@ -2777,26 +2722,6 @@
         </div>
       </div>
       <div class="sp-content">
-        <!-- 스크롤 영역 최상단에 붙어있는 필터 바 — 월 타이틀들 위에 항상 고정된다.
-             다중 선택 필터: 누르면 바로 아래에 체크박스 팝오버가 뜬다. -->
-        <div class="sp-sticky-filter-bar">
-          <button class="sp-filter-toggle" id="spFilterToggle" type="button" aria-expanded="false">
-            <span>필터</span>
-            <i data-lucide="chevron-down" class="sp-filter-toggle-chevron"></i>
-          </button>
-          <div class="sp-filter-popover" id="spFilterPopover">
-            <label class="sp-filter-option">
-              <input type="checkbox" data-filter-key="hasRecord" checked>
-              <span class="sp-filter-check"></span>
-              <span>기록 있는 날</span>
-            </label>
-            <label class="sp-filter-option">
-              <input type="checkbox" data-filter-key="noRecord" checked>
-              <span class="sp-filter-check"></span>
-              <span>기록 없는 날</span>
-            </label>
-          </div>
-        </div>
         <div id="spDateList"></div>
       </div>
       <!-- 오늘자 슬롯이 패널 스크롤 밖으로 나가면(목록 자체 스크롤 기준) 뜨는 이동 버튼 -->
@@ -3434,28 +3359,20 @@
 
   function dateKey(date) { return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`; }
 
-  // "공부 기록이 있다" = 타임 테이블에 10분 단위 형광펜 블록이 실제로 채워져 있다(.g-cell.bl1/bl2/gr1/gr2).
-  // 과목 시간(2:30:25 같은) 텍스트만으로는 판단하지 않는다 — 오른쪽 타임 테이블 하이라이트가 기준.
-  // "페이지 추가"로 만든 study형 페이지는 아직 이 기준 데이터를 안 쓰므로(더미 블록이 항상 렌더링됨)
-  // 일단 있는 것으로 간주한다.
-  function cardHasRecord(card) {
-    // 미래 날짜는 무슨 데이터가 있든 항상 "기록 없음"으로 취급한다(방어적 규칙).
-    const today = new Date(); today.setHours(0, 0, 0, 0);
-    if (parseCardDate(card) > today) return false;
-    if (card.querySelector('.g-cell.bl1, .g-cell.bl2, .g-cell.gr1, .g-cell.gr2')) return true;
-    if (card.dataset.pageType === 'study') return true;
-    return false;
-  }
+  // 빈 날짜("+")는 평소엔 아예 표시하지 않는다 — 패널 하단의 "페이지 추가" 버튼을 눌렀을 때만
+  // 켜지는 "어디에 추가할지 고르는" 모드. 페이지를 하나 고르면 다시 꺼진다.
+  let spAddModeActive = false;
 
-  // 헤더 우측 다중 선택 필터 — "기록 있는 날/기록 없는 날"을 각각 독립적으로 켜고 끌 수 있다.
-  // 기본은 전부 켜짐(과거의 "기록만" 토글이 꺼진 상태와 동일하게 전부 표시).
-  const spFilterEnabled = { hasRecord: true, noRecord: true };
+  // 접힌 월(예: "2026-7") 목록 — rebuildPanel이 다시 그려도 접힘 상태가 유지되도록 여기서 관리한다
+  const spCollapsedMonths = new Set();
 
-  // 사이드 패널 = "노트 기간"(시작일~종료일) 안에서 이미 페이지가 있는 날짜만 하루 단위로
-  // 나열한 목록 — 페이지가 없는 날짜(빈 날짜)는 목록에 아예 나타나지 않는다. 새 페이지는 하단의
-  // "페이지 추가" 버튼(캔버스 하단 버튼과 동일한 날짜 선택 오버레이)으로만 만든다.
+  // 사이드 패널 = "노트 기간"(시작일~종료일) 안의 날짜만 하루 단위로 나열한 목록 — 기록 유무와
+  // 무관하게 기간 밖의 날짜는 절대 표시되지 않는다.
+  // - 페이지가 이미 있는 날짜는(기록 유무와 무관하게) 그 페이지의 썸네일로 표시된다 — 방금 빈 칸을
+  //   눌러 새로 만든 페이지도 여기 포함되어 바로 보인다.
+  // - 페이지가 없는 날짜는 spAddModeActive일 때만(하단 "페이지 추가" 버튼을 누른 동안) 오늘·미래에
+  //   한해 빈 칸("+")으로 표시된다 — 평소에는 아예 목록에 나타나지 않는다.
   function rebuildPanel(datedCards, selectedCard) {
-    // 스크롤 영역 최상단에 고정된 .sp-sticky-filter-bar는 건드리지 않고, 날짜 목록만 다시 그린다
     const spContent = document.getElementById('spDateList');
     spContent.innerHTML = '';
 
@@ -3463,6 +3380,7 @@
     const period = activeTabEl?._periodState || defaultNotePeriod();
     updateSpNoteInfo();
 
+    const today = new Date(); today.setHours(0, 0, 0, 0);
     const startDate = new Date(period.start.year, period.start.month - 1, period.start.day);
     const endDate = new Date(period.end.year, period.end.month - 1, period.end.day);
 
@@ -3474,27 +3392,67 @@
     while (cursor <= endDate) {
       const t = cursor.getTime();
       const existingCard = cardByTime.get(t) || null;
-      const hasRecord = existingCard ? cardHasRecord(existingCard) : false;
-      if (existingCard && spFilterEnabled[hasRecord ? 'hasRecord' : 'noRecord']) {
+      if (existingCard) {
         items.push({ card: existingCard, time: t, label: `${cursor.getMonth() + 1}/${cursor.getDate()}` });
+      } else if (spAddModeActive && t >= today.getTime()) {
+        items.push({
+          isBlank: true, time: t,
+          y: cursor.getFullYear(), m: cursor.getMonth() + 1, d: cursor.getDate(),
+          isToday: t === today.getTime(),
+          label: `${cursor.getMonth() + 1}/${cursor.getDate()}`,
+        });
       }
       cursor.setDate(cursor.getDate() + 1);
     }
 
-    // 월 그루핑 없이 기간 내 날짜순으로 한 줄에 2개씩 나열한다
-    for (let i = 0; i < items.length; i += 2) {
-      const row = document.createElement('div');
-      row.className = 'sp-row';
-      for (let j = i; j < Math.min(i + 2, items.length); j++) {
-        const item = items[j];
-        const spCard = document.createElement('div');
-        spCard.className = 'sp-card' + (item.card === selectedCard ? ' sp-selected' : '');
-        spCard.dataset.dateKey = dateKey(parseCardDate(item.card));
-        spCard.innerHTML = `<div class="sp-thumb"></div><div class="sp-caption"><span class="sp-date">${item.label}</span><i data-lucide="more-horizontal" class="sp-more-icon"></i></div>`;
-        row.appendChild(spCard);
+    // 월 단위로 묶는다 — 같은 연/월끼리 하나의 접을 수 있는 그룹으로 표시
+    const groups = [];
+    let curGroup = null;
+    items.forEach(item => {
+      const d = new Date(item.time);
+      const key = `${d.getFullYear()}-${d.getMonth() + 1}`;
+      if (!curGroup || curGroup.key !== key) {
+        curGroup = { key, year: d.getFullYear(), month: d.getMonth() + 1, items: [] };
+        groups.push(curGroup);
       }
-      spContent.appendChild(row);
-    }
+      curGroup.items.push(item);
+    });
+
+    groups.forEach(group => {
+      const collapsed = spCollapsedMonths.has(group.key);
+
+      const header = document.createElement('div');
+      header.className = 'sp-month-header' + (collapsed ? ' collapsed' : '');
+      header.dataset.monthKey = group.key;
+      header.innerHTML = `<span class="sp-month-title">${group.year}년 ${group.month}월</span><i data-lucide="chevron-down" class="sp-month-chevron"></i>`;
+      spContent.appendChild(header);
+
+      const body = document.createElement('div');
+      body.className = 'sp-month-body';
+      if (collapsed) body.style.display = 'none';
+
+      for (let i = 0; i < group.items.length; i += 2) {
+        const row = document.createElement('div');
+        row.className = 'sp-row';
+        for (let j = i; j < Math.min(i + 2, group.items.length); j++) {
+          const item = group.items[j];
+          const spCard = document.createElement('div');
+          spCard.className = 'sp-card' + (item.card && item.card === selectedCard ? ' sp-selected' : '');
+          if (item.isBlank) {
+            spCard.classList.add('sp-blank');
+            spCard.dataset.y = item.y; spCard.dataset.m = item.m; spCard.dataset.d = item.d;
+            if (item.isToday) spCard.dataset.today = '1';
+            spCard.innerHTML = `<div class="sp-thumb sp-thumb-add"><span class="sp-add-icon">+</span></div><div class="sp-caption"><span class="sp-date">${item.label}</span></div>`;
+          } else {
+            spCard.dataset.dateKey = dateKey(parseCardDate(item.card));
+            spCard.innerHTML = `<div class="sp-thumb"></div><div class="sp-caption"><span class="sp-date">${item.label}</span><i data-lucide="more-horizontal" class="sp-more-icon"></i></div>`;
+          }
+          row.appendChild(spCard);
+        }
+        body.appendChild(row);
+      }
+      spContent.appendChild(body);
+    });
     lucide.createIcons({ nodes: [spContent] });
     // 목록을 새로 그렸으니 오늘 슬롯 DOM도 새 노드로 바뀐다 — 관찰 대상을 다시 연결해야 한다.
     // watchSpTodayFab은 이 함수보다 뒤에서 정의되지만, rebuildPanel의 첫 실행(맨 아래 "Initial
@@ -3502,42 +3460,19 @@
     watchSpTodayFab();
   }
 
-  // ── 스크롤 목록 최상단 고정 필터 팝오버 + 패널 헤더의 닫기(X) 버튼 ──────────
-  const spFilterToggle = document.getElementById('spFilterToggle');
-  const spFilterPopover = document.getElementById('spFilterPopover');
-  const spFilterCloseBtn = document.getElementById('spFilterCloseBtn');
-  function closeSpFilterPopover() {
-    spFilterPopover.classList.remove('show');
-    spFilterToggle.setAttribute('aria-expanded', 'false');
-  }
-  spFilterToggle.addEventListener('click', (e) => {
-    e.stopPropagation();
-    const willShow = !spFilterPopover.classList.contains('show');
-    spFilterPopover.classList.toggle('show', willShow);
-    spFilterToggle.setAttribute('aria-expanded', String(willShow));
-  });
-  spFilterCloseBtn.addEventListener('click', closeSpFilterPopover);
-  document.addEventListener('click', (e) => {
-    if (!spFilterPopover.classList.contains('show')) return;
-    if (e.target.closest('.sp-sticky-filter-bar') || e.target.closest('.sp-filter-close-btn')) return;
-    closeSpFilterPopover();
-  });
-  spFilterPopover.querySelectorAll('input[data-filter-key]').forEach(input => {
-    input.addEventListener('change', () => {
-      spFilterEnabled[input.dataset.filterKey] = input.checked;
-      const anyOff = Object.values(spFilterEnabled).some(v => !v);
-      spFilterToggle.classList.toggle('active', anyOff);
-      sortPages();
-    });
-  });
-
-  // ── 패널 하단 "페이지 추가" 버튼 — 캔버스 버튼과 달리 오버레이 메뉴를 거치지 않고
-  // 날짜 선택 캘린더(datePicker)를 바로 띄운다
+  // ── 페이지 추가 모드 진입/이탈 — 패널 전체가 "어디에 추가할지 고르는" 화면으로 바뀐다:
+  // 노트 정보가 숨겨지고 헤더 우측에 완료(체크) 버튼이 나타난다. 날짜를 하나 고르거나
+  // 완료 버튼을 누르면 원래 화면으로 돌아온다.
   const spAddPageBtn = document.getElementById('spAddPageBtn');
-  spAddPageBtn.addEventListener('click', () => {
-    activeCard = null;
-    datePicker.open();
-  });
+  const spAddDoneBtn = document.getElementById('spAddDoneBtn');
+  function setAddMode(active) {
+    spAddModeActive = active;
+    document.getElementById('sidePanel').classList.toggle('sp-add-mode', active);
+    spAddPageBtn.classList.toggle('active', active);
+    sortPages();
+  }
+  spAddPageBtn.addEventListener('click', () => setAddMode(!spAddModeActive));
+  spAddDoneBtn.addEventListener('click', () => setAddMode(false));
 
   // ── 노트 표지·이름·기간 요약 + 우측 "수정" 버튼 → 기간(시작일~종료일) 수정 팝업 ──
   const spNoteCover = document.getElementById('spNoteCover');
@@ -3617,7 +3552,8 @@
   const spTodayFabBtn = document.getElementById('spTodayFabBtn');
   const spContentEl = document.querySelector('.sp-content');
   function getTodaySpCardEl() {
-    return document.querySelector(`.sp-card[data-date-key="${dateKey(new Date())}"]`);
+    return document.querySelector('.sp-blank[data-today="1"]') ||
+      document.querySelector(`.sp-card[data-date-key="${dateKey(new Date())}"]`);
   }
   spTodayFabBtn.addEventListener('click', () => {
     const el = getTodaySpCardEl();
@@ -3657,33 +3593,13 @@
 
   function sortPages(selectedCard, revealBanners) {
     const allCards = Array.from(canvasScroll.querySelectorAll('.card'));
-    let datedCards = allCards.filter(c => c.dataset.canvasState === 'with-date');
+    const datedCards = allCards.filter(c => c.dataset.canvasState === 'with-date');
     datedCards.sort((a, b) => parseCardDate(a) - parseCardDate(b));
     canvasZoomWrap.querySelectorAll('.canvas-ad-banner').forEach(b => b.remove());
 
-    // 노트 기간(시작일~종료일) 밖의 페이지는 캔버스에서도 숨긴다 — 목록에서만 걸러지고
-    // 캔버스에는 그대로 남아있던 문제를 방지한다.
-    const activeTabForPeriod = document.querySelector('.tab.active');
-    const canvasPeriod = activeTabForPeriod?._periodState || defaultNotePeriod();
-    const periodStartTime = new Date(canvasPeriod.start.year, canvasPeriod.start.month - 1, canvasPeriod.start.day).getTime();
-    const periodEndTime = new Date(canvasPeriod.end.year, canvasPeriod.end.month - 1, canvasPeriod.end.day).getTime();
-    const hiddenCards = [];
-    const visibleDatedCards = [];
-    datedCards.forEach(c => {
-      const inPeriod = parseCardDate(c).getTime() >= periodStartTime && parseCardDate(c).getTime() <= periodEndTime;
-      c.classList.toggle('card-out-of-period', !inPeriod);
-      (inPeriod ? visibleDatedCards : hiddenCards).push(c);
-    });
-    hiddenCards.forEach(c => canvasZoomWrap.appendChild(c));
-    datedCards = visibleDatedCards;
-
     const ghostCard = canvasZoomWrap.querySelector('.card.card-ghost');
     const ghostEl = ghostCard ? (ghostCard.closest('.ghost-frame') || ghostCard) : null;
-    // 오늘자 미리보기(고스트) 카드가 떠 있으면 "페이지 추가" 버튼들을 숨긴다 — 그 상태에서
-    // openAddPageMenu의 "오늘" 항목을 눌러도 이미 taken 처리된 오늘 날짜라 createPage가 조용히
-    // 무시하므로, 오늘 페이지는 고스트 카드 자체를 눌러 활성화하는 경로로만 만들게 한다.
-    addPageBtn.style.display = ghostCard ? 'none' : '';
-    document.getElementById('spAddPageBtn').style.display = ghostCard ? 'none' : '';
+    addPageBtn.style.display = ghostCard ? 'none' : ''; // 오늘자 미리보기 카드가 있으면 페이지 추가 버튼은 숨김
 
     // 오늘자 미리보기는 항상 맨 끝이 아니라, 실제 페이지들 사이에서 날짜순 제자리에 끼워 넣는다
     // (예: 미래 날짜 페이지가 이미 있으면 그보다 앞쪽에 와야 함)
@@ -3757,7 +3673,6 @@
 
   function setCanvasMode() {
     document.getElementById('spHeaderTitle').textContent = '페이지';
-    document.getElementById('spHeaderSpacerLeft').textContent = '구매';
     sortPages();
     // 노트 전환 시 "오늘로 이동" 플로팅 버튼이 감시하는 대상도 새로 고른다. 전역 함수 선언은
     // 호이스팅으로 인해 정의 이전에도 window.watchTodayFab이 이미 존재하는 것처럼 보이므로
@@ -3843,7 +3758,6 @@
     ghostCard.querySelectorAll('.subj-time').forEach(el => { el.textContent = '0:00:00'; });
 
     addPageBtn.style.display = 'none'; // 오늘자 미리보기 카드가 있는 동안 페이지 추가 버튼은 숨김
-    document.getElementById('spAddPageBtn').style.display = 'none';
     lucide.createIcons({ nodes: [ghostCard] });
 
     // 축소된 카드 하단을 캔버스 배경색으로 흐리는 그라데이션 + 흰 배경 CTA 버튼 + 더보기(점 3개)를
@@ -3942,6 +3856,34 @@
   }
 
   document.querySelector('.sp-content').addEventListener('click', e => {
+    const monthHeader = e.target.closest('.sp-month-header');
+    if (monthHeader) {
+      const key = monthHeader.dataset.monthKey;
+      const willCollapse = !monthHeader.classList.contains('collapsed');
+      if (willCollapse) spCollapsedMonths.add(key); else spCollapsedMonths.delete(key);
+      monthHeader.classList.toggle('collapsed', willCollapse);
+      const body = monthHeader.nextElementSibling;
+      if (body && body.classList.contains('sp-month-body')) body.style.display = willCollapse ? 'none' : '';
+      return;
+    }
+
+    const blank = e.target.closest('.sp-blank');
+    if (blank) {
+      // 날짜를 하나 골랐으니 "어디에 추가할지 고르는" 모드는 끝 — 다음 렌더부터 빈 칸을 다시 숨긴다
+      spAddModeActive = false;
+      document.getElementById('sidePanel').classList.remove('sp-add-mode');
+      document.getElementById('spAddPageBtn').classList.remove('active');
+      if (blank.dataset.today === '1') {
+        // 오늘 빈칸 → 이미 캔버스에 떠 있는 "오늘' 페이지 추가" 미리보기를 그대로 활성화한다
+        const gc = document.querySelector('.card.card-ghost');
+        const frame = gc && gc.closest('.ghost-frame');
+        if (gc && frame) activateGhostCard(frame, gc, gc.dataset.dateText);
+      } else {
+        createPage(parseInt(blank.dataset.y, 10), parseInt(blank.dataset.m, 10), parseInt(blank.dataset.d, 10));
+      }
+      return;
+    }
+
     const moreIcon = e.target.closest('.sp-more-icon');
     if (moreIcon) {
       const spCard = moreIcon.closest('.sp-card[data-date-key]');

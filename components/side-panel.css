@@ -17,11 +17,11 @@
 /* ── Header (56px) ── */
 .sp-header {
   height: 56px; flex-shrink: 0;
-  display: flex; align-items: center; justify-content: center;
+  display: flex; align-items: center; justify-content: space-between;
   padding: 0 16px;
 }
 .sp-header-spacer {
-  display: none;
+  width: 30px; flex-shrink: 0;
 }
 .sp-header-title {
   font-family: 'Pretendard', sans-serif;
@@ -45,6 +45,27 @@
   padding-bottom: 10px; flex-shrink: 0;
 }
 
+/* 월 단위 접을 수 있는 타이틀바 */
+.sp-month-header {
+  display: flex; align-items: center; justify-content: space-between;
+  height: 36px; flex-shrink: 0;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+.sp-month-title {
+  font-family: 'Pretendard', sans-serif;
+  font-size: 14px; font-weight: 700;
+  color: rgba(0,0,0,0.7); letter-spacing: -0.042px;
+}
+.sp-month-chevron {
+  width: 16px; height: 16px; flex-shrink: 0;
+  color: rgba(0,0,0,0.4);
+  transition: transform 0.18s ease;
+}
+.sp-month-header.collapsed .sp-month-chevron { transform: rotate(-90deg); }
+.sp-month-body { flex-shrink: 0; }
+
 .sp-card {
   flex: 0 0 calc(50% - 8px);
   min-width: 0;
@@ -63,6 +84,19 @@
   background: #ebebeb;
 }
 .sp-card.sp-selected .sp-thumb { border-color: #242424; }
+.sp-card.sp-selected .sp-thumb-add { border-color: #242424 !important; border-style: solid !important; }
+
+.sp-thumb-add {
+  background: white;
+  border: 1px dashed rgba(0,0,0,0.3) !important;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+  display: flex; align-items: center; justify-content: center;
+}
+.sp-add-icon {
+  font-family: 'Pretendard', sans-serif;
+  font-size: 32px; font-weight: 400;
+  color: rgba(0,0,0,0.18); letter-spacing: -0.096px; line-height: 1.4;
+}
 
 /* "오늘" badge */
 .sp-badge {
