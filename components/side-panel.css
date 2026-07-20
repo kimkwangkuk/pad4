@@ -43,11 +43,6 @@
 }
 .sp-content::-webkit-scrollbar { display: none; }
 
-.sp-row {
-  display: flex; gap: 16px; align-items: flex-start;
-  padding-bottom: 10px; flex-shrink: 0;
-}
-
 /* 월 단위 접을 수 있는 타이틀바 */
 .sp-month-header {
   display: flex; align-items: center; justify-content: space-between;
@@ -69,16 +64,21 @@
 .sp-month-header.collapsed .sp-month-chevron { transform: rotate(-90deg); }
 .sp-month-body { flex-shrink: 0; }
 
+/* 리스트 행 — 왼쪽 작은 썸네일 + 오른쪽 타이틀(날짜)/서브타이틀(공부 시간) */
 .sp-card {
-  flex: 0 0 calc(50% - 8px);
-  min-width: 0;
-  display: flex; flex-direction: column; gap: 4px;
-  align-items: center;
+  width: 100%;
+  display: flex; align-items: center; gap: 12px;
+  padding: 8px 4px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
+.sp-card.sp-selected { background: rgba(0,0,0,0.04); }
 
 /* Thumbnail */
 .sp-thumb {
-  width: 100%;
+  width: 44px; flex-shrink: 0;
   aspect-ratio: 133 / 177.658;
   position: relative;
   border: 1px solid rgba(0,0,0,0.12);
@@ -97,41 +97,30 @@
 }
 .sp-add-icon {
   font-family: 'Pretendard', sans-serif;
-  font-size: 32px; font-weight: 400;
+  font-size: 18px; font-weight: 400;
   color: rgba(0,0,0,0.18); letter-spacing: -0.096px; line-height: 1.4;
 }
 
-/* "오늘" badge */
-.sp-badge {
-  position: absolute; top: 5px; right: 5px;
-  background: rgba(0,0,0,0.68);
-  padding: 2px 6px; border-radius: 4px;
+/* Title/Subtitle */
+.sp-list-info {
+  flex: 1; min-width: 0;
+  display: flex; flex-direction: column; gap: 2px;
+}
+.sp-list-title {
   font-family: 'Pretendard', sans-serif;
-  font-size: 14px; font-weight: 500;
-  color: white; letter-spacing: -0.042px; line-height: 1.4;
-  white-space: nowrap;
+  font-size: 15px; font-weight: 600;
+  color: rgba(0,0,0,0.86); letter-spacing: -0.045px; line-height: 1.4;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.sp-list-subtitle {
+  font-family: 'Pretendard', sans-serif;
+  font-size: 13px; font-weight: 400;
+  color: rgba(0,0,0,0.45); letter-spacing: -0.039px; line-height: 1.4;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 
-/* Caption row */
-.sp-caption {
-  width: 100%; height: 17px;
-  display: flex; align-items: center; gap: 10px;
-  padding: 0 2px;
-}
-.sp-date {
-  flex: 1; min-width: 0;
-  font-family: 'Pretendard', sans-serif;
-  font-size: 12px; font-weight: 400;
-  color: rgba(0,0,0,0.59); letter-spacing: -0.036px; line-height: 1.4;
-}
 .sp-more-icon {
-  width: 12px; height: 12px; flex-shrink: 0;
+  width: 16px; height: 16px; flex-shrink: 0;
   color: rgba(0,0,0,0.35);
-}
-.sp-add-more {
-  width: 12px; height: 12px; flex-shrink: 0;
-  color: rgba(0,0,0,0.59);
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
 }
 

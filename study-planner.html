@@ -3361,26 +3361,21 @@
       body.className = 'sp-month-body';
       if (collapsed) body.style.display = 'none';
 
-      for (let i = 0; i < group.items.length; i += 2) {
-        const row = document.createElement('div');
-        row.className = 'sp-row';
-        for (let j = i; j < Math.min(i + 2, group.items.length); j++) {
-          const item = group.items[j];
-          const spCard = document.createElement('div');
-          spCard.className = 'sp-card' + (item.card && item.card === selectedCard ? ' sp-selected' : '');
-          if (item.isBlank) {
-            spCard.classList.add('sp-blank');
-            spCard.dataset.y = item.y; spCard.dataset.m = item.m; spCard.dataset.d = item.d;
-            if (item.isToday) spCard.dataset.today = '1';
-            spCard.innerHTML = `<div class="sp-thumb sp-thumb-add"><span class="sp-add-icon">+</span></div><div class="sp-caption"><span class="sp-date">${item.label}</span></div>`;
-          } else {
-            spCard.dataset.dateKey = dateKey(parseCardDate(item.card));
-            spCard.innerHTML = `<div class="sp-thumb"></div><div class="sp-caption"><span class="sp-date">${item.label}</span><i data-lucide="more-horizontal" class="sp-more-icon"></i></div>`;
-          }
-          row.appendChild(spCard);
+      group.items.forEach(item => {
+        const spCard = document.createElement('div');
+        spCard.className = 'sp-card' + (item.card && item.card === selectedCard ? ' sp-selected' : '');
+        if (item.isBlank) {
+          spCard.classList.add('sp-blank');
+          spCard.dataset.y = item.y; spCard.dataset.m = item.m; spCard.dataset.d = item.d;
+          if (item.isToday) spCard.dataset.today = '1';
+          spCard.innerHTML = `<div class="sp-thumb sp-thumb-add"><span class="sp-add-icon">+</span></div><div class="sp-list-info"><span class="sp-list-title">${item.label}</span></div>`;
+        } else {
+          const studyTime = item.card.querySelector('.hd-time-val')?.textContent?.trim() || '0:00:00';
+          spCard.dataset.dateKey = dateKey(parseCardDate(item.card));
+          spCard.innerHTML = `<div class="sp-thumb"></div><div class="sp-list-info"><span class="sp-list-title">${item.label}</span><span class="sp-list-subtitle">${studyTime}</span></div><i data-lucide="more-horizontal" class="sp-more-icon"></i>`;
         }
-        body.appendChild(row);
-      }
+        body.appendChild(spCard);
+      });
       spContent.appendChild(body);
     });
     lucide.createIcons({ nodes: [spContent] });
