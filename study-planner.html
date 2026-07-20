@@ -3422,7 +3422,7 @@
         } else {
           const studyTime = item.card.querySelector('.hd-time-val')?.textContent?.trim() || '0:00:00';
           spCard.dataset.dateKey = dateKey(parseCardDate(item.card));
-          spCard.innerHTML = `<div class="sp-thumb"></div><div class="sp-list-info"><div class="sp-list-title-row"><span class="sp-list-title">${item.label}</span>${todayBadge}</div><span class="sp-list-subtitle">${studyTime}</span></div><i data-lucide="more-horizontal" class="sp-more-icon"></i>`;
+          spCard.innerHTML = `<div class="sp-thumb"></div><div class="sp-list-info"><div class="sp-list-title-row"><span class="sp-list-title">${item.label}</span>${todayBadge}</div></div><span class="sp-list-time">${studyTime}</span><i data-lucide="more-horizontal" class="sp-more-icon"></i>`;
         }
         body.appendChild(spCard);
       });

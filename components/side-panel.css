@@ -131,11 +131,13 @@
   border-radius: 4px;
   letter-spacing: -0.03px; line-height: 1.4;
 }
-.sp-list-subtitle {
+/* 공부 시간 — 서브타이틀이 아니라 행 우측(더보기 아이콘 왼쪽)에 표시 */
+.sp-list-time {
+  flex-shrink: 0;
   font-family: 'Pretendard', sans-serif;
-  font-size: 13px; font-weight: 400;
+  font-size: 13px; font-weight: 500;
   color: rgba(0,0,0,0.45); letter-spacing: -0.039px; line-height: 1.4;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .sp-more-icon {
