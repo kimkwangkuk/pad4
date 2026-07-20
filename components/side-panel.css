@@ -17,14 +17,8 @@
 /* ── Header (56px) ── */
 .sp-header {
   height: 56px; flex-shrink: 0;
-  display: flex; align-items: center; justify-content: space-between;
+  display: flex; align-items: center; justify-content: center;
   padding: 0 16px;
-}
-.sp-header-spacer {
-  font-family: 'Pretendard', sans-serif;
-  font-size: 15px; font-weight: 600;
-  color: rgba(0,0,0,0.86);
-  opacity: 0; user-select: none;
 }
 .sp-header-title {
   font-family: 'Pretendard', sans-serif;

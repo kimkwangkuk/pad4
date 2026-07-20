@@ -871,32 +871,6 @@
     .sp-blank { cursor: pointer; }
     .sp-thumb-add { cursor: pointer; }
 
-    /* ─── SIDE PANEL: 기록만 보기 필터 토글 (헤더 우측) ─────── */
-    .sp-filter-toggle {
-      display: flex; align-items: center; gap: 5px;
-      background: none; border: none; padding: 0;
-      font-family: 'Pretendard', sans-serif; font-size: 12px; font-weight: 500;
-      color: rgba(0,0,0,0.5); letter-spacing: -0.036px;
-      cursor: pointer; white-space: nowrap;
-    }
-    .sp-filter-toggle.active { color: rgba(0,0,0,0.86); font-weight: 600; }
-    .sp-filter-check {
-      width: 14px; height: 14px; border-radius: 4px; flex-shrink: 0;
-      border: 1.5px solid rgba(0,0,0,0.3);
-      display: flex; align-items: center; justify-content: center;
-      transition: background 0.12s, border-color 0.12s;
-    }
-    .sp-filter-toggle.active .sp-filter-check {
-      background: rgba(0,0,0,0.86); border-color: rgba(0,0,0,0.86);
-    }
-    .sp-filter-check::after {
-      content: ''; width: 7px; height: 4px;
-      border-left: 1.5px solid white; border-bottom: 1.5px solid white;
-      transform: rotate(-45deg) translateY(-1px);
-      opacity: 0;
-    }
-    .sp-filter-toggle.active .sp-filter-check::after { opacity: 1; }
-
     /* ─── SIDE PANEL: 노트 표지·이름·기간 요약 ──────────────
        기간은 왼쪽 텍스트로, 수정은 오른쪽 별도 버튼으로 분리(전체를 하나의 버튼으로 묶지 않는다) */
     .sp-note-info {
@@ -2664,13 +2638,7 @@
     <!-- SIDE PANEL (sibling of main-area, so it doesn't scroll with canvas) -->
     <div class="sp-panel" id="sidePanel">
       <div class="sp-header">
-        <span class="sp-header-spacer" id="spHeaderSpacerLeft">구매</span>
         <span class="sp-header-title" id="spHeaderTitle">페이지</span>
-        <!-- 켜면 기록 있는 날짜만 표시(빈 칸 전부 숨김), 끄면 오늘~기간 종료일까지 빈 칸도 함께 표시 -->
-        <button class="sp-filter-toggle" id="spFilterToggle" type="button" aria-pressed="false">
-          <span class="sp-filter-check"></span>
-          <span>기록만</span>
-        </button>
       </div>
       <!-- 노트 표지·이름·기간 요약. 기간은 왼쪽에 텍스트로, 수정은 오른쪽 버튼으로 분리 -->
       <div class="sp-note-info">
@@ -3311,23 +3279,6 @@
 
   function dateKey(date) { return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`; }
 
-  // "공부 기록이 있다" = 타임 테이블에 10분 단위 형광펜 블록이 실제로 채워져 있다(.g-cell.bl1/bl2/gr1/gr2).
-  // 과목 시간(2:30:25 같은) 텍스트만으로는 판단하지 않는다 — 오른쪽 타임 테이블 하이라이트가 기준.
-  // "페이지 추가"로 만든 study형 페이지는 아직 이 기준 데이터를 안 쓰므로(더미 블록이 항상 렌더링됨)
-  // 일단 있는 것으로 간주한다.
-  function cardHasRecord(card) {
-    // 미래 날짜는 무슨 데이터가 있든 항상 "기록 없음"으로 취급한다(방어적 규칙).
-    const today = new Date(); today.setHours(0, 0, 0, 0);
-    if (parseCardDate(card) > today) return false;
-    if (card.querySelector('.g-cell.bl1, .g-cell.bl2, .g-cell.gr1, .g-cell.gr2')) return true;
-    if (card.dataset.pageType === 'study') return true;
-    return false;
-  }
-
-  // 헤더 우측 "기록만" 토글 — 켜면 빈 칸(오늘~기간 종료일의 미기록 날짜)뿐 아니라, 페이지는
-  // 있지만 실제 공부 기록이 없는 날짜도 함께 숨기고 진짜 기록이 있는 날짜만 보여준다
-  let spFilterRecordsOnly = false;
-
   // 접힌 월(예: "2026-7") 목록 — rebuildPanel이 다시 그려도 접힘 상태가 유지되도록 여기서 관리한다
   const spCollapsedMonths = new Set();
 
@@ -3337,7 +3288,6 @@
   //   눌러 새로 만든 페이지도 여기 포함되어 바로 보인다.
   // - 페이지가 없는 날짜는 오늘·미래에 한해서만 빈 칸("+")으로 표시된다 — 과거인데 페이지가 없는
   //   날짜는 목록에서 아예 노출되지 않는다.
-  //   ("기록만" 토글이 켜져 있으면 기록 없는 항목은 전부 생략된다.)
   function rebuildPanel(datedCards, selectedCard) {
     const spContent = document.querySelector('.sp-content');
     spContent.innerHTML = '';
@@ -3358,12 +3308,9 @@
     while (cursor <= endDate) {
       const t = cursor.getTime();
       const existingCard = cardByTime.get(t) || null;
-      const hasRecord = existingCard ? cardHasRecord(existingCard) : false;
       if (existingCard) {
-        if (!spFilterRecordsOnly || hasRecord) {
-          items.push({ card: existingCard, time: t, isToday: t === today.getTime(), label: `${cursor.getMonth() + 1}/${cursor.getDate()}` });
-        }
-      } else if (!spFilterRecordsOnly && t >= today.getTime()) {
+        items.push({ card: existingCard, time: t, isToday: t === today.getTime(), label: `${cursor.getMonth() + 1}/${cursor.getDate()}` });
+      } else if (t >= today.getTime()) {
         items.push({
           isBlank: true, time: t,
           y: cursor.getFullYear(), m: cursor.getMonth() + 1, d: cursor.getDate(),
@@ -3424,15 +3371,6 @@
     // panel build")은 그 정의 블록보다도 더 나중에 일어나므로 호이스팅 문제 없이 안전하다.
     watchSpTodayFab();
   }
-
-  // ── 헤더 우측 "기록만" 필터 토글 ──────────────────────────
-  const spFilterToggle = document.getElementById('spFilterToggle');
-  spFilterToggle.addEventListener('click', () => {
-    spFilterRecordsOnly = !spFilterRecordsOnly;
-    spFilterToggle.classList.toggle('active', spFilterRecordsOnly);
-    spFilterToggle.setAttribute('aria-pressed', String(spFilterRecordsOnly));
-    sortPages();
-  });
 
   // ── 노트 표지·이름·기간 요약 + 우측 "수정" 버튼 → 기간(시작일~종료일) 수정 팝업 ──
   const spNoteCover = document.getElementById('spNoteCover');
@@ -3648,7 +3586,6 @@
 
   function setCanvasMode() {
     document.getElementById('spHeaderTitle').textContent = '페이지';
-    document.getElementById('spHeaderSpacerLeft').textContent = '구매';
     sortPages();
     // 노트 전환 시 "오늘로 이동" 플로팅 버튼이 감시하는 대상도 새로 고른다. 전역 함수 선언은
     // 호이스팅으로 인해 정의 이전에도 window.watchTodayFab이 이미 존재하는 것처럼 보이므로
