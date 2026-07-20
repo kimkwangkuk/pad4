@@ -3141,15 +3141,22 @@
     15: ['bl2','bl1','bl2','bl1','bl2','bl1'],
     16: ['bl1','bl1','','','',''],
   };
+  const FILLS_C = { // 태블릿v2만 조금 공부한 날
+    9:  ['bl1','bl1','bl1','bl1','',''],
+    10: ['bl2','bl1','','','',''],
+  };
+  const FILLS_D = { // 테마만 조금 공부한 날
+    13: ['gr1','gr1','gr2','gr1','gr1',''],
+  };
   const NO_RECORD_TIMES = ['0:00:00', '0:00:00'];
 
   const PAGES = [
     { id: 'p0', ..._relDate(-5), today: false,
-      hasRecord: false, times: NO_RECORD_TIMES, totalTime: null, fills: null },
+      hasRecord: true, times: ['1:10:20', '0:00:00'], totalTime: '1:10:20', fills: FILLS_C },
     { id: 'p1', ..._relDate(-4), today: false,
       hasRecord: true, times: ['1:45:10', '0:52:40'], totalTime: '2:37:50', fills: FILLS_A },
     { id: 'p2', ..._relDate(-3), today: false,
-      hasRecord: false, times: NO_RECORD_TIMES, totalTime: null, fills: null },
+      hasRecord: true, times: ['0:00:00', '0:55:30'], totalTime: '0:55:30', fills: FILLS_D },
     { id: 'p3', ..._relDate(-2), today: false,
       hasRecord: true, times: ['2:10:05', '1:05:30'], totalTime: '3:15:35', fills: FILLS_B },
     { id: 'p4', ..._relDate(-1), today: false,
