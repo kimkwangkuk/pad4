@@ -45,27 +45,6 @@
   padding-bottom: 10px; flex-shrink: 0;
 }
 
-/* 월 단위 접을 수 있는 타이틀바 */
-.sp-month-header {
-  display: flex; align-items: center; justify-content: space-between;
-  height: 36px; flex-shrink: 0;
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-  user-select: none;
-}
-.sp-month-title {
-  font-family: 'Pretendard', sans-serif;
-  font-size: 14px; font-weight: 700;
-  color: rgba(0,0,0,0.7); letter-spacing: -0.042px;
-}
-.sp-month-chevron {
-  width: 16px; height: 16px; flex-shrink: 0;
-  color: rgba(0,0,0,0.4);
-  transition: transform 0.18s ease;
-}
-.sp-month-header.collapsed .sp-month-chevron { transform: rotate(-90deg); }
-.sp-month-body { flex-shrink: 0; }
-
 .sp-card {
   flex: 0 0 calc(50% - 8px);
   min-width: 0;

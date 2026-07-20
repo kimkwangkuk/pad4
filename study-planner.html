@@ -3451,9 +3451,6 @@
   // 기본은 전부 켜짐(과거의 "기록만" 토글이 꺼진 상태와 동일하게 전부 표시).
   const spFilterEnabled = { hasRecord: true, noRecord: true };
 
-  // 접힌 월(예: "2026-7") 목록 — rebuildPanel이 다시 그려도 접힘 상태가 유지되도록 여기서 관리한다
-  const spCollapsedMonths = new Set();
-
   // 사이드 패널 = "노트 기간"(시작일~종료일) 안에서 이미 페이지가 있는 날짜만 하루 단위로
   // 나열한 목록 — 페이지가 없는 날짜(빈 날짜)는 목록에 아예 나타나지 않는다. 새 페이지는 하단의
   // "페이지 추가" 버튼(캔버스 하단 버튼과 동일한 날짜 선택 오버레이)으로만 만든다.
@@ -3484,47 +3481,20 @@
       cursor.setDate(cursor.getDate() + 1);
     }
 
-    // 월 단위로 묶는다 — 같은 연/월끼리 하나의 접을 수 있는 그룹으로 표시
-    const groups = [];
-    let curGroup = null;
-    items.forEach(item => {
-      const d = new Date(item.time);
-      const key = `${d.getFullYear()}-${d.getMonth() + 1}`;
-      if (!curGroup || curGroup.key !== key) {
-        curGroup = { key, year: d.getFullYear(), month: d.getMonth() + 1, items: [] };
-        groups.push(curGroup);
+    // 월 그루핑 없이 기간 내 날짜순으로 한 줄에 2개씩 나열한다
+    for (let i = 0; i < items.length; i += 2) {
+      const row = document.createElement('div');
+      row.className = 'sp-row';
+      for (let j = i; j < Math.min(i + 2, items.length); j++) {
+        const item = items[j];
+        const spCard = document.createElement('div');
+        spCard.className = 'sp-card' + (item.card === selectedCard ? ' sp-selected' : '');
+        spCard.dataset.dateKey = dateKey(parseCardDate(item.card));
+        spCard.innerHTML = `<div class="sp-thumb"></div><div class="sp-caption"><span class="sp-date">${item.label}</span><i data-lucide="more-horizontal" class="sp-more-icon"></i></div>`;
+        row.appendChild(spCard);
       }
-      curGroup.items.push(item);
-    });
-
-    groups.forEach(group => {
-      const collapsed = spCollapsedMonths.has(group.key);
-
-      const header = document.createElement('div');
-      header.className = 'sp-month-header' + (collapsed ? ' collapsed' : '');
-      header.dataset.monthKey = group.key;
-      header.innerHTML = `<span class="sp-month-title">${group.year}년 ${group.month}월</span><i data-lucide="chevron-down" class="sp-month-chevron"></i>`;
-      spContent.appendChild(header);
-
-      const body = document.createElement('div');
-      body.className = 'sp-month-body';
-      if (collapsed) body.style.display = 'none';
-
-      for (let i = 0; i < group.items.length; i += 2) {
-        const row = document.createElement('div');
-        row.className = 'sp-row';
-        for (let j = i; j < Math.min(i + 2, group.items.length); j++) {
-          const item = group.items[j];
-          const spCard = document.createElement('div');
-          spCard.className = 'sp-card' + (item.card === selectedCard ? ' sp-selected' : '');
-          spCard.dataset.dateKey = dateKey(parseCardDate(item.card));
-          spCard.innerHTML = `<div class="sp-thumb"></div><div class="sp-caption"><span class="sp-date">${item.label}</span><i data-lucide="more-horizontal" class="sp-more-icon"></i></div>`;
-          row.appendChild(spCard);
-        }
-        body.appendChild(row);
-      }
-      spContent.appendChild(body);
-    });
+      spContent.appendChild(row);
+    }
     lucide.createIcons({ nodes: [spContent] });
     // 목록을 새로 그렸으니 오늘 슬롯 DOM도 새 노드로 바뀐다 — 관찰 대상을 다시 연결해야 한다.
     // watchSpTodayFab은 이 함수보다 뒤에서 정의되지만, rebuildPanel의 첫 실행(맨 아래 "Initial
@@ -3972,17 +3942,6 @@
   }
 
   document.querySelector('.sp-content').addEventListener('click', e => {
-    const monthHeader = e.target.closest('.sp-month-header');
-    if (monthHeader) {
-      const key = monthHeader.dataset.monthKey;
-      const willCollapse = !monthHeader.classList.contains('collapsed');
-      if (willCollapse) spCollapsedMonths.add(key); else spCollapsedMonths.delete(key);
-      monthHeader.classList.toggle('collapsed', willCollapse);
-      const body = monthHeader.nextElementSibling;
-      if (body && body.classList.contains('sp-month-body')) body.style.display = willCollapse ? 'none' : '';
-      return;
-    }
-
     const moreIcon = e.target.closest('.sp-more-icon');
     if (moreIcon) {
       const spCard = moreIcon.closest('.sp-card[data-date-key]');
