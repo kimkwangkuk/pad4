@@ -3360,10 +3360,11 @@
   function dateKey(date) { return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`; }
 
   // 빈 날짜("+")는 평소엔 아예 표시하지 않는다 — 패널 하단의 "페이지 추가" 버튼을 눌렀을 때만
-  // 켜지는 "어디에 추가할지 고르는" 모드. 빈 칸을 눌러도 바로 만들어지지 않고 선택만 되며,
-  // 헤더의 완료(체크) 버튼을 눌러야 그 날짜로 페이지가 실제로 생성되고 모드가 끝난다.
+  // 켜지는 "어디에 추가할지 고르는" 모드. 빈 칸을 누르면 그 자리에서 실제 카드(썸네일)를 만들어
+  // 미리 보여주지만 캔버스에는 아직 붙이지 않는다 — 여러 날짜를 이어서 고를 수 있고, 헤더의
+  // 완료(체크) 버튼을 눌러야 골라둔 페이지들이 한 번에 캔버스에 반영되고 모드가 끝난다.
   let spAddModeActive = false;
-  let spSelectedBlank = null; // { y, m, d, isToday } | null
+  let spPendingPages = []; // { y, m, d, isToday, cardEl } — isToday면 cardEl은 null(고스트 카드를 그대로 씀)
 
   // 접힌 월(예: "2026-7") 목록 — rebuildPanel이 다시 그려도 접힘 상태가 유지되도록 여기서 관리한다
   const spCollapsedMonths = new Set();
@@ -3397,11 +3398,13 @@
       if (existingCard) {
         items.push({ card: existingCard, time: t, label: `${cursor.getMonth() + 1}/${cursor.getDate()}` });
       } else if (spAddModeActive && t >= today.getTime()) {
+        const y = cursor.getFullYear(), m = cursor.getMonth() + 1, d = cursor.getDate();
+        const pending = spPendingPages.find(p => p.y === y && p.m === m && p.d === d) || null;
         items.push({
-          isBlank: true, time: t,
-          y: cursor.getFullYear(), m: cursor.getMonth() + 1, d: cursor.getDate(),
+          isBlank: true, time: t, y, m, d,
           isToday: t === today.getTime(),
-          label: `${cursor.getMonth() + 1}/${cursor.getDate()}`,
+          label: `${m}/${d}`,
+          pending,
         });
       }
       cursor.setDate(cursor.getDate() + 1);
@@ -3438,15 +3441,18 @@
         row.className = 'sp-row';
         for (let j = i; j < Math.min(i + 2, group.items.length); j++) {
           const item = group.items[j];
-          const isSelectedBlank = item.isBlank && spSelectedBlank &&
-            spSelectedBlank.y === item.y && spSelectedBlank.m === item.m && spSelectedBlank.d === item.d;
           const spCard = document.createElement('div');
-          spCard.className = 'sp-card' + ((item.card && item.card === selectedCard) || isSelectedBlank ? ' sp-selected' : '');
+          spCard.className = 'sp-card' + ((item.card && item.card === selectedCard) || item.pending ? ' sp-selected' : '');
           if (item.isBlank) {
             spCard.classList.add('sp-blank');
             spCard.dataset.y = item.y; spCard.dataset.m = item.m; spCard.dataset.d = item.d;
             if (item.isToday) spCard.dataset.today = '1';
-            spCard.innerHTML = `<div class="sp-thumb sp-thumb-add"><span class="sp-add-icon">+</span></div><div class="sp-caption"><span class="sp-date">${item.label}</span></div>`;
+            if (item.pending) {
+              spCard.classList.add('sp-pending');
+              spCard.innerHTML = `<div class="sp-thumb"></div><div class="sp-caption"><span class="sp-date">${item.label}</span></div>`;
+            } else {
+              spCard.innerHTML = `<div class="sp-thumb sp-thumb-add"><span class="sp-add-icon">+</span></div><div class="sp-caption"><span class="sp-date">${item.label}</span></div>`;
+            }
           } else {
             spCard.dataset.dateKey = dateKey(parseCardDate(item.card));
             spCard.innerHTML = `<div class="sp-thumb"></div><div class="sp-caption"><span class="sp-date">${item.label}</span><i data-lucide="more-horizontal" class="sp-more-icon"></i></div>`;
@@ -3457,6 +3463,15 @@
       }
       spContent.appendChild(body);
     });
+    // 대기 중인(캔버스에는 아직 안 붙은) 선택 페이지는 빈 칸 "+" 대신 실제 미리보기 썸네일을 그린다.
+    // 오늘은 아직 별도 카드를 안 만들고 이미 떠 있는 고스트 카드를 그대로 미리보기 소스로 쓴다.
+    spContent.querySelectorAll('.sp-blank.sp-pending').forEach(el => {
+      const y = parseInt(el.dataset.y, 10), m = parseInt(el.dataset.m, 10), d = parseInt(el.dataset.d, 10);
+      const p = spPendingPages.find(pp => pp.y === y && pp.m === m && pp.d === d);
+      const previewEl = p && (p.cardEl || document.querySelector('.card.card-ghost'));
+      const thumbEl = el.querySelector('.sp-thumb');
+      if (previewEl && thumbEl) renderThumb(previewEl, thumbEl);
+    });
     lucide.createIcons({ nodes: [spContent] });
     // 목록을 새로 그렸으니 오늘 슬롯 DOM도 새 노드로 바뀐다 — 관찰 대상을 다시 연결해야 한다.
     // watchSpTodayFab은 이 함수보다 뒤에서 정의되지만, rebuildPanel의 첫 실행(맨 아래 "Initial
@@ -3466,29 +3481,35 @@
 
   // ── 페이지 추가 모드 진입/이탈 — 패널 전체가 "어디에 추가할지 고르는" 화면으로 바뀐다:
   // 노트 정보와 하단 "페이지 추가" 버튼이 숨겨지고 헤더 우측에 완료(체크) 버튼이 나타난다.
-  // 빈 칸을 눌러도 바로 페이지가 만들어지지 않고 선택 표시만 된다 — 완료 버튼을 눌러야
-  // 그 시점에 고른 날짜로 실제 페이지가 생성되고 한 번에 모드가 끝난다.
+  // 빈 칸을 누르면 그 자리에서 실제 카드(썸네일)를 만들어 미리 보여주되 캔버스에는 붙이지
+  // 않는다 — 여러 날짜를 이어서 고를 수 있고, 완료 버튼을 눌러야 골라둔 페이지들이 한 번에
+  // 캔버스에 반영되고 모드가 끝난다.
   const spAddPageBtn = document.getElementById('spAddPageBtn');
   const spAddDoneBtn = document.getElementById('spAddDoneBtn');
   function setAddMode(active) {
     spAddModeActive = active;
-    spSelectedBlank = null;
+    spPendingPages = [];
     document.getElementById('sidePanel').classList.toggle('sp-add-mode', active);
     sortPages();
   }
   spAddPageBtn.addEventListener('click', () => setAddMode(true));
   spAddDoneBtn.addEventListener('click', () => {
-    if (spSelectedBlank) {
-      const { y, m, d, isToday } = spSelectedBlank;
-      if (isToday) {
+    const toCommit = spPendingPages;
+    if (toCommit.length === 0) { setAddMode(false); return; }
+    const regularCards = [];
+    toCommit.forEach(p => {
+      if (p.isToday) {
         // 오늘 선택 → 이미 캔버스에 떠 있는 "오늘' 페이지 추가" 미리보기를 그대로 활성화한다
         const gc = document.querySelector('.card.card-ghost');
         const frame = gc && gc.closest('.ghost-frame');
         if (gc && frame) activateGhostCard(frame, gc, gc.dataset.dateText);
       } else {
-        createPage(y, m, d);
+        datePicker.takenDates.add(`${p.y}-${p.m}-${p.d}`);
+        regularCards.push(p.cardEl);
       }
-    }
+    });
+    if (regularCards.length) insertCardsIntoCanvas(regularCards, regularCards[regularCards.length - 1]);
+    pageToast.show(`${toCommit.length}장의 페이지가 추가되었습니다`);
     setAddMode(false);
   });
 
@@ -3887,11 +3908,18 @@
 
     const blank = e.target.closest('.sp-blank');
     if (blank) {
-      // 빈 칸을 눌러도 바로 페이지를 만들지 않는다 — 선택 표시만 하고, 다시 같은 칸을 누르면
-      // 선택이 풀린다. 실제 생성은 헤더의 완료 버튼을 눌러야 한 번에 반영된다.
+      // 빈 칸을 누르면 바로 캔버스에 붙이지는 않지만, 실제 카드(썸네일)는 미리 만들어 보여준다.
+      // 다시 같은 칸을 누르면 대기 목록에서 빠진다. 여러 날짜를 이어서 고를 수 있고, 실제 캔버스
+      // 반영은 헤더의 완료 버튼을 눌러야 한 번에 일어난다.
       const y = parseInt(blank.dataset.y, 10), m = parseInt(blank.dataset.m, 10), d = parseInt(blank.dataset.d, 10);
-      const isSame = spSelectedBlank && spSelectedBlank.y === y && spSelectedBlank.m === m && spSelectedBlank.d === d;
-      spSelectedBlank = isSame ? null : { y, m, d, isToday: blank.dataset.today === '1' };
+      const idx = spPendingPages.findIndex(p => p.y === y && p.m === m && p.d === d);
+      if (idx !== -1) {
+        spPendingPages.splice(idx, 1);
+      } else {
+        const isToday = blank.dataset.today === '1';
+        const cardEl = isToday ? null : buildPageCardEl(y, m, d);
+        spPendingPages.push({ y, m, d, isToday, cardEl });
+      }
       sortPages();
       return;
     }
@@ -3973,26 +4001,18 @@
 
   const pageToast = window.toast;
 
-  // 새 페이지를 캔버스에 생성 (속지 설정에서 구성한 템플릿 + 컬러를 그대로 반영)
-  function createPage(year, month, day) {
-    const period = document.querySelector('.tab.active')?._periodState;
-    if (period) {
-      const v = year * 10000 + month * 100 + day;
-      if (v < periodDateValue(period.start) || v > periodDateValue(period.end)) {
-        pageToast.show('설정된 노트 기간 밖의 날짜입니다');
-        return;
-      }
-    }
-    if (datePicker.takenDates.has(`${year}-${month}-${day}`)) return;
+  // 캔버스에 아직 붙이지 않은, 속지 설정을 그대로 반영한 카드 DOM만 만들어 돌려준다 — 패널의
+  // 페이지 추가 모드가 "선택만 해두고 완료를 눌러야 캔버스에 반영"하는 흐름을 만들 때 쓴다.
+  function buildPageCardEl(year, month, day) {
     const y = String(year).slice(2);
     const m = String(month).padStart(2, '0');
     const d = String(day).padStart(2, '0');
     const dateText = `${y}.${m}.${d}`;
 
     const newPage = { id: 'p' + pageCount++, dateText, today: false };
-    canvasZoomWrap.insertAdjacentHTML('beforeend', buildCardHTML(newPage));
-    const newCard = canvasZoomWrap.lastElementChild;
-    newCard.classList.add('card-creating'); // 스크롤이 도착하기 전까지는 보이지 않게 숨겨둔다
+    const wrap = document.createElement('div');
+    wrap.innerHTML = buildCardHTML(newPage);
+    const newCard = wrap.firstElementChild;
 
     const oldInner = newCard.querySelector('.card-inner');
     if (oldInner) oldInner.remove();
@@ -4006,23 +4026,44 @@
 
     initEmojiPicker(newCard);
     lucide.createIcons({ nodes: [newCard] });
+    return newCard;
+  }
 
-    datePicker.takenDates.add(`${year}-${month}-${day}`);
+  // 이미 만들어둔 카드 DOM(들)을 캔버스에 실제로 붙이고 정렬 + 생성 트랜지션까지 재생한다.
+  function insertCardsIntoCanvas(cards, selectedCard) {
+    cards.forEach(c => c.classList.add('card-creating')); // 스크롤이 도착하기 전까지는 보이지 않게 숨겨둔다
+    cards.forEach(c => canvasZoomWrap.appendChild(c));
     // 내부에서 scrollToCard(smooth)로 스크롤을 시작함 + 광고 배너를 전부 새로 만듦(생성된 배너는
     // scrollToCard가 리플로우를 일으키기 전에 이미 card-creating으로 숨겨진 채 돌려받는다)
-    const banners = sortPages(newCard, true);
+    const banners = sortPages(selectedCard || cards[cards.length - 1], true);
 
     // scrollToCard의 smooth-scroll 도착 시점(350ms fallback)이 지난 뒤에 카드+배너가 나타나는
     // 생성 트랜지션을 재생한다 — 스크롤 도중에는 보이지 않다가, 도착하면 짠 하고 함께 생성됨
     setTimeout(() => {
-      newCard.classList.add('card-created-reveal');
+      cards.forEach(c => c.classList.add('card-created-reveal'));
       banners.forEach(b => b.classList.add('card-created-reveal'));
       setTimeout(() => {
-        newCard.classList.remove('card-creating', 'card-created-reveal');
+        cards.forEach(c => c.classList.remove('card-creating', 'card-created-reveal'));
         banners.forEach(b => b.classList.remove('card-creating', 'card-created-reveal'));
       }, 400);
     }, 380);
+    return banners;
+  }
 
+  // 새 페이지를 캔버스에 바로 생성 (속지 설정에서 구성한 템플릿 + 컬러를 그대로 반영)
+  function createPage(year, month, day) {
+    const period = document.querySelector('.tab.active')?._periodState;
+    if (period) {
+      const v = year * 10000 + month * 100 + day;
+      if (v < periodDateValue(period.start) || v > periodDateValue(period.end)) {
+        pageToast.show('설정된 노트 기간 밖의 날짜입니다');
+        return;
+      }
+    }
+    if (datePicker.takenDates.has(`${year}-${month}-${day}`)) return;
+    const newCard = buildPageCardEl(year, month, day);
+    datePicker.takenDates.add(`${year}-${month}-${day}`);
+    insertCardsIntoCanvas([newCard], newCard);
     pageToast.show(`${month}월 ${day}일 페이지가 추가되었습니다`);
   }
 
