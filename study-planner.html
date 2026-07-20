@@ -3288,12 +3288,17 @@
   // 있지만 실제 공부 기록이 없는 날짜도 함께 숨기고 진짜 기록이 있는 날짜만 보여준다
   let spFilterRecordsOnly = false;
 
-  // 사이드 패널 = 진짜 달력 그리드(월 7칸) — "노트 기간"(시작일~종료일)이 걸치는 달만큼 그려진다.
+  // 접힌 월(예: "2026-7") 목록 — rebuildPanel이 다시 그려도 접힘 상태가 유지되도록 여기서 관리한다
+  const spCollapsedMonths = new Set();
+  const SP_WEEKDAY_LABELS = ['월', '화', '수', '목', '금', '토', '일'];
+
+  // 사이드 패널 = 월 단위 진짜 달력 그리드 — "노트 기간"(시작일~종료일)이 걸치는 달만큼 그려진다.
   // - 기간 밖의 날짜(달력 앞뒤 채움 칸 포함)는 상호작용 없는 흐린 칸으로만 표시된다.
   // - 기간 안에서 페이지가 있는 날짜는(기록 유무와 무관하게) 그 페이지의 썸네일 칸으로 표시된다.
   // - 기간 안에서 페이지가 없는 날짜는 오늘·미래에 한해서만 빈 칸("+")으로 표시된다 — 과거인데
   //   페이지가 없는 날짜는 클릭 불가한 흐린 칸으로 표시된다.
   //   ("기록만" 토글이 켜져 있으면 기록 없는 칸은 전부 흐린 칸으로 표시된다.)
+  // - 모든 칸(빈 칸/흐린 칸/채움 칸 포함)은 썸네일이 있는 칸과 동일한 크기를 갖는다.
   function rebuildPanel(datedCards, selectedCard) {
     const spContent = document.querySelector('.sp-content');
     spContent.innerHTML = '';
@@ -3316,8 +3321,27 @@
     const lastGy = endDate.getFullYear(), lastGm = endDate.getMonth();
 
     while (gy < lastGy || (gy === lastGy && gm <= lastGm)) {
+      const monthKey = `${gy}-${gm + 1}`;
+      const collapsed = spCollapsedMonths.has(monthKey);
+
+      const header = document.createElement('div');
+      header.className = 'sp-month-header' + (collapsed ? ' collapsed' : '');
+      header.dataset.monthKey = monthKey;
+      header.innerHTML = `<span class="sp-month-title">${gy}년 ${gm + 1}월</span><i data-lucide="chevron-down" class="sp-month-chevron"></i>`;
+      spContent.appendChild(header);
+
+      const body = document.createElement('div');
+      body.className = 'sp-month-body';
+      if (collapsed) body.style.display = 'none';
+
       const grid = document.createElement('div');
       grid.className = 'sp-cal-grid';
+      SP_WEEKDAY_LABELS.forEach(w => {
+        const wd = document.createElement('div');
+        wd.className = 'sp-cal-weekday';
+        wd.textContent = w;
+        grid.appendChild(wd);
+      });
 
       const firstDay = new Date(gy, gm, 1).getDay(); // 0=일
       const startOffset = (firstDay + 6) % 7; // 월요일 시작
@@ -3330,6 +3354,7 @@
 
         if (dayNum < 1 || dayNum > daysInMonth) {
           cell.className = 'sp-cal-cell sp-cal-pad';
+          cell.innerHTML = `<span class="sp-cal-daynum">&nbsp;</span><div class="sp-thumb sp-thumb-none"></div>`;
           grid.appendChild(cell);
           continue;
         }
@@ -3355,13 +3380,14 @@
           cell.innerHTML = `<span class="sp-cal-daynum">${dayNum}</span><div class="sp-thumb sp-thumb-add"><span class="sp-add-icon">+</span></div>`;
         } else {
           cell.classList.add('sp-cal-muted');
-          cell.innerHTML = `<span class="sp-cal-daynum">${dayNum}</span>`;
+          cell.innerHTML = `<span class="sp-cal-daynum">${dayNum}</span><div class="sp-thumb sp-thumb-none"></div>`;
         }
 
         grid.appendChild(cell);
       }
 
-      spContent.appendChild(grid);
+      body.appendChild(grid);
+      spContent.appendChild(body);
       gm++;
       if (gm > 11) { gm = 0; gy++; }
     }
@@ -3728,6 +3754,17 @@
   }
 
   document.querySelector('.sp-content').addEventListener('click', e => {
+    const monthHeader = e.target.closest('.sp-month-header');
+    if (monthHeader) {
+      const key = monthHeader.dataset.monthKey;
+      const willCollapse = !monthHeader.classList.contains('collapsed');
+      if (willCollapse) spCollapsedMonths.add(key); else spCollapsedMonths.delete(key);
+      monthHeader.classList.toggle('collapsed', willCollapse);
+      const body = monthHeader.nextElementSibling;
+      if (body && body.classList.contains('sp-month-body')) body.style.display = willCollapse ? 'none' : '';
+      return;
+    }
+
     const blank = e.target.closest('.sp-blank');
     if (blank) {
       if (blank.dataset.today === '1') {

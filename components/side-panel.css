@@ -42,12 +42,41 @@
 }
 .sp-content::-webkit-scrollbar { display: none; }
 
-/* 달력 그리드 — 한 달치 날짜를 7열로 배치, 칸마다 날짜 숫자 + 썸네일 */
+/* 월 단위 접을 수 있는 타이틀바 */
+.sp-month-header {
+  display: flex; align-items: center; justify-content: space-between;
+  height: 36px; flex-shrink: 0;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+.sp-month-title {
+  font-family: 'Pretendard', sans-serif;
+  font-size: 14px; font-weight: 700;
+  color: rgba(0,0,0,0.7); letter-spacing: -0.042px;
+}
+.sp-month-chevron {
+  width: 16px; height: 16px; flex-shrink: 0;
+  color: rgba(0,0,0,0.4);
+  transition: transform 0.18s ease;
+}
+.sp-month-header.collapsed .sp-month-chevron { transform: rotate(-90deg); }
+.sp-month-body { flex-shrink: 0; }
+
+/* 달력 그리드 — 요일 라벨 7칸 + 한 달치 날짜를 같은 7열 그리드에 배치, 칸마다 날짜 숫자 + 썸네일 */
 .sp-cal-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: 8px 4px;
   padding-bottom: 18px;
+}
+
+.sp-cal-weekday {
+  text-align: center;
+  font-family: 'Pretendard', sans-serif;
+  font-size: 11px; font-weight: 600;
+  color: rgba(0,0,0,0.35); letter-spacing: -0.033px;
+  padding-bottom: 2px;
 }
 
 .sp-cal-cell {
@@ -73,7 +102,7 @@
   border-radius: 50%; font-weight: 700;
 }
 
-/* Thumbnail */
+/* Thumbnail — 칸 크기 통일을 위해 썸네일이 없는 칸(기간 밖/미기록 과거)도 같은 크기의 빈 박스를 갖는다 */
 .sp-thumb {
   width: 100%;
   aspect-ratio: 133 / 177.658;
@@ -95,4 +124,8 @@
   font-family: 'Pretendard', sans-serif;
   font-size: 12px; font-weight: 400;
   color: rgba(0,0,0,0.22); letter-spacing: -0.036px; line-height: 1.4;
+}
+.sp-thumb-none {
+  border-color: transparent;
+  background: transparent;
 }
