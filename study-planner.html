@@ -455,6 +455,8 @@
       display: flex;
       flex-direction: column;
     }
+    /* 노트 기간 밖의 페이지 — 캔버스에서 완전히 숨긴다(삭제는 아님, 기간을 넓히면 다시 보인다) */
+    .card.card-out-of-period { display: none; }
 
     /* Card has 16px padding; the two panels sit side by side */
     .card-inner {
@@ -895,19 +897,47 @@
     }
     .sp-filter-toggle.active .sp-filter-check::after { opacity: 1; }
 
-    /* ─── SIDE PANEL: 노트 기간 바 ────────────────── */
-    .sp-period-bar {
-      display: flex; align-items: center; gap: 6px;
-      padding: 0 16px 12px; flex-shrink: 0;
+    /* ─── SIDE PANEL: 노트 표지·이름·기간 요약 ──────────────
+       기간은 왼쪽 텍스트로, 수정은 오른쪽 별도 버튼으로 분리(전체를 하나의 버튼으로 묶지 않는다) */
+    .sp-note-info {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 16px 14px; flex-shrink: 0;
     }
-    .sp-period-field {
-      flex: 1; min-width: 0; height: 32px; padding: 0 8px;
-      background: rgba(0,0,0,0.05); border: none; border-radius: 8px;
-      font-family: 'Pretendard', sans-serif; font-size: 12px; font-weight: 600;
-      color: rgba(0,0,0,0.7); cursor: pointer; text-align: center;
+    .sp-note-cover {
+      width: 34px; flex-shrink: 0;
+      aspect-ratio: 133 / 177.658;
+      border-radius: 3px;
+      border: 1px solid rgba(0,0,0,0.1);
+      background: #d8dbe2;
     }
-    .sp-period-field:hover { background: rgba(0,0,0,0.08); }
-    .sp-period-sep { font-size: 11px; color: rgba(0,0,0,0.35); flex-shrink: 0; }
+    .sp-note-info-text {
+      flex: 1; min-width: 0;
+      display: flex; flex-direction: column; gap: 4px;
+    }
+    .sp-note-name {
+      font-family: 'Pretendard', sans-serif;
+      font-size: 14px; font-weight: 700;
+      color: rgba(0,0,0,0.86); letter-spacing: -0.042px; line-height: 1.3;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .sp-note-period-row {
+      display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    }
+    .sp-note-period-sub {
+      min-width: 0; flex: 1;
+      font-family: 'Pretendard', sans-serif;
+      font-size: 12px; font-weight: 400;
+      color: rgba(0,0,0,0.45); letter-spacing: -0.036px; line-height: 1.3;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .sp-note-period-edit-btn {
+      flex-shrink: 0;
+      height: 22px; padding: 0 8px;
+      background: rgba(0,0,0,0.06); border: none; border-radius: 6px;
+      font-family: 'Pretendard', sans-serif; font-size: 11px; font-weight: 600;
+      color: rgba(0,0,0,0.55); cursor: pointer;
+    }
+    .sp-note-period-edit-btn:hover { background: rgba(0,0,0,0.1); }
 
     /* ─── SIDE PANEL: 오늘로 이동 버튼 ───────────────
        .sp-panel(position:absolute) 안에 떠서, 오늘자 슬롯이 목록(.sp-content) 자체 스크롤
@@ -919,8 +949,8 @@
       transition: opacity 0.22s ease, transform 0.22s cubic-bezier(0.4, 0, 0.2, 1);
     }
     .sp-today-fab.pos-top {
-      /* .sp-header(56px) + .sp-period-bar 아래, 목록(.sp-content)이 실제로 시작하는 지점에 맞춘다 */
-      top: 108px; bottom: auto;
+      /* .sp-header(56px) + .sp-note-info 아래, 목록(.sp-content)이 실제로 시작하는 지점에 맞춘다 */
+      top: 124px; bottom: auto;
       transform: translateX(-50%) translateY(-12px);
     }
     .sp-today-fab.visible {
@@ -2659,11 +2689,16 @@
           <span>기록만</span>
         </button>
       </div>
-      <!-- 노트 기간: 페이지를 만들 수 있는 날짜 범위. 눌러서 늘리거나 줄일 수 있다 -->
-      <div class="sp-period-bar">
-        <button class="sp-period-field" id="spPeriodStartBtn" type="button"></button>
-        <span class="sp-period-sep">~</span>
-        <button class="sp-period-field" id="spPeriodEndBtn" type="button"></button>
+      <!-- 노트 표지·이름·기간 요약. 기간은 왼쪽에 텍스트로, 수정은 오른쪽 버튼으로 분리 -->
+      <div class="sp-note-info">
+        <div class="sp-note-cover" id="spNoteCover"></div>
+        <div class="sp-note-info-text">
+          <span class="sp-note-name" id="spNoteName"></span>
+          <div class="sp-note-period-row">
+            <span class="sp-note-period-sub" id="spNotePeriodSub"></span>
+            <button class="sp-note-period-edit-btn" id="spPeriodEditBtn" type="button">수정</button>
+          </div>
+        </div>
       </div>
       <div class="sp-content"></div>
       <!-- 오늘자 슬롯이 패널 스크롤 밖으로 나가면(목록 자체 스크롤 기준) 뜨는 이동 버튼 -->
@@ -2874,6 +2909,21 @@
         <button class="nc-period-field" id="ncPeriodEndBtn" type="button"></button>
       </div>
       <button class="nc-format-create-btn" id="ncCreateBtn">만들기</button>
+    </div>
+  </div>
+
+  <!-- 사이드 패널 상단 "수정" 버튼 → 노트 기간 수정 팝업. ncFormatBackdrop과 동일한
+       fixed+flex 중앙 정렬/딤 패턴을 재사용한다 -->
+  <div class="nc-format-backdrop" id="spPeriodEditBackdrop">
+    <div class="nc-format-pop" id="spPeriodEditPop" onclick="event.stopPropagation()">
+      <div class="nc-format-title">노트 기간 수정</div>
+      <div class="nc-format-label">노트 기간</div>
+      <div class="nc-period-row">
+        <button class="nc-period-field" id="spEditPeriodStartBtn" type="button"></button>
+        <span class="nc-period-sep">~</span>
+        <button class="nc-period-field" id="spEditPeriodEndBtn" type="button"></button>
+      </div>
+      <button class="nc-format-create-btn" id="spPeriodEditDoneBtn">완료</button>
     </div>
   </div>
 
@@ -3304,8 +3354,7 @@
 
     const activeTabEl = document.querySelector('.tab.active');
     const period = activeTabEl?._periodState || defaultNotePeriod();
-    spPeriodStartBtn.textContent = formatPeriodDate(period.start);
-    spPeriodEndBtn.textContent = formatPeriodDate(period.end);
+    updateSpNoteInfo();
 
     const today = new Date(); today.setHours(0, 0, 0, 0);
     const startDate = new Date(period.start.year, period.start.month - 1, period.start.day);
@@ -3395,9 +3444,35 @@
     sortPages();
   });
 
-  // ── 노트 기간 늘리기/줄이기: 시작일/종료일 버튼을 누르면 날짜 선택기가 뜬다 ──
-  const spPeriodStartBtn = document.getElementById('spPeriodStartBtn');
-  const spPeriodEndBtn = document.getElementById('spPeriodEndBtn');
+  // ── 노트 표지·이름·기간 요약 + 우측 "수정" 버튼 → 기간(시작일~종료일) 수정 팝업 ──
+  const spNoteCover = document.getElementById('spNoteCover');
+  const spNoteName = document.getElementById('spNoteName');
+  const spNotePeriodSub = document.getElementById('spNotePeriodSub');
+  const spPeriodEditBtn = document.getElementById('spPeriodEditBtn');
+  const spPeriodEditBackdrop = document.getElementById('spPeriodEditBackdrop');
+  const spEditPeriodStartBtn = document.getElementById('spEditPeriodStartBtn');
+  const spEditPeriodEndBtn = document.getElementById('spEditPeriodEndBtn');
+
+  function updateSpNoteInfo() {
+    // rebuildPanel의 첫 실행(초기 sortPages())은 tabLabels(const)가 정의되기도 전에 일어나므로,
+    // 여기서는 항상 안전한 document.querySelector로 활성 탭을 찾는다.
+    const activeTabEl = document.querySelector('.tab.active');
+    if (!activeTabEl) return;
+    const period = activeTabEl._periodState || defaultNotePeriod();
+    const name = activeTabEl.querySelector('.tab-label')?.textContent || activeTabEl.dataset.tabName || '';
+    spNoteCover.style.background = activeTabEl.dataset.coverPattern
+      ? patternCSS(activeTabEl.dataset.coverPattern, activeTabEl.dataset.coverColor || '#d8dbe2')
+      : (activeTabEl.dataset.coverColor || '#d8dbe2');
+    spNoteName.textContent = name;
+    spNotePeriodSub.textContent = `플래너 기간: ${formatPeriodDate(period.start)} ~ ${formatPeriodDate(period.end)}`;
+  }
+
+  function updateSpPeriodEditLabels() {
+    const period = (tabLabels.querySelector('.tab.active') || {})._periodState || defaultNotePeriod();
+    spEditPeriodStartBtn.textContent = formatPeriodDate(period.start);
+    spEditPeriodEndBtn.textContent = formatPeriodDate(period.end);
+  }
+
   const spStartPicker = new DatePicker({
     onConfirm({ year, month, day }) {
       const activeTabEl = tabLabels.querySelector('.tab.active');
@@ -3407,6 +3482,8 @@
       if (periodDateValue(period.start) > periodDateValue(period.end)) period.end = period.start;
       activeTabEl._periodState = period;
       sortPages();
+      updateSpNoteInfo();
+      updateSpPeriodEditLabels();
     }
   });
   const spEndPicker = new DatePicker({
@@ -3418,18 +3495,26 @@
       if (periodDateValue(period.end) < periodDateValue(period.start)) period.start = period.end;
       activeTabEl._periodState = period;
       sortPages();
+      updateSpNoteInfo();
+      updateSpPeriodEditLabels();
     }
   });
-  spPeriodStartBtn.addEventListener('click', () => {
+  spEditPeriodStartBtn.addEventListener('click', () => {
     const period = (tabLabels.querySelector('.tab.active') || {})._periodState || defaultNotePeriod();
     spStartPicker.year = period.start.year; spStartPicker.month = period.start.month; spStartPicker.selected = period.start.day;
     spStartPicker.open();
   });
-  spPeriodEndBtn.addEventListener('click', () => {
+  spEditPeriodEndBtn.addEventListener('click', () => {
     const period = (tabLabels.querySelector('.tab.active') || {})._periodState || defaultNotePeriod();
     spEndPicker.year = period.end.year; spEndPicker.month = period.end.month; spEndPicker.selected = period.end.day;
     spEndPicker.open();
   });
+  spPeriodEditBtn.addEventListener('click', () => {
+    updateSpPeriodEditLabels();
+    spPeriodEditBackdrop.classList.add('show');
+  });
+  spPeriodEditBackdrop.addEventListener('click', () => spPeriodEditBackdrop.classList.remove('show'));
+  document.getElementById('spPeriodEditDoneBtn').addEventListener('click', () => spPeriodEditBackdrop.classList.remove('show'));
 
   // ── 사이드 패널의 "오늘로 이동" 버튼: 오늘자 슬롯(빈 칸 또는 실제 카드)이 .sp-content 자체
   //    스크롤 밖으로 나가면 뜬다. rebuildPanel이 매번 슬롯 DOM을 새로 그리므로, 다시 그릴 때마다
@@ -3482,13 +3567,29 @@
     datedCards.sort((a, b) => parseCardDate(a) - parseCardDate(b));
     canvasZoomWrap.querySelectorAll('.canvas-ad-banner').forEach(b => b.remove());
 
+    // 노트 기간 밖의 페이지는 캔버스에서도 숨긴다(display:none) — 삭제하지는 않으므로 기간을
+    // 다시 늘리면 그대로 되돌아온다. 숨긴 카드는 먼저 배치해 이후 보이는 카드들의 순서·오프셋에
+    // 영향을 주지 않게 한다.
+    const period = document.querySelector('.tab.active')?._periodState || defaultNotePeriod();
+    const periodStartTime = new Date(period.start.year, period.start.month - 1, period.start.day).getTime();
+    const periodEndTime = new Date(period.end.year, period.end.month - 1, period.end.day).getTime();
+    const hiddenCards = [];
+    const visibleDatedCards = [];
+    datedCards.forEach(c => {
+      const t = parseCardDate(c).getTime();
+      const inPeriod = t >= periodStartTime && t <= periodEndTime;
+      c.classList.toggle('card-out-of-period', !inPeriod);
+      (inPeriod ? visibleDatedCards : hiddenCards).push(c);
+    });
+    hiddenCards.forEach(c => canvasZoomWrap.appendChild(c));
+
     const ghostCard = canvasZoomWrap.querySelector('.card.card-ghost');
     const ghostEl = ghostCard ? (ghostCard.closest('.ghost-frame') || ghostCard) : null;
     addPageBtn.style.display = ghostCard ? 'none' : ''; // 오늘자 미리보기 카드가 있으면 페이지 추가 버튼은 숨김
 
     // 오늘자 미리보기는 항상 맨 끝이 아니라, 실제 페이지들 사이에서 날짜순 제자리에 끼워 넣는다
     // (예: 미래 날짜 페이지가 이미 있으면 그보다 앞쪽에 와야 함)
-    const orderedEls = datedCards.slice();
+    const orderedEls = visibleDatedCards.slice();
     if (ghostEl) {
       const ghostDate = parseCardDate(ghostCard);
       const insertAt = orderedEls.findIndex(c => parseCardDate(c) > ghostDate);
@@ -4482,7 +4583,7 @@
     lucide.createIcons({ nodes: [cardEl] });
 
     nwShowNoteCreated(name, { bg: cover.bg, pattern: ncState.coverPattern !== 'none' ? ncState.coverPattern : null });
-    openTabFromHome(note.name, note.icon, 'note', note.noteType, note.period);
+    openTabFromHome(note.name, note.icon, 'note', note.noteType, note.period, { color: note.color, pattern: note.pattern });
   });
 
   function nwDetailPreviewHTML(ins, color) {
@@ -4950,7 +5051,7 @@
         <div class="chev">⌄</div>
       </div>
     `;
-    card.addEventListener('click', () => openTabFromHome(note.name, note.icon || 'file-text', 'note', note.noteType || 'scroll', note.period));
+    card.addEventListener('click', () => openTabFromHome(note.name, note.icon || 'file-text', 'note', note.noteType || 'scroll', note.period, { color: note.color, pattern: note.pattern }));
     return card;
   }
 
@@ -5062,12 +5163,12 @@
     if (!isQuick) setCanvasMode();
   }
 
-  function openTabFromHome(name, icon, type, noteType, period) {
+  function openTabFromHome(name, icon, type, noteType, period, cover) {
     closeHomeScreen();
-    addHomeTab(name, icon, type || 'note', noteType, period);
+    addHomeTab(name, icon, type || 'note', noteType, period, cover);
   }
 
-  function addHomeTab(name, icon, type, noteType, period) {
+  function addHomeTab(name, icon, type, noteType, period, cover) {
     // Deactivate current active tab
     const prevActive = tabLabels.querySelector('.tab.active');
     if (prevActive) setTabActive(null); // clear all active states first
@@ -5076,6 +5177,8 @@
     const newTab = document.createElement('div');
     newTab.className = 'tab active';
     newTab.dataset.tabType = type;
+    newTab.dataset.coverColor = cover?.color || '#d8dbe2';
+    if (cover?.pattern) newTab.dataset.coverPattern = cover.pattern;
     newTab.dataset.tabName = name;
     newTab._periodState = period ? { start: period.start, end: period.end } : defaultNotePeriod();
     newTab.dataset.noteType = noteType || 'scroll';
@@ -5112,8 +5215,11 @@
   }
 
   // Initialise z-index / margin on the static tabs already in HTML
-  // HTML에 미리 박혀 있는 초기 탭은 새 노트 마법사를 거치지 않으므로 기간을 직접 부여해준다
-  tabLabels.querySelectorAll('.tab').forEach(t => { if (!t._periodState) t._periodState = defaultNotePeriod(); });
+  // HTML에 미리 박혀 있는 초기 탭은 새 노트 마법사를 거치지 않으므로 기간·표지색을 직접 부여해준다
+  tabLabels.querySelectorAll('.tab').forEach(t => {
+    if (!t._periodState) t._periodState = defaultNotePeriod();
+    if (!t.dataset.coverColor) t.dataset.coverColor = '#d8dbe2';
+  });
   refreshTabLayout();
   updateView();
   insertGhostTodayCard(); // updateView()의 sortPages() 재정렬이 모두 끝난 뒤에 삽입해야 배너 위치·피크 스크롤이 흔들리지 않음
