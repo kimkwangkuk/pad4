@@ -289,103 +289,6 @@
       -webkit-tap-highlight-color: transparent;
     }
 
-    /* ─── ADD PAGE BUTTON (always trailing element in canvas) ── */
-    .add-page-btn {
-      flex-shrink: 0;
-      display: inline-flex; align-items: center; justify-content: center; gap: 4px;
-      padding: 10px 14px;
-      border: 1px dashed #acacac;
-      border-radius: 14px;
-      background: transparent;
-      cursor: pointer;
-      -webkit-tap-highlight-color: transparent;
-      font-family: 'Pretendard', sans-serif;
-      font-size: 15px; font-weight: 500;
-      color: black; letter-spacing: -0.045px; line-height: 1.4;
-      transition: background 0.12s;
-    }
-    .add-page-btn:hover { background: rgba(0,0,0,0.03); }
-    .add-page-btn:active { background: rgba(0,0,0,0.07); }
-
-    /* ─── 오늘자 속지 미리보기(고스트) 카드 (Figma 4981:262394) ───────── */
-    /* 점선 프레임이 일반 카드 슬롯과 같은 600×800을 차지하고, 그 안에 오늘자 카드를
-       91.667%로 축소해 가운데 띄워둔다. 버튼을 누르면 카드가 프레임 크기(100%)까지
-       커지면서 오퍼시티도 원래대로 돌아오고, 점선/그라데이션/버튼/점은 페이드아웃된다. */
-    .ghost-frame {
-      position: relative;
-      width: 600px; height: 800px; flex-shrink: 0;
-      box-sizing: border-box; padding: 8px;
-      border: 1px dashed rgba(0,0,0,0.2); border-radius: 16px;
-      overflow: hidden;
-      transition: border-color 0.4s ease;
-    }
-    .ghost-frame.growing { border-color: transparent; }
-    .ghost-frame > .card.card-ghost {
-      position: absolute; top: 50%; left: 50%;
-      transform: translate(-50%, -50%) scale(0.91667);
-      opacity: 0.85;
-      pointer-events: none;
-      transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s ease;
-    }
-    .ghost-frame.growing > .card.card-ghost {
-      transform: translate(-50%, -50%) scale(1);
-      opacity: 1;
-    }
-    /* 닫힐 때(성장 해제) 순서: 1) 페이지가 뒤로 빠짐(카드 축소 + 테두리 복귀, 지연 없음)
-       → 2) 그라데이션 딤이 깔림(0.35s 지연) → 3) 버튼/점이 아래에서 위로 올라옴(0.55s 지연).
-       커질 때(.growing 진입)는 반대로 전부 지연 없이 즉시 사라진다. */
-    .ghost-frame-gradient {
-      position: absolute; left: 0; right: 0; bottom: 0; height: 65%;
-      background: linear-gradient(to bottom, rgba(224,224,224,0) 0%, var(--bg) 80%);
-      pointer-events: none; z-index: 60;
-      transition: opacity 0.3s ease 0.35s;
-    }
-    /* Figma: node-id 4981-262397 — 실선 흰 배경의 필 형태 버튼 */
-    .ghost-frame-btn {
-      position: absolute; left: 50%; top: 673px; transform: translateX(-50%) translateY(0);
-      display: inline-flex; align-items: center; justify-content: center;
-      padding: 12px 20px;
-      border: none; border-radius: 40px;
-      background: #fff; color: #000;
-      font-family: 'Pretendard', sans-serif;
-      font-size: 16px; font-weight: 600; line-height: 1.4; letter-spacing: -0.048px;
-      cursor: pointer; white-space: nowrap;
-      z-index: 61;
-      transition: background 0.12s, opacity 0.3s ease 0.55s, transform 0.35s cubic-bezier(0.4, 0, 0.2, 1) 0.55s;
-    }
-    .ghost-frame-btn:hover { background: #f2f2f2; }
-    /* 점 3개 = "더보기" 버튼 (탭 영역 확보를 위해 8px 패딩을 두르고, 점 자체 위치는 Figma 그대로 유지되게 top을 그만큼 당김) */
-    .ghost-frame-dots {
-      position: absolute; left: 50%; top: 737px; transform: translateX(-50%) translateY(0);
-      display: flex; align-items: center; gap: 3px;
-      padding: 8px 12px; border: none; border-radius: 20px;
-      background: transparent; cursor: pointer;
-      z-index: 61;
-      transition: background 0.12s, opacity 0.3s ease 0.55s, transform 0.35s cubic-bezier(0.4, 0, 0.2, 1) 0.55s;
-    }
-    .ghost-frame-dots:hover { background: rgba(0,0,0,0.05); }
-    .ghost-frame-dots span { width: 4px; height: 4px; border-radius: 30px; background: rgba(0,0,0,0.4); }
-    .ghost-frame.growing .ghost-frame-gradient {
-      opacity: 0;
-      transition-delay: 0s;
-      pointer-events: none;
-    }
-    .ghost-frame.growing .ghost-frame-btn,
-    .ghost-frame.growing .ghost-frame-dots {
-      opacity: 0;
-      transform: translateX(-50%) translateY(16px);
-      transition: background 0.12s, opacity 0.3s ease, transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      pointer-events: none;
-    }
-    /* 최초 진입 시 스냅용 — 그라데이션 딤은 이미 표시된 상태로 시작하고(애니메이션 없음),
-       버튼만 트랜지션 없이 숨겨뒀다가 다음 프레임에 클래스를 떼면 기본 상태(.ghost-frame-btn의
-       0.55s 지연 트랜지션)를 타고 아래에서 위로 올라오며 나타난다 */
-    .ghost-frame.entering .ghost-frame-btn {
-      opacity: 0;
-      transform: translateX(-50%) translateY(16px);
-      transition: none;
-    }
-
     /* ─── 날짜 선택으로 새 페이지가 추가될 때: 스크롤이 도착한 뒤에 카드(+광고 배너)가 나타나는 생성 트랜지션 ─── */
     .card.card-creating,
     .canvas-ad-banner.card-creating {
@@ -866,13 +769,10 @@
 
     /* ─── SIDE PANEL THUMBNAIL CLICK ─────────────── */
     .sp-card[data-date-key] { cursor: pointer; }
-    .sp-blank { cursor: pointer; }
-    .sp-thumb-add { cursor: pointer; }
-
     /* ─── SIDE PANEL: 다중 선택 필터 ───────────
        "필터" 버튼은 스크롤 목록(.sp-content) 맨 위에 고정(position:sticky)되어, 월 타이틀들이
        그 아래로 스크롤되어도 항상 최상단에 붙어있다. 우측 정렬된 고스트(배경 없는) 버튼이며,
-       누르면 바로 아래에 체크박스 팝오버가 뜨고 "기록 있는 날/기록 없는 날/빈 날짜"를 각각
+       누르면 바로 아래에 체크박스 팝오버가 뜨고 "기록 있는 날/기록 없는 날"을 각각
        켜고 끌 수 있다(단일 토글이 아니라 다중 선택). 패널 고정 헤더 우측 상단의 X 버튼은
        필터 상태와 무관하게 항상 표시되며, 눌렀을 때 필터가 열려 있으면 닫는다.
        .sp-content의 위쪽 padding을 없애고 그만큼을 이 바 자체의 padding-top으로 옮겨서,
@@ -2786,11 +2686,6 @@
               <span class="sp-filter-check"></span>
               <span>기록 없는 날</span>
             </label>
-            <label class="sp-filter-option">
-              <input type="checkbox" data-filter-key="blank" checked>
-              <span class="sp-filter-check"></span>
-              <span>빈 날짜</span>
-            </label>
           </div>
         </div>
         <div id="spDateList"></div>
@@ -3400,12 +3295,6 @@
   const canvasZoomWrap = document.getElementById('canvasZoomWrap');
   let pageCount = PAGES.length;
 
-  // 항상 마지막 페이지 아래에 표시되는 "페이지 추가" 버튼 (sortPages에서 매번 맨 뒤로 재배치)
-  const addPageBtn = document.createElement('button');
-  addPageBtn.className = 'add-page-btn';
-  addPageBtn.id = 'addPageBtn';
-  addPageBtn.innerHTML = '<i data-lucide="plus" style="width:18px;height:18px;"></i><span>페이지 추가</span>';
-
   PAGES.forEach((page) => {
     canvasZoomWrap.insertAdjacentHTML('beforeend', buildCardHTML(page));
     const card = canvasZoomWrap.lastElementChild;
@@ -3437,20 +3326,15 @@
     return false;
   }
 
-  // 헤더 우측 다중 선택 필터 — "기록 있는 날/기록 없는 날/빈 날짜"를 각각 독립적으로 켜고 끌 수
-  // 있다. 기본은 전부 켜짐(과거의 "기록만" 토글이 꺼진 상태와 동일하게 전부 표시).
-  const spFilterEnabled = { hasRecord: true, noRecord: true, blank: true };
+  // 헤더 우측 다중 선택 필터 — "기록 있는 날/기록 없는 날"을 각각 독립적으로 켜고 끌 수 있다.
+  // 기본은 전부 켜짐(과거의 "기록만" 토글이 꺼진 상태와 동일하게 전부 표시).
+  const spFilterEnabled = { hasRecord: true, noRecord: true };
 
   // 접힌 월(예: "2026-7") 목록 — rebuildPanel이 다시 그려도 접힘 상태가 유지되도록 여기서 관리한다
   const spCollapsedMonths = new Set();
 
-  // 사이드 패널 = "노트 기간"(시작일~종료일) 안의 날짜만 하루 단위로 나열한 목록 — 기록 유무와
-  // 무관하게 기간 밖의 날짜는 절대 표시되지 않는다.
-  // - 페이지가 이미 있는 날짜는(기록 유무와 무관하게) 그 페이지의 썸네일로 표시된다 — 방금 빈 칸을
-  //   눌러 새로 만든 페이지도 여기 포함되어 바로 보인다.
-  // - 페이지가 없는 날짜는 오늘·미래에 한해서만 빈 칸("+")으로 표시된다 — 과거인데 페이지가 없는
-  //   날짜는 목록에서 아예 노출되지 않는다.
-  //   ("기록만" 토글이 켜져 있으면 기록 없는 항목은 전부 생략된다.)
+  // 사이드 패널 = "노트 기간"(시작일~종료일) 안의 날짜를 하루 단위로 나열한 목록 — 기간의 모든
+  // 날짜에 이미 페이지가 미리 등록되어 있으므로(ensurePagesForPeriod), 빈 칸 상태는 없다.
   function rebuildPanel(datedCards, selectedCard) {
     // 스크롤 영역 최상단에 고정된 .sp-sticky-filter-bar는 건드리지 않고, 날짜 목록만 다시 그린다
     const spContent = document.getElementById('spDateList');
@@ -3460,7 +3344,6 @@
     const period = activeTabEl?._periodState || defaultNotePeriod();
     updateSpNoteInfo();
 
-    const today = new Date(); today.setHours(0, 0, 0, 0);
     const startDate = new Date(period.start.year, period.start.month - 1, period.start.day);
     const endDate = new Date(period.end.year, period.end.month - 1, period.end.day);
 
@@ -3473,17 +3356,8 @@
       const t = cursor.getTime();
       const existingCard = cardByTime.get(t) || null;
       const hasRecord = existingCard ? cardHasRecord(existingCard) : false;
-      if (existingCard) {
-        if (spFilterEnabled[hasRecord ? 'hasRecord' : 'noRecord']) {
-          items.push({ card: existingCard, time: t, label: `${cursor.getMonth() + 1}/${cursor.getDate()}` });
-        }
-      } else if (spFilterEnabled.blank && t >= today.getTime()) {
-        items.push({
-          isBlank: true, time: t,
-          y: cursor.getFullYear(), m: cursor.getMonth() + 1, d: cursor.getDate(),
-          isToday: t === today.getTime(),
-          label: `${cursor.getMonth() + 1}/${cursor.getDate()}`,
-        });
+      if (existingCard && spFilterEnabled[hasRecord ? 'hasRecord' : 'noRecord']) {
+        items.push({ card: existingCard, time: t, label: `${cursor.getMonth() + 1}/${cursor.getDate()}` });
       }
       cursor.setDate(cursor.getDate() + 1);
     }
@@ -3520,16 +3394,9 @@
         for (let j = i; j < Math.min(i + 2, group.items.length); j++) {
           const item = group.items[j];
           const spCard = document.createElement('div');
-          spCard.className = 'sp-card' + (item.card && item.card === selectedCard ? ' sp-selected' : '');
-          if (item.isBlank) {
-            spCard.classList.add('sp-blank');
-            spCard.dataset.y = item.y; spCard.dataset.m = item.m; spCard.dataset.d = item.d;
-            if (item.isToday) spCard.dataset.today = '1';
-            spCard.innerHTML = `<div class="sp-thumb sp-thumb-add"><span class="sp-add-icon">+</span></div><div class="sp-caption"><span class="sp-date">${item.label}</span></div>`;
-          } else {
-            spCard.dataset.dateKey = dateKey(parseCardDate(item.card));
-            spCard.innerHTML = `<div class="sp-thumb"></div><div class="sp-caption"><span class="sp-date">${item.label}</span><i data-lucide="more-horizontal" class="sp-more-icon"></i></div>`;
-          }
+          spCard.className = 'sp-card' + (item.card === selectedCard ? ' sp-selected' : '');
+          spCard.dataset.dateKey = dateKey(parseCardDate(item.card));
+          spCard.innerHTML = `<div class="sp-thumb"></div><div class="sp-caption"><span class="sp-date">${item.label}</span><i data-lucide="more-horizontal" class="sp-more-icon"></i></div>`;
           row.appendChild(spCard);
         }
         body.appendChild(row);
@@ -3609,6 +3476,7 @@
       period.start = { year, month, day };
       if (periodDateValue(period.start) > periodDateValue(period.end)) period.end = period.start;
       activeTabEl._periodState = period;
+      ensurePagesForPeriod(period); // 기간이 넓어졌으면 새로 포함된 날짜에도 페이지를 미리 만들어둔다
       sortPages();
       updateSpNoteInfo();
       updateSpPeriodEditLabels();
@@ -3622,6 +3490,7 @@
       period.end = { year, month, day };
       if (periodDateValue(period.end) < periodDateValue(period.start)) period.start = period.end;
       activeTabEl._periodState = period;
+      ensurePagesForPeriod(period); // 기간이 넓어졌으면 새로 포함된 날짜에도 페이지를 미리 만들어둔다
       sortPages();
       updateSpNoteInfo();
       updateSpPeriodEditLabels();
@@ -3650,8 +3519,7 @@
   const spTodayFabBtn = document.getElementById('spTodayFabBtn');
   const spContentEl = document.querySelector('.sp-content');
   function getTodaySpCardEl() {
-    return document.querySelector('.sp-blank[data-today="1"]') ||
-      document.querySelector(`.sp-card[data-date-key="${dateKey(new Date())}"]`);
+    return document.querySelector(`.sp-card[data-date-key="${dateKey(new Date())}"]`);
   }
   spTodayFabBtn.addEventListener('click', () => {
     const el = getTodaySpCardEl();
@@ -3695,23 +3563,11 @@
     datedCards.sort((a, b) => parseCardDate(a) - parseCardDate(b));
     canvasZoomWrap.querySelectorAll('.canvas-ad-banner').forEach(b => b.remove());
 
-    const ghostCard = canvasZoomWrap.querySelector('.card.card-ghost');
-    const ghostEl = ghostCard ? (ghostCard.closest('.ghost-frame') || ghostCard) : null;
-    addPageBtn.style.display = ghostCard ? 'none' : ''; // 오늘자 미리보기 카드가 있으면 페이지 추가 버튼은 숨김
-
-    // 오늘자 미리보기는 항상 맨 끝이 아니라, 실제 페이지들 사이에서 날짜순 제자리에 끼워 넣는다
-    // (예: 미래 날짜 페이지가 이미 있으면 그보다 앞쪽에 와야 함)
     const orderedEls = datedCards.slice();
-    if (ghostEl) {
-      const ghostDate = parseCardDate(ghostCard);
-      const insertAt = orderedEls.findIndex(c => parseCardDate(c) > ghostDate);
-      if (insertAt === -1) orderedEls.push(ghostEl);
-      else orderedEls.splice(insertAt, 0, ghostEl);
-    }
 
-    // revealBanners가 true면(날짜 선택으로 새 페이지가 막 추가된 경우) 새로 만든 배너를
-    // 여기서 즉시 card-creating으로 태어나게 한다 — scrollToCard의 offsetTop 리플로우가 일어나기
-    // 전에 이미 숨겨진 상태로 스타일이 확정되어야 "1→0" 깜빡임 없이 깔끔하게 시작한다
+    // revealBanners가 true면(새 페이지가 막 추가된 경우) 새로 만든 배너를 여기서 즉시
+    // card-creating으로 태어나게 한다 — scrollToCard의 offsetTop 리플로우가 일어나기 전에
+    // 이미 숨겨진 상태로 스타일이 확정되어야 "1→0" 깜빡임 없이 깔끔하게 시작한다
     const newBanners = [];
     orderedEls.forEach((el, i) => {
       canvasZoomWrap.appendChild(el);
@@ -3721,7 +3577,6 @@
         canvasZoomWrap.appendChild(banner);
       }
     });
-    canvasZoomWrap.appendChild(addPageBtn); // 항상 마지막 페이지 아래에 위치
 
     const selectedDomIdx = selectedCard ? orderedEls.indexOf(selectedCard) : orderedEls.length - 1;
     rebuildPanel(datedCards, selectedCard);
@@ -3784,31 +3639,6 @@
   sortPages();
   setTimeout(updateAllThumbs, 50);
 
-  // ── 오늘자 속지 미리보기(고스트) 카드 ────────────────────────
-  // "오늘' 페이지 추가" 화면의 더보기(점 3개) 메뉴 — 날짜를 직접 고르거나 속지를 바꿀 수 있게 함
-  const ghostMoreMenu = new OverlayMenu({
-    items: [
-      {
-        lucideIcon: 'calendar-days',
-        label: '날짜 직접 선택',
-        onClick() { datePicker.open(); }
-      },
-      {
-        lucideIcon: 'file-stack',
-        label: '속지 변경',
-        onClick() {
-          const gc = document.querySelector('.card.card-ghost');
-          if (gc && window.openGhostSettingsPanel) window.openGhostSettingsPanel(gc);
-        }
-      }
-    ]
-  });
-
-  function todayDateText() {
-    const t = new Date();
-    return `${String(t.getFullYear()).slice(2)}.${String(t.getMonth() + 1).padStart(2, '0')}.${String(t.getDate()).padStart(2, '0')}`;
-  }
-
   // ── 노트 기간(페이지를 만들 수 있는 날짜 범위) 공용 헬퍼 ──────────────
   function defaultNotePeriod() {
     const s = new Date();
@@ -3823,109 +3653,6 @@
   }
   function periodDateValue(d) { return d.year * 10000 + d.month * 100 + d.day; }
 
-  function insertGhostTodayCard() {
-    const todayText = todayDateText();
-    const hasToday = Array.from(canvasZoomWrap.querySelectorAll('.card[data-canvas-state="with-date"]'))
-      .some(c => parseCardDate(c).toDateString() === new Date().toDateString());
-    if (hasToday) return;
-
-    // 아직 활성화(추가) 전이라도 오늘자 미리보기가 이미 그 날짜를 대표하고 있으므로,
-    // 날짜 선택 팝업에서 오늘 날짜를 또 골라 중복 페이지를 만들 수 없도록 바로 taken 처리한다
-    const t = new Date();
-    datePicker.takenDates.add(`${t.getFullYear()}-${t.getMonth() + 1}-${t.getDate()}`);
-
-    canvasZoomWrap.insertAdjacentHTML('beforeend', buildCardHTML({ id: 'ghost-today', dateText: todayText, today: true }));
-    const ghostCard = canvasZoomWrap.lastElementChild;
-
-    // 점선 프레임(일반 카드 슬롯과 동일한 600×800)으로 감싸고, 카드는 그 안에서 91.667%로
-    // 축소되어 가운데에 뜬다 (Figma 4981:262394)
-    const ghostFrame = document.createElement('div');
-    ghostFrame.className = 'ghost-frame';
-    ghostFrame.id = 'ghostFrame';
-    ghostCard.replaceWith(ghostFrame);
-    ghostFrame.appendChild(ghostCard);
-
-    buildGrid(ghostCard, null); // 아직 시작 전이므로 타임라인 블록 없음
-    initEmojiPicker(ghostCard);
-    ghostCard.dataset.canvasState = 'ghost';
-    ghostCard.dataset.dateText = todayText;
-    ghostCard.classList.add('card-ghost');
-
-    // 아직 공부 기록이 없으므로 과목별 시간·총 시간 모두 0:00:00
-    const timeVal = ghostCard.querySelector('.hd-time-val');
-    if (timeVal) timeVal.textContent = '0:00:00';
-    ghostCard.querySelectorAll('.subj-time').forEach(el => { el.textContent = '0:00:00'; });
-
-    addPageBtn.style.display = 'none'; // 오늘자 미리보기 카드가 있는 동안 페이지 추가 버튼은 숨김
-    lucide.createIcons({ nodes: [ghostCard] });
-
-    // 축소된 카드 하단을 캔버스 배경색으로 흐리는 그라데이션 + 흰 배경 CTA 버튼 + 더보기(점 3개)를
-    // 프레임 안에 겹쳐 놓는다 (카드 자체가 아니라 프레임의 형제 요소)
-    ghostFrame.insertAdjacentHTML('beforeend', `
-      <div class="ghost-frame-gradient"></div>
-      <button class="ghost-frame-btn" id="ghostTeaserBtn">'오늘' 페이지 추가</button>
-      <button class="ghost-frame-dots" id="ghostMoreBtn" aria-label="더보기"><span></span><span></span><span></span></button>`);
-
-    // 버튼뿐 아니라 점선 프레임 영역 전체를 눌러도 바로 오늘 페이지가 추가되게 함
-    // (카드 자신은 pointer-events:none이라 클릭이 그대로 프레임까지 버블링된다).
-    // 더보기(점 3개) 버튼만 stopPropagation으로 제외해 다른 메뉴가 열리게 한다.
-    ghostFrame.addEventListener('click', () => activateGhostCard(ghostFrame, ghostCard, todayText));
-    document.getElementById('ghostMoreBtn').addEventListener('click', (e) => {
-      e.stopPropagation();
-      const rect = document.getElementById('ghostMoreBtn').getBoundingClientRect();
-      ghostMoreMenu.open(rect.left + rect.width / 2, rect.top, { above: true });
-    });
-
-    // 최초 진입 시에도 그라데이션/버튼/점이 (설정 패널을 닫을 때와 동일하게) 순서대로 나타나도록:
-    // 트랜지션 없이 숨긴 상태로 스냅해뒀다가, 다음 프레임에 .entering을 떼어 기본 상태(0.35s/0.55s
-    // 지연이 걸린 트랜지션)로 되돌리면 아래에서 위로 올라오며 나타나는 애니메이션이 재생된다
-    ghostFrame.classList.add('entering');
-    requestAnimationFrame(() => requestAnimationFrame(() => ghostFrame.classList.remove('entering')));
-
-    sortPages(); // 실제 페이지-오늘자 미리보기 사이 광고 배너 삽입 + 맨 끝 재배치를 한 번에 반영
-
-    // 최초 진입 시: 오늘보다 과거인 페이지 중 가장 가까운 페이지에 먼저 도착해 있다가,
-    // 잠시 뒤 오늘자 임시 페이지로 부드럽게 자동 스크롤한다. 과거 페이지가 하나도 없으면
-    // (오늘이 가장 이른 페이지인 경우) 바로 오늘 페이지로 이동한다.
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-      const now = new Date();
-      const pastCards = Array.from(canvasZoomWrap.querySelectorAll('.card[data-canvas-state="with-date"]'))
-        .filter(c => parseCardDate(c) < now)
-        .sort((a, b) => parseCardDate(b) - parseCardDate(a)); // 최신순 정렬 → 첫 번째가 가장 가까운 과거
-      const nearestPast = pastCards[0];
-      if (nearestPast) {
-        const idx = Array.from(canvasScroll.querySelectorAll('.card')).indexOf(nearestPast);
-        scrollToCard(idx, false); // 가장 가까운 과거 페이지에 즉시 랜딩
-        setTimeout(() => scrollToGhostCard(ghostFrame, true), 800); // 잠시 뒤 오늘 페이지로 부드럽게 스크롤
-      } else {
-        scrollToGhostCard(ghostFrame); // 과거 페이지가 없으면 바로 오늘 페이지로
-      }
-    }));
-  }
-
-  function scrollToGhostCard(ghostFrame, smooth) {
-    if (!mainArea.clientHeight) { requestAnimationFrame(() => scrollToGhostCard(ghostFrame, smooth)); return; }
-    const target = ghostFrame.offsetTop - CENTER_OFFSET();
-    mainArea.scrollTo({ top: Math.max(0, target), behavior: smooth ? 'smooth' : 'instant' });
-  }
-
-  function activateGhostCard(ghostFrame, ghostCard, dateText) {
-    // 카드가 점선 프레임 크기(100%)까지 커지며 오퍼시티도 원래대로, 점선/그라데이션/버튼/점은 페이드아웃
-    ghostFrame.classList.add('growing');
-
-    setTimeout(() => {
-      ghostCard.classList.remove('card-ghost');
-      ghostCard.dataset.canvasState = 'with-date';
-
-      const [y, m, d] = dateText.split('.');
-      datePicker.takenDates.add(`${2000 + parseInt(y, 10)}-${parseInt(m, 10)}-${parseInt(d, 10)}`);
-
-      ghostFrame.replaceWith(ghostCard); // 프레임을 벗기고 다른 페이지와 동일하게 카드만 남긴다
-
-      sortPages(ghostCard);
-      pageToast.show(`'오늘' 페이지가 추가되었습니다`);
-    }, 400); // .ghost-frame.growing 트랜지션(0.4s)이 끝난 뒤 처리 — sortPages의 reparent가 도중에 끼어들지 않도록
-  }
 
   // ── Scroll to center a card ────────────────────────────────
   const mainArea = document.querySelector('.main-area');
@@ -3963,19 +3690,6 @@
       monthHeader.classList.toggle('collapsed', willCollapse);
       const body = monthHeader.nextElementSibling;
       if (body && body.classList.contains('sp-month-body')) body.style.display = willCollapse ? 'none' : '';
-      return;
-    }
-
-    const blank = e.target.closest('.sp-blank');
-    if (blank) {
-      if (blank.dataset.today === '1') {
-        // 오늘 빈칸 → 이미 캔버스에 떠 있는 "오늘' 페이지 추가" 미리보기를 그대로 활성화한다
-        const gc = document.querySelector('.card.card-ghost');
-        const frame = gc && gc.closest('.ghost-frame');
-        if (gc && frame) activateGhostCard(frame, gc, gc.dataset.dateText);
-      } else {
-        createPage(parseInt(blank.dataset.y, 10), parseInt(blank.dataset.m, 10), parseInt(blank.dataset.d, 10));
-      }
       return;
     }
 
@@ -4017,17 +3731,10 @@
     year: 2026, month: 6,
     takenDates,
     onConfirm({ year, month, day }) {
-      if (!day) return;
-      if (activeCard) applyDate(activeCard, year, month, day);
-      else createPage(year, month, day);
+      if (!day || !activeCard) return;
+      applyDate(activeCard, year, month, day);
     }
   });
-
-  // ── Date selection mini-menu ───────────────────────────────
-  const _td = new Date();
-  const _todayY = _td.getFullYear();
-  const _todayM = _td.getMonth() + 1;
-  const _todayD = _td.getDate();
 
   function applyDate(card, year, month, day) {
     if (datePicker.takenDates.has(`${year}-${month}-${day}`)) return;
@@ -4056,17 +3763,9 @@
 
   const pageToast = window.toast;
 
-  // 새 페이지를 캔버스에 생성 (속지 설정에서 구성한 템플릿 + 컬러를 그대로 반영)
-  function createPage(year, month, day) {
-    const period = document.querySelector('.tab.active')?._periodState;
-    if (period) {
-      const v = year * 10000 + month * 100 + day;
-      if (v < periodDateValue(period.start) || v > periodDateValue(period.end)) {
-        pageToast.show('설정된 노트 기간 밖의 날짜입니다');
-        return;
-      }
-    }
-    if (datePicker.takenDates.has(`${year}-${month}-${day}`)) return;
+  // 노트 기간(시작일~종료일) 안의 모든 날짜에 페이지를 미리 만들어둔다 — "오늘 페이지 추가"
+  // 같은 별도 개념 없이, 기간을 정하는 순간 그 안의 모든 날짜가 이미 실제 페이지로 존재한다.
+  function buildBlankPageCard(year, month, day) {
     const y = String(year).slice(2);
     const m = String(month).padStart(2, '0');
     const d = String(day).padStart(2, '0');
@@ -4075,7 +3774,6 @@
     const newPage = { id: 'p' + pageCount++, dateText, today: false };
     canvasZoomWrap.insertAdjacentHTML('beforeend', buildCardHTML(newPage));
     const newCard = canvasZoomWrap.lastElementChild;
-    newCard.classList.add('card-creating'); // 스크롤이 도착하기 전까지는 보이지 않게 숨겨둔다
 
     const oldInner = newCard.querySelector('.card-inner');
     if (oldInner) oldInner.remove();
@@ -4089,93 +3787,28 @@
 
     initEmojiPicker(newCard);
     lucide.createIcons({ nodes: [newCard] });
-
     datePicker.takenDates.add(`${year}-${month}-${day}`);
-    // 내부에서 scrollToCard(smooth)로 스크롤을 시작함 + 광고 배너를 전부 새로 만듦(생성된 배너는
-    // scrollToCard가 리플로우를 일으키기 전에 이미 card-creating으로 숨겨진 채 돌려받는다)
-    const banners = sortPages(newCard, true);
-
-    // scrollToCard의 smooth-scroll 도착 시점(350ms fallback)이 지난 뒤에 카드+배너가 나타나는
-    // 생성 트랜지션을 재생한다 — 스크롤 도중에는 보이지 않다가, 도착하면 짠 하고 함께 생성됨
-    setTimeout(() => {
-      newCard.classList.add('card-created-reveal');
-      banners.forEach(b => b.classList.add('card-created-reveal'));
-      setTimeout(() => {
-        newCard.classList.remove('card-creating', 'card-created-reveal');
-        banners.forEach(b => b.classList.remove('card-creating', 'card-created-reveal'));
-      }, 400);
-    }, 380);
-
-    pageToast.show(`${month}월 ${day}일 페이지가 추가되었습니다`);
+    return newCard;
   }
 
-  // ── "페이지 추가" 진입점 (캔버스 하단 버튼 · 사이드패널 add 타일 공용) ──
-  let _lastDateMenuPos = null;
-
-  function openAddPageMenu(x, y, opts) {
-    activeCard = null;
-    const todayTaken = datePicker.takenDates.has(`${_todayY}-${_todayM}-${_todayD}`);
-    if (todayTaken) {
-      const sugg = getSuggestedNextDate();
-      if (sugg) {
-        dateSelectMenu.updateItem(0, {
-          lucideIcon: 'calendar-check',
-          label: `${sugg.month}/${sugg.day}`,
-          onClick() { createPage(sugg.year, sugg.month, sugg.day); }
-        });
+  function ensurePagesForPeriod(period) {
+    const startDate = new Date(period.start.year, period.start.month - 1, period.start.day);
+    const endDate = new Date(period.end.year, period.end.month - 1, period.end.day);
+    const existing = new Set(
+      Array.from(canvasZoomWrap.querySelectorAll('.card[data-canvas-state="with-date"]'))
+        .map(c => parseCardDate(c).toDateString())
+    );
+    const cursor = new Date(startDate);
+    let added = false;
+    while (cursor <= endDate) {
+      if (!existing.has(cursor.toDateString())) {
+        buildBlankPageCard(cursor.getFullYear(), cursor.getMonth() + 1, cursor.getDate());
+        added = true;
       }
-    } else {
-      dateSelectMenu.updateItem(0, {
-        lucideIcon: 'calendar-check',
-        label: `오늘 (${_todayM}/${_todayD})`,
-        onClick() { createPage(_todayY, _todayM, _todayD); }
-      });
+      cursor.setDate(cursor.getDate() + 1);
     }
-    dateSelectMenu.setTitle('페이지 날짜 선택');
-    _lastDateMenuPos = { x, y, opts };
-    dateSelectMenu.open(x, y, opts);
+    if (added) sortPages();
   }
-
-  window.onInsertPickerClosed = () => {
-    if (_lastDateMenuPos) {
-      // 팝업이 완전히 닫히는 애니메이션(0.22s)이 끝난 뒤 약간의 여유를 두고 다시 띄움
-      setTimeout(() => {
-        openAddPageMenu(_lastDateMenuPos.x, _lastDateMenuPos.y, _lastDateMenuPos.opts);
-      }, 400);
-    }
-  };
-
-  addPageBtn.addEventListener('click', () => {
-    const rect = addPageBtn.getBoundingClientRect();
-    openAddPageMenu(rect.left + rect.width / 2, rect.top, { above: true });
-  });
-
-  const dateSelectMenu = new OverlayMenu({
-    items: [
-      {
-        lucideIcon: 'calendar-check',
-        label: `오늘 (${_todayM}/${_todayD})`,
-        onClick() {
-          createPage(_todayY, _todayM, _todayD);
-        }
-      },
-      {
-        lucideIcon: 'calendar-days',
-        label: '직접 선택',
-        onClick() {
-          datePicker.open();
-        }
-      }
-    ],
-    preview: {
-      render(el) {
-        if (window.ipBuildConfiguredCardEl) renderMp2Thumb(window.ipBuildConfiguredCardEl(), el);
-      },
-      onClick() {
-        window.openInsertPicker();
-      }
-    }
-  });
 
   // ── 페이지 패널 더보기 메뉴 ────────────────────────────────────
   let activePageCard = null;
@@ -4222,19 +3855,6 @@
   });
 
   function openDeleteConfirm() { deleteDialog.open(); }
-
-  function getSuggestedNextDate() {
-    const datedCards = Array.from(canvasScroll.querySelectorAll('.card[data-canvas-state="with-date"]'));
-    if (!datedCards.length) return null;
-    datedCards.sort((a, b) => parseCardDate(a) - parseCardDate(b));
-    const last = datedCards[datedCards.length - 1];
-    const txt = last.dataset.dateText;
-    if (!txt) return null;
-    const [yy, mm, dd] = txt.split('.');
-    if (!yy || !mm || !dd) return null;
-    const next = new Date(2000 + parseInt(yy, 10), parseInt(mm, 10) - 1, parseInt(dd, 10) + 1);
-    return { year: next.getFullYear(), month: next.getMonth() + 1, day: next.getDate() };
-  }
 
   canvasScroll.addEventListener('click', e => {
     // ── + 버튼: 빈 행 없으면 추가 ─────────────────────
@@ -5349,14 +4969,14 @@
   });
   refreshTabLayout();
   updateView();
-  insertGhostTodayCard(); // updateView()의 sortPages() 재정렬이 모두 끝난 뒤에 삽입해야 배너 위치·피크 스크롤이 흔들리지 않음
+  // updateView()의 sortPages() 재정렬이 끝난 뒤에 채워야 배너 위치·초기 스크롤이 흔들리지 않는다 —
+  // 노트 기간 안의 모든 날짜에 페이지를 미리 만들어두므로 "오늘 페이지 추가" 같은 별도 개념이 없다
+  ensurePagesForPeriod((tabLabels.querySelector('.tab.active') || {})._periodState || defaultNotePeriod());
 
-  // ── 오늘로 이동 플로팅 버튼: 오늘자 페이지(고스트 또는 활성화된 실카드)가
-  //    캔버스 스크롤 영역 밖으로 나가면 나타나고, 누르면 그 위치로 스크롤한다 ──
+  // ── 오늘로 이동 플로팅 버튼: 오늘자 페이지가 캔버스 스크롤 영역 밖으로 나가면 나타나고,
+  //    누르면 그 위치로 스크롤한다 ──
   const todayFabBtn = document.getElementById('todayFabBtn');
   function getTodayCardEl() {
-    const ghost = canvasZoomWrap.querySelector('[data-page-id="ghost-today"]');
-    if (ghost) return ghost;
     const t = new Date();
     return Array.from(canvasZoomWrap.querySelectorAll('.card[data-canvas-state="with-date"]'))
       .find(c => parseCardDate(c).toDateString() === t.toDateString()) || null;
@@ -5364,8 +4984,7 @@
   todayFabBtn.addEventListener('click', () => {
     const el = getTodayCardEl();
     if (!el) return;
-    const frame = el.closest('.ghost-frame') || el;
-    const target = frame.offsetTop - CENTER_OFFSET();
+    const target = el.offsetTop - CENTER_OFFSET();
     mainArea.scrollTo({ top: Math.max(0, target), behavior: 'smooth' });
   });
   let todayFabObserver = null;
@@ -5383,8 +5002,8 @@
   }
   window.watchTodayFab = watchTodayFab; // setCanvasMode(탭 전환)에서 재호출할 수 있도록 노출
   window.__todayFabReady = true; // 함수 선언은 호이스팅되어 이 지점 이전에도 typeof가 'function'이므로, 준비 여부는 별도 플래그로 판단한다
-  // insertGhostTodayCard()의 스크롤 이동(더블 rAF로 지연)이 끝난 뒤에 연결해야
-  // 최초 관찰 시점에 아직 이동 전인 스크롤 위치를 기준으로 잘못 판정하지 않는다
+  // ensurePagesForPeriod()가 만든 카드들의 레이아웃이 완전히 자리잡은 뒤에 연결해야
+  // 최초 관찰 시점에 아직 반영 전인 위치를 기준으로 잘못 판정하지 않는다
   requestAnimationFrame(() => requestAnimationFrame(watchTodayFab));
 
   // ── Drawing system ────────────────────────────────────────────
