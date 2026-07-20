@@ -455,6 +455,7 @@
       display: flex;
       flex-direction: column;
     }
+    .card.card-out-of-period { display: none; }
 
     /* Card has 16px padding; the two panels sit side by side */
     .card-inner {
@@ -3685,9 +3686,25 @@
 
   function sortPages(selectedCard, revealBanners) {
     const allCards = Array.from(canvasScroll.querySelectorAll('.card'));
-    const datedCards = allCards.filter(c => c.dataset.canvasState === 'with-date');
+    let datedCards = allCards.filter(c => c.dataset.canvasState === 'with-date');
     datedCards.sort((a, b) => parseCardDate(a) - parseCardDate(b));
     canvasZoomWrap.querySelectorAll('.canvas-ad-banner').forEach(b => b.remove());
+
+    // 노트 기간(시작일~종료일) 밖의 페이지는 캔버스에서도 숨긴다 — 목록에서만 걸러지고
+    // 캔버스에는 그대로 남아있던 문제를 방지한다.
+    const activeTabForPeriod = document.querySelector('.tab.active');
+    const canvasPeriod = activeTabForPeriod?._periodState || defaultNotePeriod();
+    const periodStartTime = new Date(canvasPeriod.start.year, canvasPeriod.start.month - 1, canvasPeriod.start.day).getTime();
+    const periodEndTime = new Date(canvasPeriod.end.year, canvasPeriod.end.month - 1, canvasPeriod.end.day).getTime();
+    const hiddenCards = [];
+    const visibleDatedCards = [];
+    datedCards.forEach(c => {
+      const inPeriod = parseCardDate(c).getTime() >= periodStartTime && parseCardDate(c).getTime() <= periodEndTime;
+      c.classList.toggle('card-out-of-period', !inPeriod);
+      (inPeriod ? visibleDatedCards : hiddenCards).push(c);
+    });
+    hiddenCards.forEach(c => canvasZoomWrap.appendChild(c));
+    datedCards = visibleDatedCards;
 
     const ghostCard = canvasZoomWrap.querySelector('.card.card-ghost');
     const ghostEl = ghostCard ? (ghostCard.closest('.ghost-frame') || ghostCard) : null;
