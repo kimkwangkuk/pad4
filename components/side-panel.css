@@ -116,6 +116,11 @@
   color: rgba(0,0,0,0.86); letter-spacing: -0.045px; line-height: 1.4;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
+/* 아직 페이지가 추가되지 않은 날짜(빈 칸)는 날짜 텍스트도 연한 회색으로 표시한다 */
+.sp-card.sp-blank .sp-list-title {
+  font-weight: 500;
+  color: rgba(0,0,0,0.32);
+}
 .sp-today-badge {
   flex-shrink: 0;
   font-family: 'Pretendard', sans-serif;
