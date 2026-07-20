@@ -5,6 +5,7 @@ class DatePicker {
     this.month = options.month || today.getMonth() + 1;
     this.selected = options.selected || null;
     this.onConfirm = options.onConfirm || null;
+    this.instantSelect = !!options.instantSelect; // true면 확인 버튼 없이 날짜를 누르는 즉시 확정된다
     this._overlay = null;
     this._sheet = null;
     this.takenDates = new Set(
@@ -22,7 +23,9 @@ class DatePicker {
           <button class="dp-close-btn">
             <i data-lucide="x" style="width:14px;height:14px;color:rgba(0,0,0,0.5);"></i>
           </button>
-          <div class="dp-hidden-btn"></div>
+          ${this.instantSelect
+            ? '<div class="dp-header-spacer"></div>'
+            : '<button class="dp-header-confirm-btn" disabled><i data-lucide="check" style="width:16px;height:16px;color:#fff;"></i></button>'}
           <span class="dp-title">날짜 선택</span>
         </div>
       </div>
@@ -54,6 +57,14 @@ class DatePicker {
     `;
 
     sheet.querySelector('.dp-close-btn').addEventListener('click', () => this.close());
+    const confirmBtnEl = sheet.querySelector('.dp-header-confirm-btn');
+    if (confirmBtnEl) {
+      confirmBtnEl.addEventListener('click', () => {
+        if (this.selected == null) return;
+        if (this.onConfirm) this.onConfirm({ year: this.year, month: this.month, day: this.selected });
+        this.close();
+      });
+    }
     sheet.querySelector('.dp-prev').addEventListener('click', () => {
       this.month--;
       if (this.month < 1) { this.month = 12; this.year--; }
@@ -95,14 +106,21 @@ class DatePicker {
         if (valid && !taken) {
           cell.addEventListener('click', () => {
             this.selected = day;
-            if (this.onConfirm) this.onConfirm({ year: this.year, month: this.month, day });
-            this.close();
+            if (this.instantSelect) {
+              // 확인 버튼 없이 날짜를 누르는 즉시 확정 — 캘린더 노트처럼 바로 이동하는 용도
+              if (this.onConfirm) this.onConfirm({ year: this.year, month: this.month, day });
+            } else {
+              this._renderGrid(sheet); // 선택 표시만 갱신 — 확인 버튼을 눌러야 실제로 확정된다
+            }
           });
         }
         row.appendChild(cell);
       }
       grid.appendChild(row);
     }
+
+    const confirmBtn = sheet.querySelector('.dp-header-confirm-btn');
+    if (confirmBtn) confirmBtn.disabled = this.selected == null;
   }
 
   open() {

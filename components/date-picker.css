@@ -44,7 +44,21 @@
   cursor: pointer;
   flex-shrink: 0;
 }
-.dp-hidden-btn { width: 38px; height: 38px; opacity: 0; flex-shrink: 0; }
+/* 날짜를 고르면 바로 닫히는 게 아니라 선택만 표시되고, 이 버튼을 눌러야 확정+닫힘 */
+.dp-header-confirm-btn {
+  width: 38px; height: 38px;
+  background: rgba(0,0,0,0.86);
+  border-radius: 100px;
+  border: none;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: opacity 0.15s, background 0.12s;
+}
+.dp-header-confirm-btn:hover { background: rgba(0,0,0,0.7); }
+.dp-header-confirm-btn:disabled { opacity: 0.35; cursor: default; pointer-events: none; }
+/* instantSelect 모드: 확인 버튼 대신 제목을 가운데 맞추기 위한 빈 자리 */
+.dp-header-spacer { width: 38px; height: 38px; flex-shrink: 0; }
 .dp-title {
   position: absolute;
   left: 50%; top: 19px;
@@ -142,15 +156,3 @@
   cursor: pointer;
 }
 .dp-confirm-btn:hover { background: rgba(0,0,0,0.78); }
-
-/* ── Embedded in side panel (calendar note type) ──────────── */
-.sp-calendar-embed .dp-sheet {
-  width: 100%;
-  border-radius: 0;
-  box-shadow: none;
-}
-.sp-calendar-embed .dp-topbar { display: none; }
-.sp-calendar-embed .dp-content { padding: 4px 0 16px; }
-.sp-calendar-embed .dp-day-circle { width: 32px; height: 32px; }
-.sp-calendar-embed .dp-day-headers,
-.sp-calendar-embed .dp-week-row { height: 38px; }

@@ -16,6 +16,7 @@
   <link rel="stylesheet" href="components/sticker-picker.css">
   <link rel="stylesheet" href="components/panel-slider.css">
   <link rel="stylesheet" href="components/modal-header.css">
+  <link rel="stylesheet" href="components/glass-pill-button.css">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -304,6 +305,139 @@
     }
     .add-page-btn:hover { background: rgba(0,0,0,0.03); }
     .add-page-btn:active { background: rgba(0,0,0,0.07); }
+
+    /* ─── 오늘자 속지 미리보기(고스트) 카드 (Figma 4981:262394) ───────── */
+    /* 점선 프레임이 일반 카드 슬롯과 같은 600×800을 차지하고, 그 안에 오늘자 카드를
+       91.667%로 축소해 가운데 띄워둔다. 버튼을 누르면 카드가 프레임 크기(100%)까지
+       커지면서 오퍼시티도 원래대로 돌아오고, 점선/그라데이션/버튼/점은 페이드아웃된다. */
+    .ghost-frame {
+      position: relative;
+      width: 600px; height: 800px; flex-shrink: 0;
+      box-sizing: border-box; padding: 8px;
+      border: 1px dashed rgba(0,0,0,0.2); border-radius: 16px;
+      overflow: hidden;
+      transition: border-color 0.4s ease;
+    }
+    .ghost-frame.growing { border-color: transparent; }
+    .ghost-frame > .card.card-ghost {
+      position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%, -50%) scale(0.91667);
+      opacity: 0.85;
+      pointer-events: none;
+      transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s ease;
+    }
+    .ghost-frame.growing > .card.card-ghost {
+      transform: translate(-50%, -50%) scale(1);
+      opacity: 1;
+    }
+    /* 닫힐 때(성장 해제) 순서: 1) 페이지가 뒤로 빠짐(카드 축소 + 테두리 복귀, 지연 없음)
+       → 2) 그라데이션 딤이 깔림(0.35s 지연) → 3) 버튼/점이 아래에서 위로 올라옴(0.55s 지연).
+       커질 때(.growing 진입)는 반대로 전부 지연 없이 즉시 사라진다. */
+    .ghost-frame-gradient {
+      position: absolute; left: 0; right: 0; bottom: 0; height: 65%;
+      background: linear-gradient(to bottom, rgba(224,224,224,0) 0%, var(--bg) 80%);
+      pointer-events: none; z-index: 60;
+      transition: opacity 0.3s ease 0.35s;
+    }
+    /* Figma: node-id 4981-262397 — 실선 흰 배경의 필 형태 버튼 */
+    .ghost-frame-btn {
+      position: absolute; left: 50%; top: 673px; transform: translateX(-50%) translateY(0);
+      display: inline-flex; align-items: center; justify-content: center;
+      padding: 12px 20px;
+      border: none; border-radius: 40px;
+      background: #fff; color: #000;
+      font-family: 'Pretendard', sans-serif;
+      font-size: 16px; font-weight: 600; line-height: 1.4; letter-spacing: -0.048px;
+      cursor: pointer; white-space: nowrap;
+      z-index: 61;
+      transition: background 0.12s, opacity 0.3s ease 0.55s, transform 0.35s cubic-bezier(0.4, 0, 0.2, 1) 0.55s;
+    }
+    .ghost-frame-btn:hover { background: #f2f2f2; }
+    /* 점 3개 = "더보기" 버튼 (탭 영역 확보를 위해 8px 패딩을 두르고, 점 자체 위치는 Figma 그대로 유지되게 top을 그만큼 당김) */
+    .ghost-frame-dots {
+      position: absolute; left: 50%; top: 737px; transform: translateX(-50%) translateY(0);
+      display: flex; align-items: center; gap: 3px;
+      padding: 8px 12px; border: none; border-radius: 20px;
+      background: transparent; cursor: pointer;
+      z-index: 61;
+      transition: background 0.12s, opacity 0.3s ease 0.55s, transform 0.35s cubic-bezier(0.4, 0, 0.2, 1) 0.55s;
+    }
+    .ghost-frame-dots:hover { background: rgba(0,0,0,0.05); }
+    .ghost-frame-dots span { width: 4px; height: 4px; border-radius: 30px; background: rgba(0,0,0,0.4); }
+    .ghost-frame.growing .ghost-frame-gradient {
+      opacity: 0;
+      transition-delay: 0s;
+      pointer-events: none;
+    }
+    .ghost-frame.growing .ghost-frame-btn,
+    .ghost-frame.growing .ghost-frame-dots {
+      opacity: 0;
+      transform: translateX(-50%) translateY(16px);
+      transition: background 0.12s, opacity 0.3s ease, transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      pointer-events: none;
+    }
+    /* 최초 진입 시 스냅용 — 그라데이션 딤은 이미 표시된 상태로 시작하고(애니메이션 없음),
+       버튼만 트랜지션 없이 숨겨뒀다가 다음 프레임에 클래스를 떼면 기본 상태(.ghost-frame-btn의
+       0.55s 지연 트랜지션)를 타고 아래에서 위로 올라오며 나타난다 */
+    .ghost-frame.entering .ghost-frame-btn {
+      opacity: 0;
+      transform: translateX(-50%) translateY(16px);
+      transition: none;
+    }
+
+    /* ─── 날짜 선택으로 새 페이지가 추가될 때: 스크롤이 도착한 뒤에 카드(+광고 배너)가 나타나는 생성 트랜지션 ─── */
+    .card.card-creating,
+    .canvas-ad-banner.card-creating {
+      opacity: 0;
+      transform: scale(0.92);
+      transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1), transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .card.card-creating.card-created-reveal,
+    .canvas-ad-banner.card-creating.card-created-reveal {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    /* ─── 오늘로 이동 플로팅 버튼 (Figma 5041:108523) ───────────
+       캔버스 스크롤 영역에 오늘자 페이지(고스트/실제 카드)가 보이지 않을 때만 뜬다. 오늘 페이지가
+       현재 화면보다 아래에 있으면 하단 중앙에, 위에 있으면 상단 중앙에 뜬다(스크롤할 방향을 암시).
+       .workspace의 형제로 두어(.sp-panel/.gps-panel과 동일한 패턴) 캔버스와 별개로 항상 같은
+       위치에 고정되고, 툴바는 덮지 않는다. */
+    #todayFabBtn {
+      position: absolute; left: 50%; bottom: 28px; z-index: 140;
+      transform: translateX(-50%) translateY(12px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.22s ease, transform 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    #todayFabBtn.pos-top {
+      top: 28px; bottom: auto;
+      transform: translateX(-50%) translateY(-12px);
+    }
+    #todayFabBtn.visible {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* ─── 캘린더 노트: 인라인 캘린더 위젯 ───────────────────────
+       기존 DatePicker는 화면 전체를 덮는 딤드 오버레이 위에 뜨지만, 캘린더 노트에서는
+       딤드 없이 캔버스 좌상단에 그 자리에서 뜨고, 날짜를 누르면 체크 버튼 없이 바로 그
+       페이지로 이동한다(DatePicker의 instantSelect 옵션 사용). */
+    .cal-inline-panel {
+      position: absolute; left: 16px; top: 16px; z-index: 130;
+      opacity: 0;
+      transform: translateY(-8px) scale(0.98);
+      transform-origin: top left;
+      pointer-events: none;
+      transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .cal-inline-panel.visible {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      pointer-events: auto;
+    }
+    .cal-inline-panel .dp-sheet { width: 360px; }
 
     /* ─── DRAW CANVAS ────────────────────────────── */
     .card-draw-canvas {
@@ -1697,6 +1831,400 @@
       letter-spacing: -0.045px;
       line-height: 1.4;
     }
+    /* ─── 오늘자 임시 페이지 "속지 변경" → 페이지 설정 사이드 패널 (Figma 5017:326690 / 5017:326734) ───
+       .sp-panel과 동일하게 .workspace 안에 위치하는 position:absolute — 툴바를 덮는 뷰포트 전체 오버레이가
+       아니라, 캔버스 영역(.workspace) 안에서만 슬라이드되어 나온다 */
+    /* 딤 없이 바깥을 눌렀을 때 닫히는 용도로만 쓰는 투명 클릭 캐처 (.sp-panel처럼 어둡게 깔지 않음) */
+    .gps-backdrop {
+      position: absolute; inset: 0; background: transparent;
+      pointer-events: none; z-index: 150;
+    }
+    .gps-backdrop.visible { pointer-events: auto; }
+    .gps-panel {
+      position: absolute; left: 0; top: 0; bottom: 0; width: 340px; z-index: 151;
+      background: #fff; border-right: 1px solid rgba(0,0,0,0.08);
+      box-shadow: 1px 0 4px rgba(0,0,0,0.04);
+      transform: translateX(-100%);
+      transition: transform 0.28s cubic-bezier(0.4,0,0.2,1);
+      overflow: hidden; display: flex; flex-direction: column;
+    }
+    .gps-panel.visible { transform: translateX(0); }
+    .gps-slider { flex: 1; min-height: 0; align-items: stretch; }
+    .gps-slider > .pnl-panel { height: 100%; overflow: hidden; }
+    .gps-section-label {
+      padding: 16px 16px 4px;
+      font-family: 'Pretendard', sans-serif; font-size: 12px; font-weight: 500;
+      color: rgba(0,0,0,0.4); letter-spacing: -0.036px;
+    }
+    .gps-row {
+      width: 100%; display: flex; align-items: center; gap: 4px;
+      padding: 10px 10px 10px 16px; border: none; background: none; cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .gps-row:hover { background: rgba(0,0,0,0.03); }
+    .gps-row-label {
+      font-family: 'Pretendard', sans-serif; font-size: 15px; font-weight: 600;
+      color: rgba(0,0,0,0.86); letter-spacing: -0.045px;
+    }
+    .gps-row-value {
+      flex: 1; min-width: 0; text-align: right;
+      font-family: 'Pretendard', sans-serif; font-size: 14px; font-weight: 500;
+      color: rgba(0,0,0,0.4); letter-spacing: -0.042px;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .gps-divider { height: 1px; background: rgba(0,0,0,0.05); margin: 4px 0; }
+    .gps-scroll-body { flex: 1; min-height: 0; overflow-y: auto; }
+
+    .gps-insert-grid {
+      display: grid; grid-template-columns: repeat(2, 1fr);
+      column-gap: 14px; row-gap: 24px;
+      padding: 20px;
+    }
+    .gps-insert-cell { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+    .gps-insert-thumb-wrap { position: relative; }
+    .gps-insert-thumb {
+      position: relative; width: 100%; aspect-ratio: 160/214;
+      border-radius: 4px; overflow: hidden; background: #fff;
+      box-shadow: 0 0 1px rgba(0,0,0,0.6), 0 4px 6px rgba(0,0,0,0.03);
+    }
+    .gps-insert-cell.selected .gps-insert-thumb { box-shadow: 0 0 0 2px rgba(0,0,0,0.86); }
+    .gps-insert-thumb-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+
+    /* ─── 속지 스킨 — 캔버스의 실제 카드 DOM에 CSS만 다르게 입혀서(정적 이미지 아님)
+       선택한 속지 썸네일과 비슷한 UI로 보이게 함 ─── */
+    .card.gps-skin-checklist { background: #fff; }
+    .card.gps-skin-checklist .card-header { border-bottom: 2px solid rgba(0,0,0,0.86); }
+    .card.gps-skin-checklist .hd-date-label { display: none; }
+    .card.gps-skin-checklist .hd-date-val,
+    .card.gps-skin-checklist .hd-dday-val,
+    .card.gps-skin-checklist .hd-time-val,
+    .card.gps-skin-checklist .hd-small-label { font-family: Georgia, 'Times New Roman', serif; }
+    .card.gps-skin-checklist .hd-date-val { font-weight: 700; }
+    .card.gps-skin-checklist .play-btn { visibility: hidden; }
+    .card.gps-skin-checklist .row-subj { border-top: none; border-bottom: 1.5px solid rgba(0,0,0,0.86); }
+    .card.gps-skin-checklist .subj-name { font-family: Georgia, 'Times New Roman', serif; font-weight: 700; font-size: 15px; }
+    .card.gps-skin-checklist .subj-add svg { display: none; }
+    .card.gps-skin-checklist .subj-add::before {
+      content: ''; width: 14px; height: 14px; border: 1.5px solid rgba(0,0,0,0.5); border-radius: 3px; display: block;
+    }
+    .card.gps-skin-checklist { --border-light: rgba(0,0,0,0.15); }
+
+    /* 고양이 참고 이미지가 흑백 라인아트라 모노톤으로 */
+    .card.gps-skin-cat { background: #fff; }
+    .card.gps-skin-cat::after {
+      content: '🐱'; position: absolute; top: 14px; right: 18px; font-size: 24px; z-index: 15; pointer-events: none;
+    }
+    .card.gps-skin-cat .card-header { border: 2px solid rgba(0,0,0,0.7); border-radius: 12px; }
+    .card.gps-skin-cat .hd-date-val,
+    .card.gps-skin-cat .hd-dday-val,
+    .card.gps-skin-cat .hd-time-val,
+    .card.gps-skin-cat .subj-name { color: rgba(0,0,0,0.8); font-weight: 700; }
+    .card.gps-skin-cat .hd-small-label { color: rgba(0,0,0,0.4); }
+    .card.gps-skin-cat .row-subj { border-top: none; border-bottom: 1.5px dashed rgba(0,0,0,0.4); }
+    .card.gps-skin-cat .subj-time { color: rgba(0,0,0,0.4); }
+    .card.gps-skin-cat { --border-light: rgba(0,0,0,0.2); }
+
+    /* 강아지(테라코타/브라운) 참고 이미지에 맞춘 따뜻한 손그림 톤 */
+    .card.gps-skin-puppy { background: #fffaf3; }
+    .card.gps-skin-puppy::after {
+      content: '🐶'; position: absolute; top: 14px; right: 18px; font-size: 24px; z-index: 15; pointer-events: none;
+    }
+    .card.gps-skin-puppy .card-header { border: 3px solid #8b4a2b; border-radius: 16px; }
+    .card.gps-skin-puppy .hd-date-val,
+    .card.gps-skin-puppy .hd-dday-val,
+    .card.gps-skin-puppy .hd-time-val,
+    .card.gps-skin-puppy .subj-name { color: #8b4a2b; font-weight: 800; }
+    .card.gps-skin-puppy .hd-small-label { color: #c17a4d; }
+    .card.gps-skin-puppy .row-subj { border-top: none; border-bottom: 2px dashed #c17a4d; }
+    .card.gps-skin-puppy .subj-time { color: #c17a4d; }
+    .card.gps-skin-puppy { --border-light: rgba(139,74,43,0.3); }
+    .gps-insert-check {
+      position: absolute; top: 8px; right: 8px; width: 22px; height: 22px;
+      border-radius: 100px; background: rgba(0,0,0,0.86); border: 2px solid #fff;
+      display: none; align-items: center; justify-content: center;
+    }
+    .gps-insert-cell.selected .gps-insert-check { display: flex; }
+    .gps-insert-name {
+      margin-top: 4px;
+      font-family: 'Pretendard', sans-serif; font-size: 14px; font-weight: 500;
+      color: rgba(0,0,0,0.86); letter-spacing: -0.042px;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .gps-color-list { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; padding: 8px 8px 16px; }
+    .gps-color-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 8px; border-radius: 12px; cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .gps-color-row:hover { background: rgba(0,0,0,0.03); }
+    .gps-color-dot { width: 24px; height: 24px; border-radius: 100px; flex-shrink: 0; border: 1px solid rgba(0,0,0,0.06); }
+    .gps-color-name {
+      flex: 1; font-family: 'Pretendard', sans-serif; font-size: 15px; font-weight: 500;
+      color: rgba(0,0,0,0.86); letter-spacing: -0.045px;
+    }
+
+    /* 수량 스테퍼 (MP2 "구매한 속지" 팝업에서 공용으로 사용) */
+    .qty-custom-inner {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      background: #eaeaea;
+      border-radius: 12px;
+      overflow: hidden;
+      height: 52px;
+    }
+    .qty-stepper-btn {
+      width: 52px; height: 52px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      background: transparent; border: none; cursor: pointer;
+      font-size: 22px; font-weight: 400; color: rgba(0,0,0,0.86);
+      transition: background 0.1s;
+      user-select: none;
+    }
+    .qty-stepper-btn:hover { background: rgba(0,0,0,0.06); }
+    .qty-stepper-btn:active { background: rgba(0,0,0,0.12); }
+    .qty-custom-input {
+      flex: 1; min-width: 0; height: 52px;
+      border: none; background: transparent; outline: none;
+      text-align: center;
+      font-family: 'Pretendard', sans-serif;
+      font-size: 20px; font-weight: 600; color: black;
+      letter-spacing: -0.06px;
+      -moz-appearance: textfield;
+    }
+    .qty-custom-input::-webkit-outer-spin-button,
+    .qty-custom-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+    .qty-stepper-divider {
+      width: 1px; height: 28px; background: rgba(0,0,0,0.12); flex-shrink: 0;
+    }
+
+    /* 노트 형식 토글 (새 노트 위저드 확인 단계에서 재사용) */
+    .qty-type-toggle {
+      display: flex; gap: 8px;
+      background: #eaeaea; border-radius: 12px; padding: 4px;
+    }
+    .qty-type-chip {
+      flex: 1; padding: 12px 0;
+      background: transparent; border: none; border-radius: 9px;
+      font-family: 'Pretendard', sans-serif;
+      font-size: 15px; font-weight: 600;
+      color: rgba(0,0,0,0.55); letter-spacing: -0.048px;
+      text-align: center; cursor: pointer;
+      transition: background 0.12s, color 0.12s;
+    }
+    .qty-type-chip.selected { background: white; color: black; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+
+    /* ─── MY PAGES POPUP (2-panel slider) ─────────── */
+    .mp2-sheet {
+      max-width: 520px;
+      box-shadow: 0px 15px 75px 0px rgba(0,0,0,0.18);
+    }
+    /* .mp2-slider/.mp2-panel mechanic now provided by shared .pnl-slider/.pnl-panel (panel-slider.css) */
+    .mp2-body {
+      padding: 8px 16px 40px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .mp2-items { display: flex; flex-direction: column; gap: 16px; }
+    .mp2-item { display: flex; align-items: center; gap: 16px; }
+    .mp2-thumb {
+      width: 120px; height: 120px;
+      background: rgba(0,0,0,0.08);
+      border-radius: 6px;
+      overflow: hidden;
+      flex-shrink: 0;
+      position: relative;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .mp2-thumb-inner {
+      width: 80px; height: 108px;
+      flex-shrink: 0;
+      border: 1px solid rgba(0,0,0,0.12);
+      border-radius: 2px;
+      box-shadow: 0px 1px 20px 0px rgba(0,0,0,0.05);
+      background: white;
+      position: relative; overflow: hidden;
+    }
+    .mp2-item-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+    .mp2-item-name {
+      font-family: 'Pretendard', sans-serif;
+      font-size: 16px; font-weight: 500;
+      color: rgba(0,0,0,0.86); letter-spacing: -0.048px; line-height: 1.4;
+    }
+    .mp2-item-rem {
+      font-family: 'Pretendard', sans-serif;
+      font-size: 15px; font-weight: 500;
+      color: rgba(0,0,0,0.59); letter-spacing: -0.045px; line-height: 1.4;
+    }
+    #mp2InfoSub { font-weight: 600; color: rgba(0,0,0,0.86); }
+    .mp2-add-btn {
+      height: 38px; flex-shrink: 0;
+      background: transparent;
+      border: 1px solid rgba(0,0,0,0.08);
+      border-radius: 12px;
+      padding: 3px 12px;
+      font-family: 'Pretendard', sans-serif;
+      font-size: 15px; font-weight: 600;
+      color: rgba(0,0,0,0.86); letter-spacing: -0.045px;
+      cursor: pointer; white-space: nowrap;
+      transition: background 0.1s;
+    }
+    .mp2-add-btn:hover { background: rgba(0,0,0,0.05); }
+    /* Panel 2 – 수량 선택 */
+    .mp2-qty-body { padding: 16px; display: flex; flex-direction: column; gap: 20px; }
+    .mp2-qty-info { display: flex; align-items: center; gap: 16px; }
+    .mp2-qty-info .mp2-item-name { font-weight: 500; }
+    .mp2-qty-section-label {
+      font-family: 'Pretendard', sans-serif;
+      font-size: 14px; font-weight: 500;
+      color: rgba(0,0,0,0.59); letter-spacing: -0.042px;
+      margin-bottom: 10px;
+    }
+    .mp2-qty-chips { display: flex; flex-direction: column; gap: 8px; }
+    .mp2-qty-row { display: flex; gap: 8px; }
+    .mp2-qty-chip {
+      flex: 1; height: 48px; padding: 0;
+      display: flex; align-items: center; justify-content: center;
+      background: transparent;
+      border: 1px solid rgba(0,0,0,0.08);
+      border-radius: 16px;
+      font-family: 'Pretendard', sans-serif;
+      font-size: 16px; font-weight: 500;
+      color: rgba(0,0,0,0.59); letter-spacing: -0.048px;
+      text-align: center; cursor: pointer;
+      transition: background 0.1s, border-color 0.1s, color 0.1s;
+    }
+    .mp2-qty-chip:hover { background: rgba(0,0,0,0.04); }
+    .mp2-qty-chip.selected {
+      background: transparent; color: rgba(0,0,0,0.86); border-color: rgba(0,0,0,0.77);
+    }
+    .mp2-qty-direct { /* same flex as other chips */ }
+    .mp2-qty-custom-wrap {
+      overflow: hidden; max-height: 0; opacity: 0;
+      transition: max-height 0.26s cubic-bezier(0.4,0,0.2,1), opacity 0.2s ease;
+    }
+    .mp2-qty-custom-wrap.open { max-height: 80px; opacity: 1; }
+    .mp2-confirm-btn {
+      width: 100%; height: 48px;
+      background: rgba(0,0,0,0.86); color: white; border: none;
+      border-radius: 16px;
+      font-family: 'Pretendard', sans-serif;
+      font-size: 16px; font-weight: 600; letter-spacing: -0.048px;
+      cursor: pointer; transition: background 0.12s;
+    }
+    .mp2-confirm-btn:hover { background: rgba(0,0,0,0.75); }
+
+    /* ─── MY PAGES SCREEN ─────────────────────────── */
+    .my-pages-screen {
+      position: fixed;
+      inset: 0;
+      z-index: 650;
+      background: white;
+      overflow-y: auto;
+      scrollbar-width: none;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.22s ease;
+    }
+    .my-pages-screen::-webkit-scrollbar { display: none; }
+    .my-pages-screen.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .mp-content {
+      padding: 16px 16px 40px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .mp-section-title {
+      font-family: 'Pretendard', sans-serif;
+      font-size: 16px;
+      font-weight: 500;
+      color: black;
+      letter-spacing: -0.048px;
+      line-height: 1.4;
+    }
+    .mp-list {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .mp-item {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .mp-thumb {
+      width: 160px;
+      height: 120px;
+      border-radius: 12px;
+      overflow: hidden;
+      flex-shrink: 0;
+      position: relative;
+    }
+    .mp-thumb-inner {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .mp-thumb-gradient {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 89px;
+      background: linear-gradient(to bottom, rgba(0,0,0,0), rgba(0,0,0,0.05));
+    }
+    .mp-thumb-img {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      top: 11.08%;
+      bottom: -30.75%;
+      width: 73.75%;
+      border-radius: 5px;
+      object-fit: cover;
+    }
+    .mp-thumb-badge {
+      position: absolute;
+      bottom: 8px;
+      left: 8px;
+      background: rgba(0,0,0,0.3);
+      border-radius: 7px;
+      padding: 2px 6px;
+      font-family: 'Pretendard', sans-serif;
+      font-size: 12px;
+      font-weight: 500;
+      color: white;
+      letter-spacing: -0.036px;
+      line-height: 1.4;
+      white-space: nowrap;
+    }
+    .mp-item-info {
+      flex: 1;
+      min-width: 0;
+    }
+    .mp-item-name {
+      font-family: 'Pretendard', sans-serif;
+      font-size: 16px;
+      font-weight: 600;
+      color: black;
+      letter-spacing: -0.048px;
+      line-height: 1.4;
+      margin-bottom: 2px;
+    }
+    .mp-item-remaining {
+      font-family: 'Pretendard', sans-serif;
+      font-size: 15px;
+      font-weight: 400;
+      color: rgba(0,0,0,0.59);
+      letter-spacing: -0.045px;
+      line-height: 1.4;
+    }
 
     /* ─── HOME SCREEN ──────────────────────────────── */
     .home-screen {
@@ -1717,31 +2245,27 @@
       pointer-events: auto;
     }
 
-    /* ── Home (design ported from Desktop/note/note-creation-ipad-v5.html) ── */
-    .home-top { display:flex; flex-direction:column; gap:24px; align-items:center; padding:20px; border-bottom:1px solid rgba(0,0,0,.05); }
-    .home-profile-row { display:flex; gap:8px; align-items:center; width:100%; }
-    .profile { flex:1; display:flex; gap:10px; align-items:center; min-width:0; }
-    .avatar { width:50px; height:50px; border-radius:40px; background:#d9d9d9; flex:0 0 auto; }
-    .userinfo { display:flex; flex-direction:column; min-width:0; }
-    .uname { font-family: 'Pretendard', sans-serif; font-size:18px; font-weight:600; color:#000; letter-spacing:-.05px; line-height:1.4; }
-    .ugrade { font-family: 'Pretendard', sans-serif; font-size:14px; font-weight:500; color:rgba(0,0,0,.59); line-height:1.4; }
+    /* ── Home (design ported from Figma: 패드 UI 개편, node 4791:616727) ── */
+    .home-top { padding:30px 20px; }
+    .home-title-row { display:flex; gap:8px; align-items:center; width:100%; }
+    .home-title { flex:1; font-family: 'Pretendard', sans-serif; font-size:28px; font-weight:700; color:#000; letter-spacing:-.084px; }
+    .hicon-btn { width:32px; height:32px; border-radius:10px; border:none; background:none; cursor:pointer; display:flex; align-items:center; justify-content:center; flex:0 0 auto; }
+    .hicon-btn:active { background:rgba(0,0,0,.05); }
     .menu-btn { width:32px; height:32px; border-radius:10px; border:none; background:none; cursor:pointer; display:flex; align-items:center; justify-content:center; flex:0 0 auto; }
     .menu-btn:active { background:rgba(0,0,0,.05); }
     .grid-ic { display:grid; grid-template-columns:1fr 1fr; gap:3px; width:19px; height:19px; }
     .grid-ic i { border:2px solid rgba(0,0,0,.86); border-radius:2px; }
-    .quick-row { display:flex; gap:20px; align-items:center; width:100%; }
-    .quick { flex:1; min-width:0; display:flex; gap:10px; align-items:center; background:rgba(0,0,0,.05); border-radius:20px; padding:10px 10px 10px 12px; overflow:hidden; cursor:pointer; }
-    .quick .q-ic { width:50px; height:50px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:26px; flex:0 0 auto; }
-    .quick .q-txt { min-width:0; }
-    .quick .q-t { font-family: 'Pretendard', sans-serif; font-size:15px; font-weight:600; color:rgba(0,0,0,.86); line-height:1.4; letter-spacing:-.045px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    .quick .q-s { font-family: 'Pretendard', sans-serif; font-size:16px; font-weight:500; color:rgba(0,0,0,.59); line-height:1.4; letter-spacing:-.048px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 
     .home-body { flex:1; display:flex; flex-direction:column; }
-    .note-head { display:flex; gap:8px; align-items:center; padding:30px 20px; }
-    .note-head .note-title { flex:1; font-family: 'Pretendard', sans-serif; font-size:24px; font-weight:700; color:#000; letter-spacing:-.072px; }
-    .newnote-btn { height:38px; display:flex; align-items:center; gap:4px; background:rgba(0,0,0,.86); color:#fff; border:none; border-radius:12px; padding:3px 12px; font-family: 'Pretendard', sans-serif; font-size:15px; font-weight:600; letter-spacing:-.045px; cursor:pointer; }
-    .newnote-btn .plus { font-size:15px; line-height:1; }
     .note-grid { display:grid; grid-template-columns:repeat(5,170px); justify-content:space-between; row-gap:40px; padding:0 20px 40px; }
+
+    .fab-add-btn {
+      position:fixed; right:20px; bottom:20px; width:60px; height:60px; border-radius:50%;
+      background:rgba(0,0,0,.86); border:none; cursor:pointer;
+      display:flex; align-items:center; justify-content:center;
+      box-shadow:0 4px 50px rgba(0,0,0,.12); z-index:100;
+    }
+    .fab-add-btn:active { background:rgba(0,0,0,.75); }
     .note-card { display:flex; flex-direction:column; gap:10px; align-items:center; cursor:pointer; }
     .nb { position:relative; width:170px; height:226.667px; border-radius:5.667px 16.056px 16.056px 5.667px; overflow:hidden; box-shadow:7.083px 7.083px 14.167px rgba(0,0,0,.15); background:#a2a2a2; flex:0 0 auto; }
     .nb-cover { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
@@ -1781,7 +2305,8 @@
     .nn-menu {
       position:fixed; z-index:996; background:#fff; border-radius:24px;
       box-shadow:0 4px 50px rgba(0,0,0,.12); padding:16px;
-      display:none; flex-direction:column; gap:16px; width:392px;
+      display:none; flex-direction:column; gap:16px; width:480px;
+      max-height:80vh; overflow-y:auto;
     }
     .nn-menu.show { display:flex; }
     .nn-row { display:flex; gap:18px; align-items:center; width:100%; background:none; border:none; padding:0; cursor:pointer; font-family:inherit; text-align:left; }
@@ -1795,128 +2320,7 @@
     .nn-t { font-size:17px; font-weight:600; color:rgba(0,0,0,.86); letter-spacing:-.3px; line-height:1.4; }
     .nn-s { font-size:13px; font-weight:400; color:rgba(0,0,0,.59); letter-spacing:-.039px; line-height:1.4; }
 
-    /* ══════════════ 새 노트 생성 위저드 (참고: note-creation-ipad-v5.html 1안) ══════════════ */
-    .scrim {
-      position:fixed; inset:0; background:rgba(0,0,0,.34); z-index:990;
-      opacity:0; pointer-events:none; transition:opacity .26s ease;
-      display:flex; align-items:center; justify-content:center;
-    }
-    .scrim.show { opacity:1; pointer-events:auto; }
-    .popup {
-      width:620px; height:680px; max-height:90%; background:#f2f2f7; border-radius:22px;
-      box-shadow:0 30px 80px rgba(0,0,0,.30);
-      display:flex; flex-direction:column; overflow:hidden;
-      transform:scale(.94) translateY(14px); opacity:0;
-      transition:transform .3s cubic-bezier(.3,.9,.35,1), opacity .22s ease;
-    }
-    .scrim.show .popup { transform:scale(1) translateY(0); opacity:1; }
-    .navbar {
-      flex:0 0 auto; height:58px; display:flex; align-items:center;
-      justify-content:space-between; padding:0 8px; position:relative;
-      border-bottom:1px solid rgba(0,0,0,.05); background:rgba(249,249,251,.9);
-    }
-    .nav-text {
-      border:none; background:none; cursor:pointer; font-family:inherit;
-      font-size:17px; color:#0a84ff; padding:10px 12px; letter-spacing:-.2px;
-      display:flex; align-items:center; gap:2px;
-    }
-    .nav-text .chv { font-size:24px; font-weight:500; line-height:1; margin-right:1px; }
-    .nav-text.action { font-weight:700; }
-    .nav-text.action:disabled { color:#b9bcc2; cursor:default; }
-    .nav-center { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); text-align:center; pointer-events:none; }
-    .nav-title { font-size:17px; font-weight:700; letter-spacing:-.2px; white-space:nowrap; }
-    .popup-body { flex:1; overflow-y:auto; overflow-x:hidden; padding:18px 26px 26px; }
-
-    .pills { display:flex; gap:8px; overflow-x:auto; padding:2px 0 16px; scrollbar-width:none; }
-    .pills::-webkit-scrollbar { display:none; }
-    .pill {
-      flex:0 0 auto; font-size:14px; font-weight:600; padding:8px 16px; border-radius:100px;
-      background:#e3e3e8; color:#3a3a3c; border:none; cursor:pointer; white-space:nowrap; transition:all .15s ease;
-    }
-    .pill.on { background:#1c1c1e; color:#fff; }
-
-    .cover-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:18px 16px; }
-    .cover-cell { position:relative; cursor:pointer; }
-    .cover-face {
-      aspect-ratio:238/314; border-radius:14px; border:1px solid rgba(0,0,0,.06);
-      position:relative; overflow:hidden; transition:box-shadow .15s ease;
-    }
-    .cover-cell.sel .cover-face { box-shadow:0 0 0 3px #0a84ff; }
-    .cover-face .spine { position:absolute; left:10px; top:0; bottom:0; width:3px; background:rgba(0,0,0,.10); border-radius:2px; }
-    .cover-face .cover-title { position:absolute; left:24px; top:16px; font-size:11px; font-weight:800; color:rgba(0,0,0,.4); letter-spacing:.4px; }
-    .cover-name { font-size:13px; color:#3a3a3c; text-align:center; margin-top:8px; font-weight:500; }
-    .cover-check {
-      position:absolute; top:-8px; right:-8px; width:24px; height:24px; border-radius:50%;
-      background:#fff; border:1.5px solid #d1d1d6; z-index:2;
-      display:flex; align-items:center; justify-content:center; font-size:13px; color:transparent; transition:all .15s ease;
-    }
-    .cover-cell.sel .cover-check { background:#0a84ff; border-color:#0a84ff; color:#fff; }
-    .cover-make .cover-face {
-      background:#fff; border:1.5px dashed #c7c7cc;
-      display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px;
-    }
-    .cover-make .plus {
-      width:36px; height:36px; border-radius:50%; background:#f2f2f7;
-      display:flex; align-items:center; justify-content:center; font-size:20px; color:#0a84ff; font-weight:500;
-    }
-    .cover-make .mk { font-size:13px; font-weight:600; color:#0a84ff; }
-    .empty-my { grid-column:1/-1; text-align:center; color:#aeaeb2; font-size:13px; padding:6px 0 2px; line-height:1.5; }
-
-    .insert-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:18px 16px; }
-    .insert-cell { position:relative; cursor:pointer; }
-    .insert-face {
-      aspect-ratio:238/314; border-radius:14px; background:#fff; border:1px solid rgba(0,0,0,.06);
-      overflow:hidden; position:relative; transition:box-shadow .15s ease; padding:16px 18px 0;
-    }
-    .insert-cell.sel .insert-face { box-shadow:0 0 0 3px #0a84ff; }
-    .insert-face .date-dot { width:24px; height:24px; border-radius:50%; margin-bottom:10px; opacity:.9; }
-    .insert-face .ln { height:7px; border-radius:4px; margin-bottom:10px; opacity:.55; }
-    .insert-face .ln.w1{width:85%} .insert-face .ln.w2{width:65%} .insert-face .ln.w3{width:75%} .insert-face .ln.w4{width:50%}
-    .insert-face .chk-row { display:flex; align-items:center; gap:9px; margin-bottom:11px; }
-    .insert-face .chk-box { width:15px; height:15px; border-radius:5px; opacity:.8; flex:0 0 auto; }
-    .insert-face .tl { display:flex; gap:10px; margin-bottom:9px; align-items:center; }
-    .insert-face .tl-time { font-size:10px; color:rgba(0,0,0,.35); width:30px; font-weight:600; }
-    .insert-face .tl-bar { height:11px; border-radius:6px; flex:1; opacity:.6; }
-    .insert-face .grid-mini { display:grid; grid-template-columns:repeat(4,1fr); gap:7px; }
-    .insert-face .cell-mini { height:24px; border-radius:6px; opacity:.5; }
-    .insert-name { font-size:13px; color:#3a3a3c; text-align:center; margin-top:8px; font-weight:500; }
-    .insert-cell.sel .insert-name { color:#000; font-weight:700; }
-    .hint-dots { display:flex; justify-content:center; gap:5px; margin-top:8px; }
-    .hint-dot { width:7px; height:7px; border-radius:50%; border:1px solid rgba(0,0,0,.07); }
-    .hint-dot.on { box-shadow:0 0 0 1.5px #fff, 0 0 0 3px #0a84ff; }
-    .color-hint { font-size:12px; color:#aeaeb2; text-align:center; margin-top:18px; }
-
-    .editor-wrap { display:flex; gap:26px; padding-top:4px; }
-    .editor-left { flex:0 0 220px; display:flex; align-items:flex-start; justify-content:center; padding-top:6px; }
-    .editor-preview {
-      width:200px; aspect-ratio:238/314; border-radius:18px; position:relative;
-      border:1px solid rgba(0,0,0,.07); box-shadow:0 12px 28px rgba(0,0,0,.12);
-      transition:background .2s ease; overflow:hidden;
-    }
-    .editor-preview .spine { position:absolute; left:16px; top:0; bottom:0; width:4px; background:rgba(0,0,0,.10); border-radius:2px; }
-    .editor-preview .ep-title { position:absolute; left:36px; top:28px; font-size:14px; font-weight:800; color:rgba(0,0,0,.5); letter-spacing:.3px; }
-    .editor-right { flex:1; }
-    .ed-section { font-size:13px; font-weight:700; color:#8e8e93; margin:4px 2px 12px; }
-    .swatch-row { display:flex; gap:12px; flex-wrap:wrap; padding:0 2px; }
-    .swatch {
-      width:42px; height:42px; border-radius:50%; cursor:pointer; border:1px solid rgba(0,0,0,.08);
-      transition:transform .12s ease, box-shadow .12s ease;
-    }
-    .swatch.on { box-shadow:0 0 0 3px #f2f2f7, 0 0 0 5.5px #0a84ff; transform:scale(1.04); }
-    .pattern-row { display:flex; gap:10px; padding:0 2px; }
-    .pattern-chip {
-      flex:1; height:48px; border-radius:12px; background:#fff; border:1.5px solid #e3e3e8;
-      display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:600; color:#3a3a3c; cursor:pointer;
-    }
-    .pattern-chip.on { border-color:#0a84ff; color:#0a84ff; background:#eaf3ff; }
-
-    .step-view { display:none; }
-    .step-view.on { display:block; }
-
-    .detail-stage {
-      background:linear-gradient(180deg,#eceef2,#e4e7ec); padding:30px 0 22px;
-      display:flex; justify-content:center;
-    }
+    /* ══════════════ 새 노트 상세 미리보기 미니 카드 (nwMiniInsertHTML/nwDetailPreviewHTML에서 사용) ══════════════ */
     .detail-preview {
       width:238px; height:314px; border-radius:6px 14px 14px 6px; background:#fff;
       position:relative; overflow:hidden;
@@ -1943,64 +2347,15 @@
     .dp-chk-row { display:flex; align-items:center; gap:8px; margin-bottom:11px; }
     .dp-chk-box { width:11px; height:11px; border-radius:3.5px; border:1.6px solid; flex:0 0 auto; }
     .dp-chk-label { font-size:9px; color:#6a6d73; font-weight:600; }
-    .dp-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:4px; }
-    .dp-cell { height:16px; border-radius:3px; }
+    /* 이름을 dp-grid/dp-cell로 짓지 말 것 — components/date-picker.js의 .dp-grid(요일/날짜 래퍼)와
+       클래스명이 겹쳐서 뒤에 로드되는 이 <style>이 그 레이아웃을 깨뜨렸었다(요일 헤더가 한쪽에 뭉침) */
+    .chk-preview-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:4px; }
+    .chk-preview-cell { height:16px; border-radius:3px; }
     .dp-foot { display:flex; align-items:center; justify-content:space-between; margin-top:auto; padding-top:8px; }
     .dp-pageinfo { font-size:7.5px; color:#c2c5ca; font-weight:700; letter-spacing:.3px; }
     .dp-pdots { display:flex; gap:3px; }
     .dp-pdots span { width:3.5px; height:3.5px; border-radius:50%; background:#e2e4e8; }
     .dp-pdots span.on { background:#a7abb2; }
-
-    .detail-info { padding:22px 26px 6px; }
-    .detail-title-row { display:flex; align-items:center; gap:8px; margin-bottom:6px; }
-    .detail-name { font-size:19px; font-weight:800; letter-spacing:-.3px; color:#1c1c1e; }
-    .detail-badge { font-size:11px; font-weight:700; padding:3px 9px; border-radius:100px; }
-    .detail-badge.free { background:#e6f7ef; color:#0c7a54; }
-    .detail-badge.premium { background:#fdf0e0; color:#a86112; }
-    .detail-desc { font-size:13.5px; color:#6a6a6f; line-height:1.55; }
-
-    .detail-color-section { padding:22px 26px 26px; }
-    .dc-label-row { display:flex; align-items:baseline; gap:6px; margin-bottom:14px; }
-    .dc-label { font-size:13px; font-weight:700; color:#8e8e93; }
-    .dc-current { font-size:13px; font-weight:700; color:#1c1c1e; }
-    .dc-swatch-row { display:flex; gap:14px; flex-wrap:wrap; }
-    .dc-swatch {
-      width:40px; height:40px; border-radius:50%; cursor:pointer; position:relative;
-      border:1px solid rgba(0,0,0,.06); box-shadow:inset 0 1px 2px rgba(255,255,255,.5), 0 1px 3px rgba(0,0,0,.10);
-      transition:transform .12s ease;
-    }
-    .dc-swatch:active { transform:scale(.94); }
-    .dc-swatch.on { box-shadow:0 0 0 2.5px #fff, 0 0 0 4.5px #0a84ff; }
-    .dc-swatch .chk { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:#fff; font-size:14px; font-weight:700; opacity:0; text-shadow:0 1px 2px rgba(0,0,0,.25); }
-    .dc-swatch.on .chk { opacity:1; }
-
-    .cf4-preview-row { display:flex; justify-content:center; align-items:flex-end; gap:18px; padding:18px 0 30px; }
-    .cf4-cover, .cf4-insert {
-      width:138px; aspect-ratio:238/314; border-radius:13px; position:relative; overflow:hidden;
-      border:1px solid rgba(0,0,0,.06); box-shadow:0 12px 28px rgba(0,0,0,.13); background:#fff;
-    }
-    .cf4-cover .spine { position:absolute; left:12px; top:0; bottom:0; width:3px; background:rgba(0,0,0,.12); border-radius:2px; }
-    .cf4-fields { max-width:452px; margin:0 auto; background:#fff; border-radius:14px; overflow:hidden; }
-    .cf4-field {
-      display:flex; align-items:center; justify-content:space-between; gap:12px;
-      padding:15px 18px; border-bottom:0.5px solid rgba(0,0,0,.08);
-    }
-    .cf4-field:last-child { border-bottom:none; }
-    .cf4-label { font-size:15px; color:#8e8e93; font-weight:500; flex:0 0 auto; }
-    .cf4-value { font-size:15px; color:#1c1c1e; font-weight:600; display:flex; align-items:center; gap:5px; text-align:right; }
-    .cf4-name-input {
-      border:none; background:none; outline:none; font-family:inherit; text-align:right;
-      font-size:15px; font-weight:600; color:#1c1c1e; width:62%;
-    }
-    .cf4-name-input::placeholder { color:#aeb0b5; font-weight:500; }
-
-    .step-footer { flex:0 0 auto; padding:14px 26px 20px; border-top:1px solid rgba(0,0,0,.05); background:rgba(249,249,251,.9); }
-    .step-use-btn { width:100%; background:#0a84ff; color:#fff; border:none; border-radius:14px; padding:15px 0; font-size:16px; font-weight:700; cursor:pointer; font-family:inherit; }
-    .step-use-btn:active { background:#0a72e0; }
-
-    /* 노트 형식 토글 (확인 단계) — 기존 .qty-type-toggle/.qty-type-chip 재사용 */
-    #nwNoteTypeToggle { display:flex; gap:4px; border-radius:10px; padding:3px; }
-    #nwNoteTypeToggle .qty-type-chip { padding:7px 12px; font-size:13px; }
 
     /* 노트 생성 완료 팝업 */
     .done-scrim { position:fixed; inset:0; background:rgba(0,0,0,.34); z-index:998; display:flex; align-items:center; justify-content:center; opacity:0; pointer-events:none; transition:opacity .26s ease; }
@@ -2023,6 +2378,134 @@
     .done-name { font-size:16px; font-weight:500; color:rgba(0,0,0,.59); letter-spacing:-.048px; margin-top:8px; }
     .done-footer { padding:16px 24px 28px; display:flex; justify-content:center; }
     .done-btn { width:200px; height:48px; background:rgba(0,0,0,.86); color:#fff; border:none; border-radius:16px; font-family:inherit; font-size:16px; font-weight:600; letter-spacing:-.048px; cursor:pointer; }
+
+    /* ══════════════ 새 노트 전체화면 (참고: Figma 4791:616796 / 4791:622749) ══════════════ */
+    .nc-screen {
+      position:fixed; inset:0; z-index:900; background:#fff;
+      display:flex; flex-direction:column;
+      transform:translateY(100%); pointer-events:none;
+      transition:transform .3s cubic-bezier(.4,0,.2,1);
+    }
+    .nc-screen.visible { transform:translateY(0); pointer-events:auto; }
+    .nc-topbar {
+      flex:0 0 auto; height:48px; display:flex; align-items:center; justify-content:space-between;
+      padding:10px 16px; position:relative; border-bottom:1px solid rgba(0,0,0,.08);
+    }
+    .nc-close-btn, .nc-confirm-btn {
+      width:38px; height:38px; border-radius:100px; border:none; cursor:pointer;
+      display:flex; align-items:center; justify-content:center; flex:0 0 auto;
+    }
+    .nc-close-btn { background:rgba(0,0,0,.05); color:rgba(0,0,0,.86); }
+    .nc-confirm-btn { background:rgba(0,0,0,.86); }
+    .nc-title-block {
+      position:absolute; left:50%; top:0; bottom:0; transform:translateX(-50%);
+      display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;
+    }
+    .nc-title { font-family:'Pretendard',sans-serif; font-size:17px; font-weight:600; color:rgba(0,0,0,.86); letter-spacing:-.3px; line-height:1.4; }
+    .nc-subtitle { font-family:'Pretendard',sans-serif; font-size:13px; font-weight:400; color:rgba(0,0,0,.59); letter-spacing:-.039px; line-height:1.4; cursor:pointer; }
+    .nc-subtitle-input {
+      font-family:'Pretendard',sans-serif; font-size:13px; font-weight:400; color:rgba(0,0,0,.86);
+      text-align:center; border:none; border-bottom:1px solid rgba(0,0,0,.3); outline:none; width:160px;
+    }
+    .nc-preview-row { flex:0 0 auto; display:flex; gap:30px; align-items:flex-end; justify-content:center; padding-top:20px; border-bottom:1px solid rgba(0,0,0,.08); }
+    .nc-preview-tab { display:flex; flex-direction:column; gap:10px; align-items:center; padding-bottom:24px; cursor:pointer; border-bottom:4px solid transparent; }
+    .nc-preview-tab-active { border-bottom-color:rgba(0,0,0,.86); }
+    .nc-preview-label { font-family:'Pretendard',sans-serif; font-size:13px; font-weight:500; color:rgba(0,0,0,.59); letter-spacing:-.039px; }
+    .nc-cover-thumb, .nc-insert-thumb {
+      width:130px; height:173.333px; border-radius:4.333px 12.278px 12.278px 4.333px; position:relative; overflow:hidden;
+      box-shadow:0 5px 5px rgba(0,0,0,.03); background:#a2a2a2;
+    }
+    .nc-cover-thumb .spine { position:absolute; right:0; top:0; bottom:0; width:15px; }
+    .nc-insert-thumb { background:#fff; border-radius:4px; box-shadow:0 0 .83px rgba(0,0,0,.6), 0 5px 5px rgba(0,0,0,.03); }
+    .nc-body { flex:1; overflow-y:auto; background:#fafafa; padding:20px; display:flex; flex-direction:column; gap:16px; }
+    .nc-pills { display:flex; gap:8px; overflow-x:auto; flex-shrink:0; margin:0 auto; }
+    .nc-pill {
+      flex:0 0 auto; font-family:'Pretendard',sans-serif; font-size:15px; font-weight:600; padding:8px 16px; border-radius:100px;
+      background:#fff; border:1px solid rgba(0,0,0,.08); color:rgba(0,0,0,.86); cursor:pointer;
+    }
+    .nc-pill.on { background:rgba(0,0,0,.86); color:#fff; border-color:transparent; }
+    /* 너비는 ncApplyGridColumns()가 그리드 박스 폭과 똑같이 맞춰 인라인으로 지정 —
+       타이틀 라벨이 컨테이너 왼쪽 패딩이 아니라 그리드 리스트의 왼쪽 끝에 맞춰지도록 함 */
+    .nc-section-title { font-family:'Pretendard',sans-serif; font-size:18px; font-weight:600; color:rgba(0,0,0,.86); letter-spacing:-.054px; margin:0 auto; }
+    /* 아이템 최대 너비 260px(진짜 max — 필요할 때만 그 아래로 줄어듦) + 갭 최소 16px.
+       컬럼 수(최소 2, 최대 5)와 각 컬럼의 실제 px 폭, 그리드 박스 전체 폭까지 전부
+       ncApplyGridColumns()가 JS로 직접 계산해 인라인 스타일로 박아넣는다 — minmax()나
+       auto-fit/align-self:center 같은 브라우저 자동 계산에 맡기면 (특히 세이프리에서)
+       트랙 수를 잘못 추론하는 경우가 있어, 전부 고정 px 값으로 명시한다.
+       아래 값은 JS 계산 전 기본값이다. */
+    .nc-grid {
+      display:grid; grid-template-columns:repeat(2,1fr);
+      justify-content:start; margin:0 auto; column-gap:16px; row-gap:40px;
+    }
+    .nc-cell { display:flex; flex-direction:column; gap:12px; align-items:center; cursor:pointer; }
+    .nc-cell-face {
+      position:relative; width:100%; aspect-ratio:210/214; display:flex; align-items:center; justify-content:center; padding:0 27px;
+    }
+    .nc-cell-face-inner {
+      position:relative; aspect-ratio:160/214; height:100%; background:#fff; border-radius:4px; overflow:hidden;
+      box-shadow:0 0 1px rgba(0,0,0,.6), 0 4px 6px rgba(0,0,0,.03);
+    }
+    /* 선택된 속지 표시 (Figma 4791:616826 focusFrame/checked 그대로 이식) */
+    .nc-focus-frame {
+      position:absolute; inset:0; overflow:hidden; border-radius:4px;
+      border:3px solid rgba(0,0,0,.86); pointer-events:none;
+    }
+    .nc-focus-ring { position:absolute; inset:-3px; border-radius:4px; border:5px solid #fff; }
+    .nc-focus-badge {
+      position:absolute; top:9px; right:9px; width:30px; height:30px; border-radius:100px;
+      background:rgba(0,0,0,.86); border:2px solid #fff; overflow:hidden;
+      display:flex; align-items:center; justify-content:center;
+    }
+    .nc-cell-name { font-family:'Pretendard',sans-serif; font-size:14px; font-weight:500; color:rgba(0,0,0,.86); text-align:center; letter-spacing:-.042px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; width:100%; }
+    .nc-lock-badge {
+      position:absolute; left:5px; bottom:5px; width:20px; height:20px; border-radius:4px;
+      background:rgba(0,0,0,.4); display:flex; align-items:center; justify-content:center;
+    }
+    .nc-placeholder { grid-column:1/-1; text-align:center; color:#aeaeb2; font-size:14px; padding:60px 0; }
+    .nc-cover-cell-face {
+      width:100%; aspect-ratio:600/800; border-radius:5.25px 14.875px 14.875px 5.25px; position:relative; overflow:hidden;
+      box-shadow:6.563px 6.563px 13.125px rgba(0,0,0,.15); background:#a2a2a2;
+    }
+    .nc-cover-cell-face .spine { position:absolute; right:0; top:0; bottom:0; width:11.9%; }
+    .nc-cell.sel .nc-cover-cell-face { box-shadow:0 0 0 3px #0a84ff, 6.563px 6.563px 13.125px rgba(0,0,0,.15); }
+
+    .nc-format-pop {
+      position:fixed; z-index:910; background:#fff; border-radius:20px; box-shadow:0 8px 40px rgba(0,0,0,.18);
+      padding:16px; display:none; flex-direction:column; gap:12px; width:280px;
+      right:16px; bottom:70px;
+    }
+    .nc-format-pop.show { display:flex; }
+    .nc-format-label { font-family:'Pretendard',sans-serif; font-size:13px; font-weight:700; color:#8e8e93; }
+    .nc-format-create-btn {
+      width:100%; height:44px; background:rgba(0,0,0,.86); color:#fff; border:none; border-radius:12px;
+      font-family:'Pretendard',sans-serif; font-size:15px; font-weight:600; cursor:pointer;
+    }
+
+    /* ══════════════ 속지 상세 바텀시트 (참고: Figma 4791:616876) ══════════════ */
+    .nc-detail-scrim {
+      position:fixed; inset:0; z-index:950; background:rgba(0,0,0,.34);
+      opacity:0; pointer-events:none; transition:opacity .26s ease;
+      display:flex; align-items:flex-end; justify-content:center;
+    }
+    .nc-detail-scrim.show { opacity:1; pointer-events:auto; }
+    .nc-detail-sheet {
+      width:700px; max-width:100%; max-height:88vh; background:#fff; border-radius:24px 24px 0 0;
+      display:flex; flex-direction:column; overflow:hidden;
+      transform:translateY(100%); transition:transform .3s cubic-bezier(.32,.72,.24,1);
+    }
+    .nc-detail-scrim.show .nc-detail-sheet { transform:translateY(0); }
+    .nc-detail-grabber { height:16px; flex:0 0 auto; }
+    .nc-detail-topbar { flex:0 0 auto; display:flex; align-items:center; justify-content:space-between; padding:0 16px 10px; position:relative; }
+    .nc-detail-title { position:absolute; left:50%; top:0; transform:translateX(-50%); font-family:'Pretendard',sans-serif; font-size:17px; font-weight:600; color:rgba(0,0,0,.86); letter-spacing:-.3px; }
+    .nc-detail-body { flex:1; overflow-y:auto; padding:0 26px 30px; display:flex; flex-direction:column; gap:22px; }
+    .nc-detail-stage { background:linear-gradient(180deg,#eceef2,#e4e7ec); margin:0 -26px; padding:30px 0; display:flex; justify-content:center; }
+    .nc-detail-desc { font-family:'Pretendard',sans-serif; font-size:14px; color:#6a6a6f; line-height:1.55; }
+    .nc-detail-colors { display:flex; gap:14px; flex-wrap:wrap; }
+    .nc-detail-swatch {
+      width:36px; height:36px; border-radius:50%; cursor:pointer; position:relative;
+      border:1px solid rgba(0,0,0,.06); transition:transform .12s ease;
+    }
+    .nc-detail-swatch.on { box-shadow:0 0 0 2.5px #fff, 0 0 0 4.5px rgba(0,0,0,.86); }
 
   </style>
 </head>
@@ -2108,6 +2591,17 @@
       </div>
     </div>
 
+    <!-- 캘린더 노트: 날짜 이동용 인라인 캘린더 위젯 (딤드 없이 캔버스 좌상단에 뜬다) -->
+    <div id="calInlinePanel" class="cal-inline-panel"></div>
+
+    <!-- 오늘로 이동 플로팅 버튼: 오늘자 페이지가 화면 밖일 때만 표시 -->
+    <button class="glass-pill-btn" id="todayFabBtn" type="button" aria-label="오늘로 이동">
+      <span class="glass-pill-btn-icon">
+        <svg viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M11.25 3L15 6.75L11.25 10.5M15 6.75H7.125C6.03098 6.75 4.98177 7.1846 4.20818 7.95818C3.4346 8.73177 3 9.78098 3 10.875C3 11.4167 3.1067 11.9531 3.314 12.4536C3.5213 12.954 3.82514 13.4088 4.20818 13.7918C4.98177 14.5654 6.03098 15 7.125 15H9.75" stroke="rgba(0,0,0,0.86)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+      <span>오늘</span>
+    </button>
+
     <!-- SIDE PANEL (sibling of main-area, so it doesn't scroll with canvas) -->
     <div class="sp-panel" id="sidePanel">
       <div class="sp-header">
@@ -2116,6 +2610,56 @@
         <span class="sp-header-spacer" id="spHeaderSpacerRight">구매</span>
       </div>
       <div class="sp-content"></div>
+    </div>
+
+    <!-- 오늘자 임시 페이지 "속지 변경" → 페이지 설정 사이드 패널 (Figma 5017:326690 / 5017:326734)
+         .sp-panel과 마찬가지로 workspace 안에서 슬라이드 — 툴바를 덮지 않고 캔버스 영역 안에서만 나온다 -->
+    <div id="gpsBackdrop" class="gps-backdrop"></div>
+    <div id="ghostSettingsPanel" class="gps-panel">
+      <div class="pnl-slider gps-slider" id="gpsSlider">
+        <!-- Panel 0: 페이지 설정 -->
+        <div class="pnl-panel">
+          <div class="bsm-header">
+            <button class="bsm-close-btn" id="gpsCloseBtn"><i data-lucide="x" style="width:20px;height:20px;color:rgba(0,0,0,0.6);"></i></button>
+            <span class="bsm-title">페이지 설정</span>
+            <div class="bsm-spacer"></div>
+          </div>
+          <div class="gps-scroll-body">
+            <div class="gps-section-label">속지 설정</div>
+            <button class="gps-row" id="gpsInsertRow">
+              <span class="gps-row-label">속지</span>
+              <span class="gps-row-value" id="gpsInsertValue"></span>
+              <i data-lucide="chevron-right" style="width:16px;height:16px;color:rgba(0,0,0,0.3);"></i>
+            </button>
+            <button class="gps-row" id="gpsColorRow">
+              <span class="gps-row-label">색상</span>
+              <span class="gps-row-value" id="gpsColorValue"></span>
+              <i data-lucide="chevron-right" style="width:16px;height:16px;color:rgba(0,0,0,0.3);"></i>
+            </button>
+            <div class="gps-divider"></div>
+          </div>
+        </div>
+        <!-- Panel 1: 속지 -->
+        <div class="pnl-panel">
+          <div class="bsm-header">
+            <button class="bsm-back-btn" id="gpsInsertBack">‹</button>
+            <span class="bsm-title">속지</span>
+            <div class="bsm-spacer"></div>
+          </div>
+          <div class="gps-scroll-body">
+            <div class="gps-insert-grid" id="gpsInsertGrid"></div>
+          </div>
+        </div>
+        <!-- Panel 2: 색상 -->
+        <div class="pnl-panel">
+          <div class="bsm-header">
+            <button class="bsm-back-btn" id="gpsColorBack">‹</button>
+            <span class="bsm-title">색상</span>
+            <div class="bsm-spacer"></div>
+          </div>
+          <div class="gps-color-list" id="gpsColorList"></div>
+        </div>
+      </div>
     </div>
 
   </div><!-- /workspace -->
@@ -2225,84 +2769,56 @@
   </div>
 
   <!-- 새 노트 생성 위저드 (참고: note-creation-ipad-v5.html 1안) -->
-  <div class="scrim" id="noteWizardScrim">
-    <div class="popup" onclick="event.stopPropagation()">
-      <div class="navbar">
-        <button class="nav-text" id="nwLeftBtn" onclick="nwLeftAction()">취소</button>
-        <div class="nav-center"><div class="nav-title" id="nwNavTitle">표지 선택</div></div>
-        <button class="nav-text action" id="nwRightBtn" onclick="nwRightAction()">다음</button>
+  <div class="nc-screen" id="noteCreateScreen">
+    <div class="nc-topbar">
+      <button class="nc-close-btn" id="ncCloseBtn"><i data-lucide="x" style="width:20px;height:20px;"></i></button>
+      <div class="nc-title-block" id="ncTitleBlock">
+        <div class="nc-title">새 노트</div>
+        <div class="nc-subtitle" id="ncSubtitle">데일리 플래너</div>
+        <input class="nc-subtitle-input" id="ncSubtitleInput" style="display:none;">
       </div>
-
-      <div class="popup-body" id="nwPopupBody">
-        <div class="step-view" id="nw-view-cover">
-          <div class="pills" id="nwPillRow"></div>
-          <div class="cover-grid" id="nwCoverGrid"></div>
-        </div>
-
-        <div class="step-view" id="nw-view-editor">
-          <div class="editor-wrap">
-            <div class="editor-left">
-              <div class="editor-preview" id="nwEdPreview">
-                <div class="spine"></div>
-                <div class="ep-title">MY NOTE</div>
-              </div>
-            </div>
-            <div class="editor-right">
-              <p class="ed-section">색상</p>
-              <div class="swatch-row" id="nwSwatchRow"></div>
-              <p class="ed-section" style="margin-top:24px;">패턴</p>
-              <div class="pattern-row" id="nwPatternRow"></div>
-            </div>
-          </div>
-        </div>
-
-        <div class="step-view" id="nw-view-insert">
-          <div class="insert-grid" id="nwInsertGrid"></div>
-          <p class="color-hint">속지를 누르면 크게 미리 볼 수 있어요</p>
-        </div>
-
-        <div class="step-view" id="nw-view-preview">
-          <div class="detail-stage" style="margin:-18px -26px 0;">
-            <div class="detail-preview"><div class="dp-inner" id="nwPvInner"></div></div>
-          </div>
-          <div class="detail-info" style="padding-left:2px; padding-right:2px;">
-            <div class="detail-title-row">
-              <span class="detail-name" id="nwPvName">기본형</span>
-              <span class="detail-badge" id="nwPvBadge">무료</span>
-            </div>
-            <p class="detail-desc" id="nwPvDesc"></p>
-          </div>
-          <div class="detail-color-section" style="padding-left:2px; padding-right:2px;">
-            <div class="dc-label-row">
-              <span class="dc-label">컬러 선택</span>
-              <span class="dc-current" id="nwPvCurrentName">민트</span>
-            </div>
-            <div class="dc-swatch-row" id="nwPvDots"></div>
-          </div>
-        </div>
-
-        <div class="step-view" id="nw-view-confirm">
-          <div class="cf4-preview-row" id="nwCf4PreviewRow">
-            <div class="cf4-cover" id="nwCf4Cover"><div class="spine"></div></div>
-            <div class="cf4-insert" id="nwCf4Insert"></div>
-          </div>
-          <div class="cf4-fields">
-            <div class="cf4-field" id="nwCf4NameField">
-              <span class="cf4-label">이름</span>
-              <input class="cf4-name-input" id="nwCf4NameInput" placeholder="나의 데일리 노트">
-            </div>
-            <div class="cf4-field">
-              <span class="cf4-label">노트 형식</span>
-              <div class="qty-type-toggle" id="nwNoteTypeToggle" style="background:#e3e3e8;">
-                <button class="qty-type-chip selected" data-note-type="scroll">스크롤형</button>
-                <button class="qty-type-chip" data-note-type="calendar">캘린더형</button>
-              </div>
-            </div>
-          </div>
-        </div>
+      <button class="nc-confirm-btn" id="ncConfirmBtn"><i data-lucide="check" style="width:20px;height:20px;color:#fff;"></i></button>
+    </div>
+    <div class="nc-preview-row">
+      <div class="nc-preview-tab" id="ncCoverTab">
+        <p class="nc-preview-label">표지</p>
+        <div class="nc-cover-thumb" id="ncCoverThumb"><div class="spine"></div></div>
       </div>
-      <div class="step-footer" id="nwStepFooter" style="display:none;">
-        <button class="step-use-btn" onclick="nwSelectFromPreview()">이 속지 사용</button>
+      <div class="nc-preview-tab nc-preview-tab-active" id="ncInsertTab">
+        <p class="nc-preview-label">속지</p>
+        <div class="nc-insert-thumb" id="ncInsertThumb"></div>
+      </div>
+    </div>
+    <div class="nc-body" id="ncBody">
+      <div class="nc-pills" id="ncPills" style="display:none;"></div>
+      <div class="nc-section-title" id="ncSectionTitle"></div>
+      <div class="nc-grid" id="ncGrid"></div>
+    </div>
+    <div class="nc-format-pop" id="ncFormatPop">
+      <div class="nc-format-label">노트 형식</div>
+      <div class="qty-type-toggle" id="ncNoteTypeToggle">
+        <button class="qty-type-chip selected" data-note-type="scroll">스크롤형</button>
+        <button class="qty-type-chip" data-note-type="calendar">캘린더형</button>
+      </div>
+      <button class="nc-format-create-btn" id="ncCreateBtn">만들기</button>
+    </div>
+  </div>
+
+  <!-- 속지 상세 (참고: Figma 4791:616876) -->
+  <div class="nc-detail-scrim" id="ncDetailScrim">
+    <div class="nc-detail-sheet" onclick="event.stopPropagation()">
+      <div class="nc-detail-grabber"></div>
+      <div class="nc-detail-topbar">
+        <button class="nc-close-btn" id="ncDetailCloseBtn"><i data-lucide="x" style="width:18px;height:18px;"></i></button>
+        <div class="nc-detail-title" id="ncDetailTitle"></div>
+        <button class="nc-confirm-btn" id="ncDetailConfirmBtn"><i data-lucide="check" style="width:18px;height:18px;color:#fff;"></i></button>
+      </div>
+      <div class="nc-detail-body">
+        <div class="nc-detail-stage">
+          <div class="detail-preview" id="ncDetailPreview" style="width:238px;height:314px;"><div class="dp-inner"></div></div>
+        </div>
+        <p class="nc-detail-desc" id="ncDetailDesc"></p>
+        <div class="nc-detail-colors" id="ncDetailColors"></div>
       </div>
     </div>
   </div>
@@ -2462,31 +2978,24 @@
       <div class="ipcs-list" id="ipColorList"></div>
     </div>
   </div>
-
   <!-- HOME SCREEN -->
   <div id="homeScreen" class="home-screen">
     <div class="home-top">
-      <div class="home-profile-row">
-        <div class="profile">
-          <div class="avatar"></div>
-          <div class="userinfo">
-            <div class="uname">케이케이</div>
-            <div class="ugrade">고2</div>
-          </div>
-        </div>
+      <div class="home-title-row">
+        <div class="home-title">홈</div>
+        <button class="hicon-btn" aria-label="통계"><i data-lucide="pie-chart" style="width:24px;height:24px;color:rgba(0,0,0,0.86);"></i></button>
+        <button class="hicon-btn" aria-label="그룹"><i data-lucide="users" style="width:24px;height:24px;color:rgba(0,0,0,0.86);"></i></button>
         <button class="menu-btn" aria-label="메뉴">
           <span class="grid-ic"><i></i><i></i><i></i><i></i></span>
         </button>
       </div>
-      <div class="quick-row" id="hsQuickActions"></div>
     </div>
     <div class="home-body">
-      <div class="note-head">
-        <div class="note-title">노트</div>
-        <button class="newnote-btn" id="hsAddBtn"><span class="plus">＋</span>새 노트</button>
-      </div>
       <div class="note-grid" id="hsNotes"></div>
     </div>
+    <button class="fab-add-btn" id="hsAddBtn" aria-label="새 노트">
+      <i data-lucide="plus" style="width:30px;height:30px;color:#fff;"></i>
+    </button>
   </div>
 
 <script src="components/date-picker.js"></script>
@@ -2711,20 +3220,46 @@
     return el;
   }
 
-  function sortPages(selectedCard) {
+  function sortPages(selectedCard, revealBanners) {
     const allCards = Array.from(canvasScroll.querySelectorAll('.card'));
     const datedCards = allCards.filter(c => c.dataset.canvasState === 'with-date');
     datedCards.sort((a, b) => parseCardDate(a) - parseCardDate(b));
     canvasZoomWrap.querySelectorAll('.canvas-ad-banner').forEach(b => b.remove());
-    datedCards.forEach((card, i) => {
-      canvasZoomWrap.appendChild(card);
-      if (i < datedCards.length - 1) canvasZoomWrap.appendChild(buildAdBanner());
+
+    const ghostCard = canvasZoomWrap.querySelector('.card.card-ghost');
+    const ghostEl = ghostCard ? (ghostCard.closest('.ghost-frame') || ghostCard) : null;
+    addPageBtn.style.display = ghostCard ? 'none' : ''; // 오늘자 미리보기 카드가 있으면 페이지 추가 버튼은 숨김
+
+    // 오늘자 미리보기는 항상 맨 끝이 아니라, 실제 페이지들 사이에서 날짜순 제자리에 끼워 넣는다
+    // (예: 미래 날짜 페이지가 이미 있으면 그보다 앞쪽에 와야 함)
+    const orderedEls = datedCards.slice();
+    if (ghostEl) {
+      const ghostDate = parseCardDate(ghostCard);
+      const insertAt = orderedEls.findIndex(c => parseCardDate(c) > ghostDate);
+      if (insertAt === -1) orderedEls.push(ghostEl);
+      else orderedEls.splice(insertAt, 0, ghostEl);
+    }
+
+    // revealBanners가 true면(날짜 선택으로 새 페이지가 막 추가된 경우) 새로 만든 배너를
+    // 여기서 즉시 card-creating으로 태어나게 한다 — scrollToCard의 offsetTop 리플로우가 일어나기
+    // 전에 이미 숨겨진 상태로 스타일이 확정되어야 "1→0" 깜빡임 없이 깔끔하게 시작한다
+    const newBanners = [];
+    orderedEls.forEach((el, i) => {
+      canvasZoomWrap.appendChild(el);
+      if (i < orderedEls.length - 1) {
+        const banner = buildAdBanner();
+        if (revealBanners) { banner.classList.add('card-creating'); newBanners.push(banner); }
+        canvasZoomWrap.appendChild(banner);
+      }
     });
     canvasZoomWrap.appendChild(addPageBtn); // 항상 마지막 페이지 아래에 위치
-    const selectedIdx = selectedCard ? datedCards.indexOf(selectedCard) : datedCards.length - 1;
-    rebuildPanel(datedCards, selectedIdx);
-    if (selectedCard) scrollToCard(selectedIdx, true);
+
+    const selectedPanelIdx = selectedCard ? datedCards.indexOf(selectedCard) : datedCards.length - 1;
+    const selectedDomIdx = selectedCard ? orderedEls.indexOf(selectedCard) : orderedEls.length - 1;
+    rebuildPanel(datedCards, selectedPanelIdx);
+    if (selectedCard) scrollToCard(selectedDomIdx, true);
     setTimeout(updateAllThumbs, 50);
+    return newBanners;
   }
 
   // ── Thumbnail renderer ────────────────────────────────────
@@ -2735,6 +3270,9 @@
     const scale  = thumbW / cardW;
 
     const clone = card.cloneNode(true);
+    // 생성 트랜지션 도중(opacity:0인 card-creating 상태)에 썸네일이 갱신되는 경우가 있어,
+    // 클론에서는 그 클래스를 걷어내 항상 보이는 상태로 스냅샷을 뜬다
+    clone.classList.remove('card-creating', 'card-created-reveal');
     // Remove interactive overlay elements
     clone.querySelectorAll('.stk-rot-handle, .stk-rot-line, .stk-del-btn').forEach(el => el.remove());
     clone.querySelectorAll('.card-sticker').forEach(el => el.classList.remove('stk-selected'));
@@ -2776,24 +3314,31 @@
         while (canvasZoomWrap.firstChild) scrollModeFragment.appendChild(canvasZoomWrap.firstChild);
         canvasZoomWrap.dataset.mode = 'calendar';
       }
-      spContent.classList.add('sp-calendar-embed');
-      document.getElementById('spHeaderTitle').textContent = '캘린더 노트';
-      document.getElementById('spHeaderSpacerLeft').textContent = '';
-      document.getElementById('spHeaderSpacerRight').textContent = '';
       renderCalendarNoteCanvas(tabEl);
-      renderCalendarSidePanel(tabEl);
+      ensureCalendarPicker(tabEl);
+      // 캘린더 노트는 사이드바를 쓰지 않고 툴바의 사이드바 버튼이 좌상단 인라인 캘린더를
+      // 열고 닫는 토글로 쓰인다 (panelToggleBtn 핸들러 참고)
+      sidePanel.close();
+      panelToggleBtn.classList.remove('panel-open');
+      closeCalInlinePanel(); // 탭 전환 시 이전 탭에서 열려있던 인라인 캘린더는 닫아둔다
     } else {
       if (canvasZoomWrap.dataset.mode === 'calendar') {
         canvasZoomWrap.innerHTML = '';
         if (scrollModeFragment) { canvasZoomWrap.appendChild(scrollModeFragment); scrollModeFragment = null; }
         canvasZoomWrap.dataset.mode = 'scroll';
       }
-      spContent.classList.remove('sp-calendar-embed');
+      closeCalInlinePanel();
       document.getElementById('spHeaderTitle').textContent = '페이지';
       document.getElementById('spHeaderSpacerLeft').textContent = '구매';
       document.getElementById('spHeaderSpacerRight').textContent = '구매';
       sortPages();
     }
+    // 캘린더 노트 ↔ 일반 노트 전환 시 "오늘로 이동" 플로팅 버튼이 감시하는 대상도 새로
+    // 고른다(그렇지 않으면 전환 전에 연결해둔 관찰자가 DOM에서 떨어져나간 옛 카드를 계속
+    // 붙들고 있어 판정이 어긋난다). 전역 함수 선언은 호이스팅으로 인해 정의 이전에도
+    // window.watchTodayFab이 이미 존재하는 것처럼 보이므로(TDZ 오류 유발), 별도의 준비완료
+    // 플래그로 안전하게 가드한다 — 최초 페이지 로드 시점엔 아직 준비 전이라 조용히 무시된다.
+    if (window.__todayFabReady) window.watchTodayFab();
   }
 
   function ensureCalendarPageCard(tabEl, dateText) {
@@ -2823,28 +3368,182 @@
     requestAnimationFrame(() => scrollToCard(0, false));
   }
 
-  function renderCalendarSidePanel(tabEl) {
+  // 캘린더 노트는 사이드바를 쓰지 않으므로, DatePicker 인스턴스만 미리 만들어두고
+  // 실제로 여는 건 panelToggleBtn 클릭 핸들러가 담당한다. 확인 버튼 없이 날짜를 누르면
+  // 바로 그 페이지로 이동하고(instantSelect), 인라인 캘린더 위젯 자체도 접힌다.
+  function ensureCalendarPicker(tabEl) {
     const state = tabEl._calState;
-    const spContent = document.querySelector('.sp-content');
     if (!state.picker) {
       state.picker = new DatePicker({
         year: state.year, month: state.month, // no takenDates -> every date stays clickable
+        instantSelect: true,
         onConfirm({ year, month, day }) {
           const y = String(year).slice(2), m = String(month).padStart(2, '0'), d = String(day).padStart(2, '0');
           state.activeDateText = `${y}.${m}.${d}`;
           state.year = year; state.month = month;
           renderCalendarNoteCanvas(tabEl);
-          state.picker.refresh();
+          closeCalInlinePanel();
         }
       });
     }
-    spContent.innerHTML = '';
-    state.picker.mount(spContent);
+    return state.picker;
+  }
+
+  // ── 캘린더 노트: 좌상단 인라인 캘린더 위젯(딤드 없음) 열기/닫기 ──────────
+  const calInlinePanel = document.getElementById('calInlinePanel');
+  function openCalInlinePanel(tabEl) {
+    const picker = ensureCalendarPicker(tabEl);
+    if (!picker._sheet) {
+      picker.mount(calInlinePanel);
+    } else if (picker._sheet.parentElement !== calInlinePanel) {
+      calInlinePanel.innerHTML = '';
+      calInlinePanel.appendChild(picker._sheet);
+    }
+    picker.refresh();
+    calInlinePanel.classList.add('visible');
+    panelToggleBtn.classList.add('panel-open');
+  }
+  function closeCalInlinePanel() {
+    calInlinePanel.classList.remove('visible');
+    panelToggleBtn.classList.remove('panel-open');
+  }
+  function toggleCalInlinePanel(tabEl) {
+    if (calInlinePanel.classList.contains('visible')) closeCalInlinePanel();
+    else openCalInlinePanel(tabEl);
   }
 
   // Initial panel build
   sortPages();
   setTimeout(updateAllThumbs, 50);
+
+  // ── 오늘자 속지 미리보기(고스트) 카드 ────────────────────────
+  // "오늘' 페이지 추가" 화면의 더보기(점 3개) 메뉴 — 날짜를 직접 고르거나 속지를 바꿀 수 있게 함
+  const ghostMoreMenu = new OverlayMenu({
+    items: [
+      {
+        lucideIcon: 'calendar-days',
+        label: '날짜 직접 선택',
+        onClick() { datePicker.open(); }
+      },
+      {
+        lucideIcon: 'file-stack',
+        label: '속지 변경',
+        onClick() {
+          const gc = document.querySelector('.card.card-ghost');
+          if (gc && window.openGhostSettingsPanel) window.openGhostSettingsPanel(gc);
+        }
+      }
+    ]
+  });
+
+  function todayDateText() {
+    const t = new Date();
+    return `${String(t.getFullYear()).slice(2)}.${String(t.getMonth() + 1).padStart(2, '0')}.${String(t.getDate()).padStart(2, '0')}`;
+  }
+
+  function insertGhostTodayCard() {
+    const todayText = todayDateText();
+    const hasToday = Array.from(canvasZoomWrap.querySelectorAll('.card[data-canvas-state="with-date"]'))
+      .some(c => parseCardDate(c).toDateString() === new Date().toDateString());
+    if (hasToday) return;
+
+    // 아직 활성화(추가) 전이라도 오늘자 미리보기가 이미 그 날짜를 대표하고 있으므로,
+    // 날짜 선택 팝업에서 오늘 날짜를 또 골라 중복 페이지를 만들 수 없도록 바로 taken 처리한다
+    const t = new Date();
+    datePicker.takenDates.add(`${t.getFullYear()}-${t.getMonth() + 1}-${t.getDate()}`);
+
+    canvasZoomWrap.insertAdjacentHTML('beforeend', buildCardHTML({ id: 'ghost-today', dateText: todayText, today: true }));
+    const ghostCard = canvasZoomWrap.lastElementChild;
+
+    // 점선 프레임(일반 카드 슬롯과 동일한 600×800)으로 감싸고, 카드는 그 안에서 91.667%로
+    // 축소되어 가운데에 뜬다 (Figma 4981:262394)
+    const ghostFrame = document.createElement('div');
+    ghostFrame.className = 'ghost-frame';
+    ghostFrame.id = 'ghostFrame';
+    ghostCard.replaceWith(ghostFrame);
+    ghostFrame.appendChild(ghostCard);
+
+    buildGrid(ghostCard, null); // 아직 시작 전이므로 타임라인 블록 없음
+    initEmojiPicker(ghostCard);
+    ghostCard.dataset.canvasState = 'ghost';
+    ghostCard.dataset.dateText = todayText;
+    ghostCard.classList.add('card-ghost');
+
+    // 아직 공부 기록이 없으므로 과목별 시간·총 시간 모두 0:00:00
+    const timeVal = ghostCard.querySelector('.hd-time-val');
+    if (timeVal) timeVal.textContent = '0:00:00';
+    ghostCard.querySelectorAll('.subj-time').forEach(el => { el.textContent = '0:00:00'; });
+
+    addPageBtn.style.display = 'none'; // 오늘자 미리보기 카드가 있는 동안 페이지 추가 버튼은 숨김
+    lucide.createIcons({ nodes: [ghostCard] });
+
+    // 축소된 카드 하단을 캔버스 배경색으로 흐리는 그라데이션 + 흰 배경 CTA 버튼 + 더보기(점 3개)를
+    // 프레임 안에 겹쳐 놓는다 (카드 자체가 아니라 프레임의 형제 요소)
+    ghostFrame.insertAdjacentHTML('beforeend', `
+      <div class="ghost-frame-gradient"></div>
+      <button class="ghost-frame-btn" id="ghostTeaserBtn">'오늘' 페이지 추가</button>
+      <button class="ghost-frame-dots" id="ghostMoreBtn" aria-label="더보기"><span></span><span></span><span></span></button>`);
+
+    // 버튼뿐 아니라 점선 프레임 영역 전체를 눌러도 바로 오늘 페이지가 추가되게 함
+    // (카드 자신은 pointer-events:none이라 클릭이 그대로 프레임까지 버블링된다).
+    // 더보기(점 3개) 버튼만 stopPropagation으로 제외해 다른 메뉴가 열리게 한다.
+    ghostFrame.addEventListener('click', () => activateGhostCard(ghostFrame, ghostCard, todayText));
+    document.getElementById('ghostMoreBtn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      const rect = document.getElementById('ghostMoreBtn').getBoundingClientRect();
+      ghostMoreMenu.open(rect.left + rect.width / 2, rect.top, { above: true });
+    });
+
+    // 최초 진입 시에도 그라데이션/버튼/점이 (설정 패널을 닫을 때와 동일하게) 순서대로 나타나도록:
+    // 트랜지션 없이 숨긴 상태로 스냅해뒀다가, 다음 프레임에 .entering을 떼어 기본 상태(0.35s/0.55s
+    // 지연이 걸린 트랜지션)로 되돌리면 아래에서 위로 올라오며 나타나는 애니메이션이 재생된다
+    ghostFrame.classList.add('entering');
+    requestAnimationFrame(() => requestAnimationFrame(() => ghostFrame.classList.remove('entering')));
+
+    sortPages(); // 실제 페이지-오늘자 미리보기 사이 광고 배너 삽입 + 맨 끝 재배치를 한 번에 반영
+
+    // 최초 진입 시: 오늘보다 과거인 페이지 중 가장 가까운 페이지에 먼저 도착해 있다가,
+    // 잠시 뒤 오늘자 임시 페이지로 부드럽게 자동 스크롤한다. 과거 페이지가 하나도 없으면
+    // (오늘이 가장 이른 페이지인 경우) 바로 오늘 페이지로 이동한다.
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      const now = new Date();
+      const pastCards = Array.from(canvasZoomWrap.querySelectorAll('.card[data-canvas-state="with-date"]'))
+        .filter(c => parseCardDate(c) < now)
+        .sort((a, b) => parseCardDate(b) - parseCardDate(a)); // 최신순 정렬 → 첫 번째가 가장 가까운 과거
+      const nearestPast = pastCards[0];
+      if (nearestPast) {
+        const idx = Array.from(canvasScroll.querySelectorAll('.card')).indexOf(nearestPast);
+        scrollToCard(idx, false); // 가장 가까운 과거 페이지에 즉시 랜딩
+        setTimeout(() => scrollToGhostCard(ghostFrame, true), 800); // 잠시 뒤 오늘 페이지로 부드럽게 스크롤
+      } else {
+        scrollToGhostCard(ghostFrame); // 과거 페이지가 없으면 바로 오늘 페이지로
+      }
+    }));
+  }
+
+  function scrollToGhostCard(ghostFrame, smooth) {
+    if (!mainArea.clientHeight) { requestAnimationFrame(() => scrollToGhostCard(ghostFrame, smooth)); return; }
+    const target = ghostFrame.offsetTop - CENTER_OFFSET();
+    mainArea.scrollTo({ top: Math.max(0, target), behavior: smooth ? 'smooth' : 'instant' });
+  }
+
+  function activateGhostCard(ghostFrame, ghostCard, dateText) {
+    // 카드가 점선 프레임 크기(100%)까지 커지며 오퍼시티도 원래대로, 점선/그라데이션/버튼/점은 페이드아웃
+    ghostFrame.classList.add('growing');
+
+    setTimeout(() => {
+      ghostCard.classList.remove('card-ghost');
+      ghostCard.dataset.canvasState = 'with-date';
+
+      const [y, m, d] = dateText.split('.');
+      datePicker.takenDates.add(`${2000 + parseInt(y, 10)}-${parseInt(m, 10)}-${parseInt(d, 10)}`);
+
+      ghostFrame.replaceWith(ghostCard); // 프레임을 벗기고 다른 페이지와 동일하게 카드만 남긴다
+
+      sortPages(ghostCard);
+      pageToast.show(`'오늘' 페이지가 추가되었습니다`);
+    }, 400); // .ghost-frame.growing 트랜지션(0.4s)이 끝난 뒤 처리 — sortPages의 reparent가 도중에 끼어들지 않도록
+  }
 
   // ── Scroll to center a card ────────────────────────────────
   const mainArea = document.querySelector('.main-area');
@@ -2962,6 +3661,7 @@
     const newPage = { id: 'p' + pageCount++, dateText, today: false };
     canvasZoomWrap.insertAdjacentHTML('beforeend', buildCardHTML(newPage));
     const newCard = canvasZoomWrap.lastElementChild;
+    newCard.classList.add('card-creating'); // 스크롤이 도착하기 전까지는 보이지 않게 숨겨둔다
 
     const oldInner = newCard.querySelector('.card-inner');
     if (oldInner) oldInner.remove();
@@ -2977,7 +3677,21 @@
     lucide.createIcons({ nodes: [newCard] });
 
     datePicker.takenDates.add(`${year}-${month}-${day}`);
-    sortPages(newCard);
+    // 내부에서 scrollToCard(smooth)로 스크롤을 시작함 + 광고 배너를 전부 새로 만듦(생성된 배너는
+    // scrollToCard가 리플로우를 일으키기 전에 이미 card-creating으로 숨겨진 채 돌려받는다)
+    const banners = sortPages(newCard, true);
+
+    // scrollToCard의 smooth-scroll 도착 시점(350ms fallback)이 지난 뒤에 카드+배너가 나타나는
+    // 생성 트랜지션을 재생한다 — 스크롤 도중에는 보이지 않다가, 도착하면 짠 하고 함께 생성됨
+    setTimeout(() => {
+      newCard.classList.add('card-created-reveal');
+      banners.forEach(b => b.classList.add('card-created-reveal'));
+      setTimeout(() => {
+        newCard.classList.remove('card-creating', 'card-created-reveal');
+        banners.forEach(b => b.classList.remove('card-creating', 'card-created-reveal'));
+      }, 400);
+    }, 380);
+
     pageToast.show(`${month}월 ${day}일 페이지가 추가되었습니다`);
   }
 
@@ -3163,6 +3877,11 @@
   const sidePanel = new SidePanel(document.getElementById('sidePanel'));
   const panelToggleBtn = document.getElementById('panelToggleBtn');
   panelToggleBtn.addEventListener('click', () => {
+    const activeTabEl = tabLabels.querySelector('.tab.active');
+    if (activeTabEl && activeTabEl.dataset.noteType === 'calendar') {
+      toggleCalInlinePanel(activeTabEl); // 캘린더 노트: 딤드 팝업 대신 좌상단 인라인 캘린더를 토글
+      return;
+    }
     sidePanel.toggle();
     panelToggleBtn.classList.toggle('panel-open', sidePanel.isOpen());
   });
@@ -3241,8 +3960,9 @@
 
   function nwPositionMenu(menu, btn) {
     const br = btn.getBoundingClientRect();
-    menu.style.top = (br.bottom + 8) + 'px';
+    menu.style.bottom = (window.innerHeight - br.top + 8) + 'px';
     menu.style.right = (window.innerWidth - br.right) + 'px';
+    menu.style.top = 'auto';
     menu.style.left = 'auto';
   }
   function closeMenus() {
@@ -3266,18 +3986,19 @@
     return base;
   }
 
-  // ── 위저드 데이터 (참고 파일 그대로 이식) ────────────────────
+  // ── 새 노트 데이터 ────────────────────
   const NW_COVERS = [
-    { id: 'c1', name: '코랄 무드', cat: '감성', bg: '#f7d9c4' },
-    { id: 'c2', name: '라벤더',   cat: '감성', bg: '#ddd6f8' },
-    { id: 'c3', name: '차콜',     cat: '기본', bg: '#d8dbe2' },
-    { id: 'c4', name: '아이보리', cat: '기본', bg: '#f5efe0' },
-    { id: 'c5', name: '포레스트', cat: '감성', bg: '#cfe6d4' },
-    { id: 'c6', name: '스톤',     cat: '기본', bg: '#e6e2dc' },
+    { id: 'c1', name: '코랄 무드', bg: '#f7d9c4' },
+    { id: 'c2', name: '라벤더',   bg: '#ddd6f8' },
+    { id: 'c3', name: '차콜',     bg: '#d8dbe2' },
+    { id: 'c4', name: '아이보리', bg: '#f5efe0' },
+    { id: 'c5', name: '포레스트', bg: '#cfe6d4' },
+    { id: 'c6', name: '스톤',     bg: '#e6e2dc' },
+    { id: 'c7', name: '그린',     bg: '#1e7f00' },
+    { id: 'c8', name: '오렌지',   bg: '#f34c18' },
+    { id: 'c9', name: '퍼플',     bg: '#452c83' },
+    { id: 'c10', name: '스카이', bg: '#5a8dee' },
   ];
-  let nwMyCovers = [];
-  let nwMyCoverSeq = 1;
-
   const NW_INSERTS = {
     '데일리': [
       { id: 'i1', name: '기본형',     kind: 'lines',    colors: ['#7fd8be','#f5b8c9','#c3b8f5','#f3ead9'] },
@@ -3294,9 +4015,8 @@
       { id: 'm2', name: '심플형', kind: 'blank', colors: ['#d5d9de','#d9c8f5'], premium: true },
     ],
   };
-  const NW_EDITOR_COLORS = ['#f7d9c4','#fbe7a1','#cfe6d4','#a9d6f5','#ddd6f8','#f5c1d0','#e8e8ec','#3f4550'];
-  const NW_PATTERNS = [{ id: 'none', name: '없음' }, { id: 'dot', name: '도트' }, { id: 'line', name: '스트라이프' }];
-  const NW_COLOR_NAMES = { '#7fd8be': '민트', '#f5b8c9': '핑크', '#c3b8f5': '라벤더', '#f3ead9': '아이보리', '#d5d9de': '그레이', '#a9d6f5': '스카이', '#d9c8f5': '퍼플' };
+  const NW_PATTERNS = ['dot', 'line'];
+  const NW_TYPE_ICON = { '데일리': 'sun', '위클리': 'calendar-range', '먼슬리': 'calendar' };
   const NW_INSERT_DESC = {
     lines:    '시간대별로 일정과 메모를 함께 적는 기본형 레이아웃이에요. 하루를 촘촘하게 기록하고 싶을 때 잘 맞아요.',
     blank:    '군더더기 없이 깔끔한 여백 중심 레이아웃이에요. 자유롭게 쓰고 그리고 싶은 분께 추천해요.',
@@ -3304,130 +4024,233 @@
     check:    '해야 할 일을 체크리스트로 관리해요. 완료 여부를 빠르게 확인하고 싶을 때 유용해요.',
     grid:     '한 주 또는 한 달을 격자로 구성해 계획을 세우기 편해요. 전체 일정을 넓게 보고 싶을 때 추천해요.',
   };
-  const NW_TYPE_ICON = { '데일리': 'sun', '위클리': 'calendar-range', '먼슬리': 'calendar' };
-
-  function nwAllCovers() { return [...nwMyCovers, ...NW_COVERS]; }
 
   // ── 상태 ─────────────────────────────────────
-  let nwState = {};
-  function nwResetState(type) {
-    nwState = {
-      type, step: 'cover', coverTab: '전체',
-      coverId: null, insertId: null, insertColors: {}, previewIndex: 0,
-      fromConfirm: false, noteType: 'scroll',
-      ed: { color: NW_EDITOR_COLORS[0], pattern: 'none' },
+  let ncState = {};
+  function ncResetState(type) {
+    ncState = {
+      type, activeTab: 'insert', coverFilterTab: '컬러',
+      coverId: NW_COVERS[0].id, coverPattern: 'none',
+      insertId: NW_INSERTS[type][0].id, insertColors: {},
+      noteType: 'scroll',
     };
   }
 
-  const NW_NAV = {
-    cover:   { title: '표지 선택',   left: 'cancel', right: '다음',   rightBold: false },
-    editor:  { title: '표지 만들기', left: 'cancel', right: '완료',   rightBold: true },
-    insert:  { title: '속지 선택',   left: 'back',   right: null,     rightBold: false },
-    preview: { title: '',            left: 'back',   right: '선택',   rightBold: true },
-    confirm: { title: '노트 이름',   left: 'back',   right: '만들기', rightBold: true },
-  };
-
   function chooseNewNote(type) {
     closeMenus();
-    nwResetState(type);
-    const nameInput = document.getElementById('nwCf4NameInput');
-    nameInput.value = '';
-    nameInput.placeholder = '나의 ' + type + ' 노트';
-    nwRender();
-    document.getElementById('noteWizardScrim').classList.add('show');
+    ncResetState(type);
+    document.getElementById('ncSubtitle').textContent = type + ' 플래너';
+    document.getElementById('ncSubtitleInput').value = type + ' 플래너';
+    ncRenderPreviewTabs();
+    ncRenderPreviewThumbs();
+    ncRenderBody();
+    document.getElementById('ncFormatPop').classList.remove('show');
+    document.getElementById('noteCreateScreen').classList.add('visible');
+    lucide.createIcons({ nodes: [document.getElementById('noteCreateScreen')] });
   }
-  function nwDismissPopup() {
-    document.getElementById('noteWizardScrim').classList.remove('show');
+  function ncCloseScreen() {
+    document.getElementById('noteCreateScreen').classList.remove('visible');
+    document.getElementById('ncFormatPop').classList.remove('show');
   }
-  document.getElementById('noteWizardScrim').addEventListener('click', nwDismissPopup);
+  document.getElementById('ncCloseBtn').addEventListener('click', ncCloseScreen);
 
-  function nwStepLeft(step) { return NW_NAV[step].left; }
+  function ncRenderPreviewTabs() {
+    document.getElementById('ncCoverTab').classList.toggle('nc-preview-tab-active', ncState.activeTab === 'cover');
+    document.getElementById('ncInsertTab').classList.toggle('nc-preview-tab-active', ncState.activeTab === 'insert');
+  }
+  document.getElementById('ncCoverTab').addEventListener('click', () => { ncState.activeTab = 'cover'; ncRenderPreviewTabs(); ncRenderBody(); });
+  document.getElementById('ncInsertTab').addEventListener('click', () => { ncState.activeTab = 'insert'; ncRenderPreviewTabs(); ncRenderBody(); });
 
-  function nwLeftAction() {
-    if (nwStepLeft(nwState.step) === 'cancel') {
-      if (nwState.step === 'editor') { nwState.step = 'cover'; nwRender(-1); }
-      else nwDismissPopup();
+  function ncRenderPreviewThumbs() {
+    const cover = NW_COVERS.find(c => c.id === ncState.coverId);
+    const coverThumb = document.getElementById('ncCoverThumb');
+    coverThumb.style.background = patternCSS(ncState.coverPattern, cover.bg);
+    coverThumb.querySelector('.spine').style.background = darkenHex(cover.bg, 0.32);
+
+    const ins = NW_INSERTS[ncState.type].find(i => i.id === ncState.insertId);
+    const col = ncState.insertColors[ins.id] || ins.colors[0];
+    document.getElementById('ncInsertThumb').innerHTML = nwMiniInsertHTML(ins, col);
+    nwFitMiniPreviews();
+  }
+
+  function ncRenderBody() {
+    const pillsEl = document.getElementById('ncPills');
+    const titleEl = document.getElementById('ncSectionTitle');
+    const gridEl = document.getElementById('ncGrid');
+
+    if (ncState.activeTab === 'insert') {
+      pillsEl.style.display = 'none';
+      titleEl.textContent = `'${ncState.type} 플래너' 속지`;
+      const list = NW_INSERTS[ncState.type];
+      gridEl.innerHTML = list.map(ins => {
+        const cur = ncState.insertColors[ins.id] || ins.colors[0];
+        const isSel = ncState.insertId === ins.id;
+        const lock = ins.premium ? '<div class="nc-lock-badge"><i data-lucide="lock" style="width:12px;height:12px;color:#fff;"></i></div>' : '';
+        const focus = isSel ? '<div class="nc-focus-frame"><div class="nc-focus-ring"></div><div class="nc-focus-badge"><i data-lucide="check" style="width:16px;height:16px;color:#fff;"></i></div></div>' : '';
+        return `<div class="nc-cell ${isSel ? 'sel' : ''}" onclick="ncOpenInsertDetail('${ins.id}')">
+          <div class="nc-cell-face"><div class="nc-cell-face-inner">${nwMiniInsertHTML(ins, cur)}${lock}${focus}</div></div>
+          <p class="nc-cell-name">${ins.name}</p>
+        </div>`;
+      }).join('');
     } else {
-      nwGoBack();
-    }
-  }
-  function nwRightAction() {
-    if (nwState.step === 'cover') {
-      if (nwState.coverId) {
-        nwState.step = nwState.fromConfirm ? 'confirm' : 'insert';
-        nwState.fromConfirm = false;
-        nwRender(1);
+      pillsEl.style.display = 'flex';
+      const pills = ['컬러', '패턴', '스티커', '재질', '내가 만든'];
+      pillsEl.innerHTML = pills.map(p =>
+        `<button class="nc-pill ${ncState.coverFilterTab === p ? 'on' : ''}" onclick="ncSwitchCoverFilter('${p}')">${p}</button>`).join('');
+      titleEl.textContent = '표지';
+
+      if (ncState.coverFilterTab === '컬러') {
+        gridEl.innerHTML = NW_COVERS.map(c => `
+          <div class="nc-cell ${ncState.coverId === c.id && ncState.coverPattern === 'none' ? 'sel' : ''}" onclick="ncSelectCover('${c.id}','none')">
+            <div class="nc-cover-cell-face" style="background:${c.bg};"><div class="spine" style="background:${darkenHex(c.bg, 0.32)};"></div></div>
+            <p class="nc-cell-name">${c.name}</p>
+          </div>`).join('');
+      } else if (ncState.coverFilterTab === '패턴') {
+        const items = [];
+        NW_PATTERNS.forEach(pt => NW_COVERS.slice(0, 5).forEach(c => items.push({ c, pt })));
+        gridEl.innerHTML = items.map(({ c, pt }) => `
+          <div class="nc-cell ${ncState.coverId === c.id && ncState.coverPattern === pt ? 'sel' : ''}" onclick="ncSelectCover('${c.id}','${pt}')">
+            <div class="nc-cover-cell-face" style="background:${patternCSS(pt, c.bg)};"><div class="spine" style="background:${darkenHex(c.bg, 0.32)};"></div></div>
+            <p class="nc-cell-name">${c.name} ${pt === 'dot' ? '도트' : '스트라이프'}</p>
+          </div>`).join('');
+      } else {
+        gridEl.innerHTML = `<div class="nc-placeholder">준비 중이에요</div>`;
       }
-    } else if (nwState.step === 'editor') {
-      nwFinishEditor();
-    } else if (nwState.step === 'preview') {
-      nwSelectFromPreview();
-    } else if (nwState.step === 'confirm') {
-      nwCreateNote();
     }
-  }
-  function nwGoBack() {
-    if (nwState.step === 'preview') nwState.step = 'insert';
-    else if (nwState.step === 'insert') nwState.step = 'cover';
-    else if (nwState.step === 'confirm') nwState.step = 'insert';
-    nwRender(-1);
+    lucide.createIcons({ nodes: [gridEl] });
+    ncApplyGridColumns();
   }
 
-  function nwOpenEditor() {
-    nwState.ed = { color: NW_EDITOR_COLORS[0], pattern: 'none' };
-    nwState.step = 'editor';
-    nwRender(1);
-  }
-  function nwFinishEditor() {
-    const id = 'my' + (nwMyCoverSeq++);
-    nwMyCovers.push({ id, name: '내 표지 ' + nwMyCovers.length, cat: '내가 만든 표지', bg: nwState.ed.color, pattern: nwState.ed.pattern });
-    nwState.coverTab = '내가 만든 표지';
-    nwState.coverId = id;
-    nwState.step = 'cover';
-    nwRender(-1);
-  }
-
-  function nwSelectCover(id) {
-    nwState.coverId = id;
-    nwRender(0);
-  }
-  function nwRenderCover() {
-    const tabs = ['전체', '기본', '감성', '내가 만든 표지'];
-    document.getElementById('nwPillRow').innerHTML = tabs.map(t =>
-      `<button class="pill ${nwState.coverTab === t ? 'on' : ''}" onclick="nwState.coverTab='${t}';nwRender()">${t}</button>`).join('');
-
-    const list = nwAllCovers().filter(c => nwState.coverTab === '전체' ? true : c.cat === nwState.coverTab);
-    const showMake = (nwState.coverTab === '내가 만든 표지');
-
-    let html = '';
-    if (showMake) {
-      html += `<div class="cover-cell cover-make" onclick="nwOpenEditor()">
-        <div class="cover-face"><div class="plus">＋</div><div class="mk">표지 만들기</div></div>
-        <p class="cover-name">&nbsp;</p></div>`;
+  // 컨테이너 폭 기준으로 한 줄에 들어갈 컬럼 수(최소 2, 최대 5)를 계산 — 아이템은 260px를
+  // 유지한 채 갭(최소 16px)을 지키며 최대한 채우고, 5→4→3→2 순으로 줄인다. 컬럼은 2 밑으로는
+  // 줄지 않고, 2칸조차 260px로 다 안 들어갈 만큼 좁을 때만 아이템 폭이 260 밑으로 줄어든다.
+  function ncGridColCount(containerWidth) {
+    const MAX = 260, GAP = 16, CAP = 5, MIN = 2;
+    for (let n = CAP; n >= MIN; n--) {
+      if (containerWidth >= n * MAX + (n - 1) * GAP) return n;
     }
-    if (nwState.coverTab === '내가 만든 표지' && nwMyCovers.length === 0) {
-      html += `<div class="empty-my">아직 만든 표지가 없어요<br>나만의 표지를 만들어보세요</div>`;
-    }
-    html += list.map(c => `
-      <div class="cover-cell ${nwState.coverId === c.id ? 'sel' : ''}" onclick="nwSelectCover('${c.id}')">
-        <div class="cover-face" style="background:${patternCSS(c.pattern || 'none', c.bg)};">
-          <div class="spine"></div><div class="cover-title">NOTE</div>
-        </div>
-        <span class="cover-check">✓</span>
-        <p class="cover-name">${c.name}</p>
-      </div>`).join('');
-    document.getElementById('nwCoverGrid').innerHTML = html;
+    return MIN;
+  }
+  function ncApplyGridColumns() {
+    const gridEl = document.getElementById('ncGrid');
+    const body = document.getElementById('ncBody');
+    if (!gridEl || !body) return;
+    const cs = getComputedStyle(body);
+    const avail = body.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+    const n = ncGridColCount(avail);
+    const GAP = 16;
+    const itemW = Math.max(0, Math.min(260, (avail - (n - 1) * GAP) / n));
+    const totalW = itemW * n + GAP * (n - 1);
+    gridEl.style.gridTemplateColumns = `repeat(${n}, ${itemW}px)`;
+    gridEl.style.width = totalW + 'px';
+    // 타이틀 라벨·필터 필도 그리드와 같은 폭으로 맞춰 왼쪽 끝이 그리드 리스트와 나란히 정렬되게 함
+    const titleEl = document.getElementById('ncSectionTitle');
+    if (titleEl) titleEl.style.width = totalW + 'px';
+    const pillsEl = document.getElementById('ncPills');
+    if (pillsEl) pillsEl.style.width = totalW + 'px';
+  }
+  window.addEventListener('resize', () => {
+    if (document.getElementById('noteCreateScreen').classList.contains('visible')) ncApplyGridColumns();
+  });
+
+  // ── 속지 상세 바텀시트 ─────────────────────────
+  let ncDetailInsertId = null;
+  let ncDetailColor = null;
+
+  function ncOpenInsertDetail(id) {
+    ncDetailInsertId = id;
+    const ins = NW_INSERTS[ncState.type].find(i => i.id === id);
+    ncDetailColor = ncState.insertColors[id] || ins.colors[0];
+    document.getElementById('ncDetailTitle').textContent = ins.name;
+    ncRenderInsertDetail();
+    document.getElementById('ncDetailScrim').classList.add('show');
+  }
+  function ncRenderInsertDetail() {
+    const ins = NW_INSERTS[ncState.type].find(i => i.id === ncDetailInsertId);
+    document.getElementById('ncDetailPreview').querySelector('.dp-inner').innerHTML = nwDetailPreviewHTML(ins, ncDetailColor);
+    document.getElementById('ncDetailDesc').textContent = NW_INSERT_DESC[ins.kind] || '';
+    document.getElementById('ncDetailColors').innerHTML = ins.colors.map(c =>
+      `<div class="nc-detail-swatch ${ncDetailColor === c ? 'on' : ''}" style="background:${c};" onclick="ncPickDetailColor('${c}')"></div>`).join('');
+  }
+  function ncPickDetailColor(c) {
+    ncDetailColor = c;
+    ncRenderInsertDetail();
+  }
+  function ncCloseInsertDetail() {
+    document.getElementById('ncDetailScrim').classList.remove('show');
+  }
+  document.getElementById('ncDetailCloseBtn').addEventListener('click', ncCloseInsertDetail);
+  document.getElementById('ncDetailScrim').addEventListener('click', ncCloseInsertDetail);
+  document.getElementById('ncDetailConfirmBtn').addEventListener('click', () => {
+    ncState.insertId = ncDetailInsertId;
+    ncState.insertColors[ncDetailInsertId] = ncDetailColor;
+    ncCloseInsertDetail();
+    ncRenderPreviewThumbs();
+    ncRenderBody();
+  });
+  function ncSwitchCoverFilter(tab) {
+    ncState.coverFilterTab = tab;
+    ncRenderBody();
+  }
+  function ncSelectCover(id, pattern) {
+    ncState.coverId = id;
+    ncState.coverPattern = pattern;
+    ncRenderPreviewThumbs();
+    ncRenderBody();
   }
 
-  function nwRenderEditor() {
-    document.getElementById('nwEdPreview').style.background = patternCSS(nwState.ed.pattern, nwState.ed.color);
-    document.getElementById('nwSwatchRow').innerHTML = NW_EDITOR_COLORS.map(c =>
-      `<div class="swatch ${nwState.ed.color === c ? 'on' : ''}" style="background:${c};"
-        onclick="nwState.ed.color='${c}';nwRenderEditor()"></div>`).join('');
-    document.getElementById('nwPatternRow').innerHTML = NW_PATTERNS.map(pt =>
-      `<div class="pattern-chip ${nwState.ed.pattern === pt.id ? 'on' : ''}"
-        onclick="nwState.ed.pattern='${pt.id}';nwRenderEditor()">${pt.name}</div>`).join('');
+  // 이름(부제) 인라인 수정
+  const ncSubtitleEl = document.getElementById('ncSubtitle');
+  const ncSubtitleInputEl = document.getElementById('ncSubtitleInput');
+  ncSubtitleEl.addEventListener('click', () => {
+    ncSubtitleInputEl.value = ncSubtitleEl.textContent;
+    ncSubtitleEl.style.display = 'none';
+    ncSubtitleInputEl.style.display = 'block';
+    ncSubtitleInputEl.focus();
+    ncSubtitleInputEl.select();
+  });
+  function ncCommitSubtitle() {
+    ncSubtitleEl.textContent = ncSubtitleInputEl.value.trim() || ncSubtitleEl.textContent;
+    ncSubtitleInputEl.style.display = 'none';
+    ncSubtitleEl.style.display = 'block';
   }
+  ncSubtitleInputEl.addEventListener('blur', ncCommitSubtitle);
+  ncSubtitleInputEl.addEventListener('keydown', (e) => { if (e.key === 'Enter') ncSubtitleInputEl.blur(); });
+
+  // 확인(✓) → 노트 형식 미니팝업
+  const ncFormatPop = document.getElementById('ncFormatPop');
+  document.getElementById('ncConfirmBtn').addEventListener('click', (e) => {
+    if (ncFormatPop.classList.contains('show')) { ncFormatPop.classList.remove('show'); return; }
+    const br = e.currentTarget.getBoundingClientRect();
+    ncFormatPop.style.top = (br.bottom + 8) + 'px';
+    ncFormatPop.style.right = (window.innerWidth - br.right) + 'px';
+    ncFormatPop.style.bottom = 'auto';
+    ncFormatPop.classList.add('show');
+  });
+  document.getElementById('ncNoteTypeToggle').querySelectorAll('.qty-type-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      ncState.noteType = chip.dataset.noteType;
+      document.getElementById('ncNoteTypeToggle').querySelectorAll('.qty-type-chip').forEach(c =>
+        c.classList.toggle('selected', c === chip));
+    });
+  });
+
+  document.getElementById('ncCreateBtn').addEventListener('click', () => {
+    const cover = NW_COVERS.find(c => c.id === ncState.coverId);
+    const name = ncSubtitleEl.textContent;
+    const noteType = ncState.noteType;
+
+    ncCloseScreen();
+
+    const note = { name, date: '방금 전', icon: NW_TYPE_ICON[ncState.type] || 'file-text', color: cover.bg, pattern: ncState.coverPattern !== 'none' ? ncState.coverPattern : null, noteType };
+    const cardEl = buildNoteCardEl(note);
+    HOME_NOTES.unshift(note);
+    hsNotesEl.insertBefore(cardEl, hsNotesEl.firstChild);
+    lucide.createIcons({ nodes: [cardEl] });
+
+    nwShowNoteCreated(name, { bg: cover.bg, pattern: ncState.coverPattern !== 'none' ? ncState.coverPattern : null });
+    openTabFromHome(note.name, note.icon, 'note', note.noteType);
+  });
 
   function nwDetailPreviewHTML(ins, color) {
     const head = `<div class="dp-head">
@@ -3461,8 +4284,8 @@
           <span class="dp-chk-label">${t}</span>
         </div>`).join('');
     } else {
-      body = `<div class="dp-grid">${Array.from({ length: 14 }).map((_,i) =>
-        `<div class="dp-cell" style="background:${i % 5 === 0 ? color : color + '26'};"></div>`).join('')}</div>`;
+      body = `<div class="chk-preview-grid">${Array.from({ length: 14 }).map((_,i) =>
+        `<div class="chk-preview-cell" style="background:${i % 5 === 0 ? color : color + '26'};"></div>`).join('')}</div>`;
     }
     const foot = `<div class="dp-foot">
         <span class="dp-pageinfo">1 / 30</span>
@@ -3486,101 +4309,6 @@
       if (inner && w) inner.style.transform = `scale(${w / 238})`;
     });
   }
-  function nwColorDotsHTML(ins, curColor, pick) {
-    return ins.colors.map(c => `
-      <div class="dc-swatch ${curColor === c ? 'on' : ''}" style="background:${c};" onclick="${pick(c)}">
-        <span class="chk">✓</span>
-      </div>`).join('');
-  }
-
-  function nwRenderInsert() {
-    const list = NW_INSERTS[nwState.type];
-    document.getElementById('nwInsertGrid').innerHTML = list.map(ins => {
-      const cur = nwState.insertColors[ins.id] || ins.colors[0];
-      const hints = ins.colors.map(c => `<span class="hint-dot" style="background:${c};"></span>`).join('');
-      return `<div class="insert-cell" onclick="nwOpenPreview('${ins.id}')">
-        <div class="insert-face">${nwMiniInsertHTML(ins, cur)}</div>
-        <p class="insert-name">${ins.name}</p>
-        <div class="hint-dots">${hints}</div>
-      </div>`;
-    }).join('');
-  }
-  function nwOpenPreview(id) {
-    const list = NW_INSERTS[nwState.type];
-    nwState.previewIndex = list.findIndex(i => i.id === id);
-    nwState.step = 'preview';
-    nwRender(1);
-  }
-  function nwSelectFromPreview() {
-    nwState.insertId = NW_INSERTS[nwState.type][nwState.previewIndex].id;
-    nwState.step = 'confirm';
-    nwRender(1);
-  }
-  function nwRenderPreview() {
-    const ins = NW_INSERTS[nwState.type][nwState.previewIndex];
-    const col = nwState.insertColors[ins.id] || ins.colors[0];
-
-    document.getElementById('nwPvInner').innerHTML = nwDetailPreviewHTML(ins, col);
-    document.getElementById('nwPvName').textContent = ins.name;
-    const badge = document.getElementById('nwPvBadge');
-    badge.textContent = ins.premium ? '프리미엄' : '무료';
-    badge.className = 'detail-badge ' + (ins.premium ? 'premium' : 'free');
-    document.getElementById('nwPvDesc').textContent = NW_INSERT_DESC[ins.kind] || '';
-    document.getElementById('nwPvCurrentName').textContent = NW_COLOR_NAMES[col] || '';
-    document.getElementById('nwPvDots').innerHTML =
-      nwColorDotsHTML(ins, col, c => `nwState.insertColors['${ins.id}']='${c}'; nwRenderPreview();`);
-    nwFitMiniPreviews();
-
-    document.getElementById('nwNavTitle').textContent = ins.name;
-    const rb = document.getElementById('nwRightBtn');
-    rb.style.visibility = 'visible';
-    rb.textContent = '선택';
-    rb.disabled = false;
-    rb.style.fontWeight = '700';
-  }
-
-  function nwRenderConfirm() {
-    const cover = nwAllCovers().find(c => c.id === nwState.coverId);
-    const ins = NW_INSERTS[nwState.type].find(i => i.id === nwState.insertId);
-    const col = nwState.insertColors[ins.id] || ins.colors[0];
-
-    const cv = document.getElementById('nwCf4Cover');
-    cv.style.background = patternCSS(cover.pattern || 'none', cover.bg);
-    cv.innerHTML = '<div class="spine"></div>';
-    const iv = document.getElementById('nwCf4Insert');
-    iv.style.background = '#fff';
-    iv.innerHTML = nwMiniInsertHTML(ins, col);
-    nwFitMiniPreviews();
-
-    document.getElementById('nwNoteTypeToggle').querySelectorAll('.qty-type-chip').forEach(chip => {
-      chip.classList.toggle('selected', chip.dataset.noteType === nwState.noteType);
-    });
-  }
-  document.getElementById('nwNoteTypeToggle').querySelectorAll('.qty-type-chip').forEach(chip => {
-    chip.addEventListener('click', () => {
-      nwState.noteType = chip.dataset.noteType;
-      nwRenderConfirm();
-    });
-  });
-
-  function nwCreateNote() {
-    const nameEl = document.getElementById('nwCf4NameInput');
-    const name = nameEl.value.trim() || nameEl.placeholder;
-    const cover = nwAllCovers().find(c => c.id === nwState.coverId);
-    const noteType = nwState.noteType;
-
-    nwDismissPopup();
-
-    const note = { name, date: '방금 전', icon: NW_TYPE_ICON[nwState.type] || 'file-text', color: cover.bg, pattern: cover.pattern || null, noteType };
-    const cardEl = buildNoteCardEl(note);
-    HOME_NOTES.unshift(note);
-    hsNotesEl.insertBefore(cardEl, hsNotesEl.firstChild);
-    lucide.createIcons({ nodes: [cardEl] });
-
-    nwShowNoteCreated(name, cover);
-    openTabFromHome(note.name, note.icon, 'note', note.noteType);
-  }
-
   function nwShowNoteCreated(name, cover) {
     const spine = darkenHex(cover.bg, 0.32);
     const cbg = patternCSS(cover.pattern || 'none', cover.bg);
@@ -3597,78 +4325,6 @@
   }
   function closeNoteCreated() {
     document.getElementById('doneScrim').classList.remove('show');
-  }
-
-  function nwSetStepView(step, dir) {
-    const body = document.getElementById('nwPopupBody');
-    const target = document.getElementById('nw-view-' + step);
-    if (!dir) {
-      document.querySelectorAll('#nwPopupBody .step-view').forEach(el => {
-        el.classList.toggle('on', el === target);
-        el.style.transition = ''; el.style.transform = ''; el.style.opacity = '';
-      });
-      body.scrollTop = 0;
-      nwFitMiniPreviews();
-      return;
-    }
-    const current = document.querySelector('#nwPopupBody .step-view.on');
-    if (current === target) { body.scrollTop = 0; return; }
-    const outX = dir === 1 ? '-28px' : '28px';
-    const inX  = dir === 1 ? '28px'  : '-28px';
-    if (current) {
-      current.style.transition = 'transform .18s ease, opacity .18s ease';
-      current.style.transform = `translateX(${outX})`;
-      current.style.opacity = '0';
-    }
-    setTimeout(() => {
-      if (current) {
-        current.classList.remove('on');
-        current.style.transition = ''; current.style.transform = ''; current.style.opacity = '';
-      }
-      target.classList.add('on');
-      nwFitMiniPreviews();
-      target.style.transition = 'none';
-      target.style.transform = `translateX(${inX})`;
-      target.style.opacity = '0';
-      void target.offsetWidth;
-      target.style.transition = 'transform .26s cubic-bezier(.32,.72,.24,1), opacity .22s ease';
-      target.style.transform = 'translateX(0)';
-      target.style.opacity = '1';
-      body.scrollTop = 0;
-      setTimeout(() => { target.style.transition = ''; target.style.transform = ''; target.style.opacity = ''; }, 280);
-    }, 170);
-  }
-
-  function nwRender(dir) {
-    const n = NW_NAV[nwState.step];
-    let navTitleText = n.title;
-    if (nwState.step === 'preview') navTitleText = NW_INSERTS[nwState.type][nwState.previewIndex].name;
-    document.getElementById('nwNavTitle').textContent = navTitleText;
-
-    const leftKind = nwStepLeft(nwState.step);
-    const lb = document.getElementById('nwLeftBtn');
-    lb.innerHTML = (leftKind === 'cancel') ? '취소' : '<span class="chv">‹</span>뒤로';
-
-    const rb = document.getElementById('nwRightBtn');
-    let right = n.right, rightBold = n.rightBold, disabled = false;
-    if (nwState.step === 'cover') disabled = !nwState.coverId;
-    if (right === null) {
-      rb.style.visibility = 'hidden';
-    } else {
-      rb.style.visibility = 'visible';
-      rb.textContent = right;
-      rb.style.fontWeight = rightBold ? '700' : '600';
-      rb.disabled = disabled;
-    }
-
-    if (nwState.step === 'cover') nwRenderCover();
-    if (nwState.step === 'editor') nwRenderEditor();
-    if (nwState.step === 'insert') nwRenderInsert();
-    if (nwState.step === 'preview') nwRenderPreview();
-    if (nwState.step === 'confirm') nwRenderConfirm();
-
-    document.getElementById('nwStepFooter').style.display = 'none';
-    nwSetStepView(nwState.step, dir || 0);
   }
 
   document.getElementById('itemAddBtn').addEventListener('click', () => {
@@ -3784,13 +4440,13 @@
         </div>`).join('');
       const hiddenStyle = isEmpty ? 'visibility:hidden;' : '';
       return `<div style="${botStrong?'border-bottom:1px solid rgba(0,0,0,0.4);':''}overflow:hidden;">
-        <div style="display:flex;align-items:center;height:28px;border-top:1px solid ${topStrong?'rgba(0,0,0,0.4)':'rgba(0,0,0,0.08)'};border-bottom:1px solid rgba(0,0,0,0.08);">
+        <div class="row-subj" style="display:flex;align-items:center;height:28px;border-top:1px solid ${topStrong?'rgba(0,0,0,0.4)':'rgba(0,0,0,0.08)'};border-bottom:1px solid rgba(0,0,0,0.08);">
           <div style="flex:1;min-width:0;display:flex;align-items:center;gap:8px;padding-right:4px;${hiddenStyle}">
-            <div style="width:24px;height:24px;border-radius:6px;flex-shrink:0;background:${bg};display:flex;align-items:center;justify-content:center;">${pi(ic)}</div>
-            <span style="flex:1;min-width:0;font-size:14px;font-weight:500;color:rgba(0,0,0,0.86);white-space:nowrap;overflow:hidden;">${name}</span>
-            <span style="font-size:13px;color:rgba(0,0,0,0.86);white-space:nowrap;">${time}</span>
+            <div class="play-btn" style="width:24px;height:24px;border-radius:6px;flex-shrink:0;background:${bg};display:flex;align-items:center;justify-content:center;">${pi(ic)}</div>
+            <span class="subj-name" style="flex:1;min-width:0;font-size:14px;font-weight:500;color:rgba(0,0,0,0.86);white-space:nowrap;overflow:hidden;">${name}</span>
+            <span class="subj-time" style="font-size:13px;color:rgba(0,0,0,0.86);white-space:nowrap;">${time}</span>
           </div>
-          <div style="width:34px;height:28px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border-left:1px solid rgba(0,0,0,0.05);${hiddenStyle}">${plusSvg}</div>
+          <div class="subj-add" style="width:34px;height:28px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border-left:1px solid rgba(0,0,0,0.05);${hiddenStyle}">${plusSvg}</div>
         </div>
         ${subRows}
       </div>`;
@@ -3798,8 +4454,8 @@
     const el = document.createElement('div');
     el.style.cssText = 'width:600px;height:800px;background:white;border-radius:12px;padding:22px;box-sizing:border-box;display:flex;flex-direction:column;font-family:Pretendard,sans-serif;overflow:hidden;';
     el.innerHTML = `
-      <div style="flex-shrink:0;padding:14px 0;">
-        <span class="study-date-val${isEmpty ? ' placeholder' : ''}" style="font-size:23px;font-weight:700;color:${isEmpty ? '#ebebeb' : 'rgba(0,0,0,0.86)'};letter-spacing:-0.069px;line-height:1.4;">${isEmpty ? '| 날짜 선택' : (dateText || '| 24.06.24')}</span>
+      <div class="card-header" style="flex-shrink:0;padding:14px 0;">
+        <span class="study-date-val hd-date-val${isEmpty ? ' placeholder' : ''}" style="font-size:23px;font-weight:700;color:${isEmpty ? '#ebebeb' : 'rgba(0,0,0,0.86)'};letter-spacing:-0.069px;line-height:1.4;">${isEmpty ? '| 날짜 선택' : (dateText || '| 24.06.24')}</span>
       </div>
       <div style="flex:1;min-height:0;display:flex;gap:12px;overflow:hidden;">
         <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:16px;overflow:hidden;">
@@ -3807,15 +4463,15 @@
             <div style="font-size:8px;font-weight:600;color:rgba(0,0,0,0.4);line-height:1.4;">Daily Outcomes</div>
             <div style="border-top:1px solid rgba(0,0,0,0.4);border-bottom:1px solid rgba(0,0,0,0.4);">
               <div style="display:flex;align-items:center;gap:10px;height:28px;border-top:1px solid rgba(0,0,0,0.08);">
-                <span style="width:54px;flex-shrink:0;font-size:9px;font-weight:600;color:rgba(0,0,0,0.2);">Dday</span>
-                ${isEmpty ? '' : '<span style="font-size:12px;font-weight:500;color:rgba(0,0,0,0.86);">Dday..</span>'}
+                <span class="hd-small-label" style="width:54px;flex-shrink:0;font-size:9px;font-weight:600;color:rgba(0,0,0,0.2);">Dday</span>
+                ${isEmpty ? '' : '<span class="hd-dday-val" style="font-size:12px;font-weight:500;color:rgba(0,0,0,0.86);">Dday..</span>'}
               </div>
               <div style="display:flex;align-items:center;gap:10px;height:28px;border-top:1px solid rgba(0,0,0,0.08);">
-                <span style="width:54px;flex-shrink:0;font-size:9px;font-weight:600;color:rgba(0,0,0,0.2);">Total Time</span>
-                ${isEmpty ? '' : '<span style="font-size:12px;font-weight:500;color:rgba(0,0,0,0.86);">00:00:00</span>'}
+                <span class="hd-small-label" style="width:54px;flex-shrink:0;font-size:9px;font-weight:600;color:rgba(0,0,0,0.2);">Total Time</span>
+                ${isEmpty ? '' : '<span class="hd-time-val" style="font-size:12px;font-weight:500;color:rgba(0,0,0,0.86);">00:00:00</span>'}
               </div>
               <div style="display:flex;align-items:center;gap:10px;height:28px;border-top:1px solid rgba(0,0,0,0.08);">
-                <span style="width:54px;flex-shrink:0;font-size:9px;font-weight:600;color:rgba(0,0,0,0.2);">Goal</span>
+                <span class="hd-small-label" style="width:54px;flex-shrink:0;font-size:9px;font-weight:600;color:rgba(0,0,0,0.2);">Goal</span>
                 <span style="font-size:12px;color:rgba(0,0,0,0.08);">오늘의 목표&gt;</span>
               </div>
             </div>
@@ -3870,6 +4526,7 @@
     innerEl.innerHTML = '';
     const scale = (innerEl.offsetWidth || 80) / 600;
     const clone = card.cloneNode(true);
+    clone.classList.remove('card-creating', 'card-created-reveal'); // 생성 트랜지션(opacity:0) 상태로 스냅샷되는 것 방지
     clone.querySelectorAll('.stk-rot-handle, .stk-rot-line, .stk-del-btn').forEach(el => el.remove());
     clone.querySelectorAll('.card-sticker').forEach(el => el.classList.remove('stk-selected'));
     const origCanvas = card.querySelector('.card-draw-canvas');
@@ -4025,13 +4682,6 @@
   const tabLabels  = document.querySelector('.tab-labels');
   const tabsSection = document.querySelector('.tabs-section');
 
-  const HOME_QUICK = [
-    { name: '타이머',  homeIcon: '⏱️', tabIcon: 'timer',        sub: '0:00:00',        type: 'quick' },
-    { name: '할 일',   homeIcon: '✅', tabIcon: 'check-square', sub: '영어 수업 외 2',  type: 'quick' },
-    { name: '일정',    homeIcon: '🗓️', tabIcon: 'calendar',     sub: '중간고사 2일차',  type: 'quick' },
-    { name: '그룹',    homeIcon: '👥', tabIcon: 'users',        sub: '3명 공부중',      type: 'quick' },
-  ];
-
   const HOME_NOTES = [
     { name: '시간표',                    date: '2일 전', icon: 'clock',          color: '#1e7f00' },
     { name: '나의 하루 기록',             date: '2일 전', icon: 'sun',            color: '#f34c18' },
@@ -4047,22 +4697,6 @@
     const n = parseInt(hex.slice(1), 16);
     return `rgb(${Math.round((n >> 16) * f)},${Math.round(((n >> 8) & 255) * f)},${Math.round((n & 255) * f)})`;
   }
-
-  // Build quick-action buttons
-  const hsQuickActions = document.getElementById('hsQuickActions');
-  HOME_QUICK.forEach(item => {
-    const btn = document.createElement('div');
-    btn.className = 'quick';
-    btn.innerHTML = `
-      <div class="q-ic">${item.homeIcon}</div>
-      <div class="q-txt">
-        <div class="q-t">${item.name}</div>
-        <div class="q-s">${item.sub}</div>
-      </div>
-    `;
-    btn.addEventListener('click', () => openTabFromHome(item.name, item.tabIcon, item.type));
-    hsQuickActions.appendChild(btn);
-  });
 
   // Build note cards
   const hsNotesEl = document.getElementById('hsNotes');
@@ -4258,6 +4892,45 @@
   // Initialise z-index / margin on the static tabs already in HTML
   refreshTabLayout();
   updateView();
+  insertGhostTodayCard(); // updateView()의 sortPages() 재정렬이 모두 끝난 뒤에 삽입해야 배너 위치·피크 스크롤이 흔들리지 않음
+
+  // ── 오늘로 이동 플로팅 버튼: 오늘자 페이지(고스트 또는 활성화된 실카드)가
+  //    캔버스 스크롤 영역 밖으로 나가면 나타나고, 누르면 그 위치로 스크롤한다 ──
+  const todayFabBtn = document.getElementById('todayFabBtn');
+  function getTodayCardEl() {
+    // 캘린더 노트는 스크롤 캔버스와 별개의 네비게이션(좌상단 인라인 캘린더)을 쓰므로 대상에서 제외
+    if (canvasZoomWrap.dataset.mode === 'calendar') return null;
+    const ghost = canvasZoomWrap.querySelector('[data-page-id="ghost-today"]');
+    if (ghost) return ghost;
+    const t = new Date();
+    return Array.from(canvasZoomWrap.querySelectorAll('.card[data-canvas-state="with-date"]'))
+      .find(c => parseCardDate(c).toDateString() === t.toDateString()) || null;
+  }
+  todayFabBtn.addEventListener('click', () => {
+    const el = getTodayCardEl();
+    if (!el) return;
+    const frame = el.closest('.ghost-frame') || el;
+    const target = frame.offsetTop - CENTER_OFFSET();
+    mainArea.scrollTo({ top: Math.max(0, target), behavior: 'smooth' });
+  });
+  let todayFabObserver = null;
+  function watchTodayFab() {
+    const el = getTodayCardEl();
+    if (!el) { todayFabBtn.classList.remove('visible'); return; }
+    if (todayFabObserver) todayFabObserver.disconnect();
+    todayFabObserver = new IntersectionObserver(([entry]) => {
+      todayFabBtn.classList.toggle('visible', !entry.isIntersecting);
+      // 오늘 페이지가 현재 화면보다 위에 있으면 버튼도 위쪽에, 아래에 있으면 아래쪽에 뜬다
+      const isAbove = entry.boundingClientRect.top < entry.rootBounds.top;
+      todayFabBtn.classList.toggle('pos-top', isAbove);
+    }, { root: mainArea, threshold: 0 });
+    todayFabObserver.observe(el);
+  }
+  window.watchTodayFab = watchTodayFab; // setCanvasMode(탭 전환)에서 재호출할 수 있도록 노출
+  window.__todayFabReady = true; // 함수 선언은 호이스팅되어 이 지점 이전에도 typeof가 'function'이므로, 준비 여부는 별도 플래그로 판단한다
+  // insertGhostTodayCard()의 스크롤 이동(더블 rAF로 지연)이 끝난 뒤에 연결해야
+  // 최초 관찰 시점에 아직 이동 전인 스크롤 위치를 기준으로 잘못 판정하지 않는다
+  requestAnimationFrame(() => requestAnimationFrame(watchTodayFab));
 
   // ── Drawing system ────────────────────────────────────────────
   const DRAW_COLOR  = 'rgba(0,0,0,0.78)';
@@ -4946,6 +5619,182 @@
       closeInsertPicker();
       pageToast.show('속지가 설정되었습니다');
     });
+  })();
+  // ── 오늘자 임시 페이지 "속지 변경" → 페이지 설정 사이드 패널 (Figma 5017:326690 / 5017:326734) ──
+  (function() {
+    const backdrop     = document.getElementById('gpsBackdrop');
+    const panel        = document.getElementById('ghostSettingsPanel');
+    const slider       = new PanelSlider(document.getElementById('gpsSlider'));
+    const closeBtn     = document.getElementById('gpsCloseBtn');
+    const insertRow    = document.getElementById('gpsInsertRow');
+    const insertValueEl = document.getElementById('gpsInsertValue');
+    const insertBack   = document.getElementById('gpsInsertBack');
+    const insertGrid   = document.getElementById('gpsInsertGrid');
+    const colorRow     = document.getElementById('gpsColorRow');
+    const colorValueEl = document.getElementById('gpsColorValue');
+    const colorBack    = document.getElementById('gpsColorBack');
+    const colorList    = document.getElementById('gpsColorList');
+
+    // 속지 컬러 목록 — 오늘 임시 페이지(GPS 패널)와 페이지 추가(속지 미리보기) 양쪽에서 공용으로 쓰는
+    // 단일 소스. 마지막으로 설정한 속지/컬러가 어느 진입점에서 골랐든 서로 반영되게 하나로 합쳤다.
+    const GPS_COLOR_OPTIONS = [
+      { color: '#eee0e5', name: '핑크' },
+      { color: '#e2e4df', name: '세이지' },
+      { color: '#e4ebb3', name: '라임' },
+      { color: '#ede4cb', name: '옐로우' },
+      { color: '#d5d0dc', name: '라벤더' },
+      { color: '#f2f2f1', name: '그레이' }
+    ];
+
+    // 각 속지는 실제 디자인이 서로 다른 별도 이미지로 표시된다(대표 미리보기 이미지 1장) —
+    // 아직 이미지가 없는 속지는 목록에 넣지 않는다. 이미지가 도착하는 대로 여기에 추가.
+    // image: 속지 목록(썸네일)에 쓰는 대표 미리보기 이미지. skinClass: 캔버스의 실제 카드에 입혀서
+    // 진짜 UI로 그 디자인과 비슷하게 보이도록 하는 CSS 스킨(없으면 기본형 = 네이티브 그대로).
+    const GPS_INSERT_ITEMS = [
+      { id: 0, name: '기본형 플래너', image: 'assets/insert-default.png', isDefault: true },
+      { id: 1, name: '체크리스트형 플래너', image: 'assets/insert-checklist.png', skinClass: 'gps-skin-checklist' },
+      { id: 2, name: '고양이 플래너', image: 'assets/insert-cat.png', skinClass: 'gps-skin-cat' },
+      { id: 3, name: '강아지 플래너', image: 'assets/insert-puppy.png', skinClass: 'gps-skin-puppy' }
+    ];
+    const GPS_SKIN_CLASSES = GPS_INSERT_ITEMS.map(it => it.skinClass).filter(Boolean);
+    let gpsTargetCard = null;
+    let gpsOnClose = null; // 페이지 추가 흐름에서 열렸을 때만 설정 — 닫히면 날짜 선택 오버레이를 다시 띄우는 용도
+    let gpsSelectedInsertId = 0; // 기본값: 기본형 플래너가 처음부터 체크되어 있음
+    let gpsSelectedColorIdx = -1; // -1 = 화이트(틴트 없음) 기본값
+    const GPS_WHITE_COLOR = { color: '#ffffff', name: '화이트' };
+
+    // 캔버스의 실제 카드에 스킨 클래스를 입혀서(정적 이미지가 아니라 진짜 UI로) 선택한 속지처럼 보이게 함.
+    // 기본형은 스킨이 없으므로 전부 걷어내 네이티브 모습 그대로 돌아간다.
+    function applyGpsInsertPreview(item) {
+      if (!gpsTargetCard) return;
+      gpsTargetCard.classList.remove(...GPS_SKIN_CLASSES);
+      if (item && item.skinClass) gpsTargetCard.classList.add(item.skinClass);
+    }
+
+    function renderGpsInsertGrid() {
+      insertGrid.innerHTML = '';
+      GPS_INSERT_ITEMS.forEach(item => {
+        const isSelected = item.id === gpsSelectedInsertId;
+        const cell = document.createElement('div');
+        cell.className = 'gps-insert-cell' + (isSelected ? ' selected' : '');
+        cell.innerHTML = `
+          <div class="gps-insert-thumb-wrap">
+            <div class="gps-insert-thumb">${item.image ? `<img src="${item.image}" alt="" class="gps-insert-thumb-img">` : ''}</div>
+            <div class="gps-insert-check"><i data-lucide="check" style="width:13px;height:13px;color:#fff;"></i></div>
+          </div>
+          <div class="gps-insert-name">${item.name}</div>`;
+        cell.addEventListener('click', () => {
+          gpsSelectedInsertId = item.id;
+          insertValueEl.textContent = item.name;
+          applyGpsInsertPreview(item); // 클릭 즉시 캔버스에도 반영
+          // 속지를 바꾸면 이전에 설정해둔 컬러는 항상 화이트로 초기화된다(속지마다 색이 다를 수 있어서)
+          gpsSelectedColorIdx = -1;
+          applyGpsTint(null);
+          colorValueEl.textContent = GPS_WHITE_COLOR.name;
+          renderGpsInsertGrid();
+        });
+        insertGrid.appendChild(cell);
+        if (!item.image && gpsTargetCard) {
+          const thumbEl = cell.querySelector('.gps-insert-thumb');
+          setTimeout(() => renderMp2Thumb(gpsTargetCard, thumbEl), 0);
+        }
+      });
+      if (window.lucide) lucide.createIcons({ nodes: [insertGrid] });
+    }
+
+    // color가 null이면(화이트) 틴트를 걷어내 카드 자체의 흰 배경이 그대로 보이게 한다
+    function applyGpsTint(color) {
+      if (!gpsTargetCard) return;
+      const tint = gpsTargetCard.querySelector('.gps-applied-tint');
+      if (!color) {
+        if (tint) tint.remove();
+        return;
+      }
+      const el = tint || (() => {
+        const t = document.createElement('div');
+        t.className = 'gps-applied-tint';
+        t.style.cssText = 'position:absolute;inset:0;mix-blend-mode:multiply;opacity:0.5;pointer-events:none;';
+        gpsTargetCard.appendChild(t);
+        return t;
+      })();
+      el.style.background = color; // 팝업 안이 아니라 캔버스에 실제로 떠 있는 카드에 바로 적용
+    }
+
+    function renderGpsColorList() {
+      colorList.innerHTML = '';
+      const colors = [GPS_WHITE_COLOR, ...GPS_COLOR_OPTIONS];
+      colors.forEach((opt, i) => {
+        const idx = i - 1; // 화이트는 -1, 나머지는 GPS_COLOR_OPTIONS의 원래 인덱스(0부터)와 일치
+        const row = document.createElement('div');
+        row.className = 'gps-color-row';
+        row.innerHTML = `
+          <span class="gps-color-dot" style="background:${opt.color};"></span>
+          <span class="gps-color-name">${opt.name}</span>
+          <div class="ctp-radio${idx === gpsSelectedColorIdx ? ' selected' : ''}"></div>`;
+        row.addEventListener('click', () => {
+          gpsSelectedColorIdx = idx;
+          applyGpsTint(idx === -1 ? null : opt.color); // 클릭 즉시 캔버스 카드 배경색 반영
+          colorValueEl.textContent = opt.name;
+          renderGpsColorList();
+        });
+        colorList.appendChild(row);
+      });
+    }
+
+    // 마지막으로 설정된 속지/컬러를 임의의 카드 엘리먼트에 적용 — "오늘" 카드뿐 아니라 페이지
+    // 추가로 새로 만들어지는 카드에도 같은 소스(gpsSelectedInsertId/gpsSelectedColorIdx)를 그대로
+    // 반영해 "마지막에 설정한 속지가 기본값" 규칙을 두 진입점이 공유하게 한다.
+    function applyInsertToCard(cardEl) {
+      if (!cardEl) return;
+      const item = GPS_INSERT_ITEMS.find(it => it.id === gpsSelectedInsertId);
+      cardEl.classList.remove(...GPS_SKIN_CLASSES);
+      if (item && item.skinClass) cardEl.classList.add(item.skinClass);
+      cardEl.querySelector('.gps-applied-tint')?.remove();
+      if (gpsSelectedColorIdx !== -1) {
+        const color = GPS_COLOR_OPTIONS[gpsSelectedColorIdx]?.color;
+        if (color) {
+          const tint = document.createElement('div');
+          tint.className = 'gps-applied-tint';
+          tint.style.cssText = `position:absolute;inset:0;mix-blend-mode:multiply;opacity:0.5;pointer-events:none;background:${color};`;
+          cardEl.appendChild(tint);
+        }
+      }
+    }
+    window.applyInsertToCard = applyInsertToCard;
+
+    function openGhostSettingsPanel(targetCard, opts) {
+      gpsTargetCard = targetCard || null;
+      gpsOnClose = (opts && opts.onClose) || null;
+      slider.reset(0);
+      insertValueEl.textContent = GPS_INSERT_ITEMS.find(it => it.id === gpsSelectedInsertId)?.name || '';
+      colorValueEl.textContent = gpsSelectedColorIdx === -1 ? GPS_WHITE_COLOR.name : GPS_COLOR_OPTIONS[gpsSelectedColorIdx]?.name || GPS_WHITE_COLOR.name;
+      // 새로 만든(아직 스킨이 없는) 미리보기 카드일 수도 있으므로, 열릴 때마다 현재 상태로 동기화
+      applyInsertToCard(gpsTargetCard);
+      backdrop.classList.add('visible');
+      panel.classList.add('visible');
+      // '오늘' 페이지 추가 버튼을 누른 것처럼 카드를 점선 프레임 크기까지 키운다(실제 확정은 아님) —
+      // 점선 테두리/그라데이션/버튼/점이 함께 페이드아웃되어 편집에 집중할 수 있게. 오늘 임시 페이지가
+      // 아닌 곳(페이지 추가)에서 열렸다면 .ghost-frame 조상이 없으므로 자연히 아무 일도 일어나지 않는다.
+      const frame = gpsTargetCard && gpsTargetCard.closest('.ghost-frame');
+      if (frame) frame.classList.add('growing');
+    }
+    function closeGhostSettingsPanel() {
+      backdrop.classList.remove('visible');
+      panel.classList.remove('visible');
+      // 패널을 닫으면 다시 축소된 미리보기 상태로 — 점선 테두리/그라데이션/버튼/점이 다시 나타남
+      const frame = gpsTargetCard && gpsTargetCard.closest('.ghost-frame');
+      if (frame) frame.classList.remove('growing');
+      if (gpsOnClose) { const cb = gpsOnClose; gpsOnClose = null; cb(); }
+    }
+
+    closeBtn.addEventListener('click', closeGhostSettingsPanel);
+    backdrop.addEventListener('click', closeGhostSettingsPanel);
+    insertRow.addEventListener('click', () => { renderGpsInsertGrid(); slider.goTo(1); });
+    insertBack.addEventListener('click', () => slider.goTo(0));
+    colorRow.addEventListener('click', () => { renderGpsColorList(); slider.goTo(2); });
+    colorBack.addEventListener('click', () => slider.goTo(0));
+
+    window.openGhostSettingsPanel = openGhostSettingsPanel;
   })();
 </script>
 </body>
