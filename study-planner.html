@@ -3765,23 +3765,18 @@
 
   // 노트 기간(시작일~종료일) 안의 모든 날짜에 페이지를 미리 만들어둔다 — "오늘 페이지 추가"
   // 같은 별도 개념 없이, 기간을 정하는 순간 그 안의 모든 날짜가 이미 실제 페이지로 존재한다.
+  // 기본 속지는 PAGES의 7/15(p0)와 동일한 "기록 없음" 상태 — 과목 시간은 0:00:00, 타임 테이블은
+  // 빈 채로 둔다(buildCardHTML + buildGrid, study-card-inner로 바꿔치기하지 않는다).
   function buildBlankPageCard(year, month, day) {
     const y = String(year).slice(2);
     const m = String(month).padStart(2, '0');
     const d = String(day).padStart(2, '0');
     const dateText = `${y}.${m}.${d}`;
 
-    const newPage = { id: 'p' + pageCount++, dateText, today: false };
+    const newPage = { id: 'p' + pageCount++, dateText, times: NO_RECORD_TIMES, totalTime: null, today: false };
     canvasZoomWrap.insertAdjacentHTML('beforeend', buildCardHTML(newPage));
     const newCard = canvasZoomWrap.lastElementChild;
-
-    const oldInner = newCard.querySelector('.card-inner');
-    if (oldInner) oldInner.remove();
-    const studyInner = buildStudyCardEl(false, `| ${dateText}`);
-    studyInner.className = 'study-card-inner';
-    studyInner.style.cssText = 'flex:1;min-height:0;display:flex;flex-direction:column;padding:22px;box-sizing:border-box;overflow:hidden;';
-    newCard.appendChild(studyInner);
-    newCard.dataset.pageType = 'study';
+    buildGrid(newCard, null);
     newCard.dataset.dateText = dateText;
     if (window.ipApplyTint) window.ipApplyTint(newCard);
 
