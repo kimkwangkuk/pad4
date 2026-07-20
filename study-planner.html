@@ -994,7 +994,8 @@
        .sp-panel(position:absolute) 안에 떠서, 오늘자 슬롯이 목록(.sp-content) 자체 스크롤
        밖으로 나가면 나타난다. 위/아래 중 오늘 슬롯이 있는 쪽에 뜬다. */
     .sp-today-fab {
-      position: absolute; left: 50%; bottom: 16px; z-index: 20;
+      /* 하단 고정 "페이지 추가" 버튼(56px + 16px 여백) 위에 뜨도록 bottom을 그만큼 띄운다 */
+      position: absolute; left: 50%; bottom: 80px; z-index: 20;
       transform: translateX(-50%) translateY(12px);
       opacity: 0; pointer-events: none;
       transition: opacity 0.22s ease, transform 0.22s cubic-bezier(0.4, 0, 0.2, 1);
@@ -1020,6 +1021,22 @@
     }
     .sp-today-fab:hover { background: rgba(0,0,0,0.72); }
     .sp-today-fab .glass-pill-btn-icon svg path { stroke: #fff; }
+
+    /* ─── SIDE PANEL: 하단 고정 페이지 추가 버튼 ───────────
+       평소엔 빈 날짜를 목록에 표시하지 않는다. 이 버튼을 누르면 그때만 기간 안의 빈 날짜들이
+       "+" 칸으로 나타나 어디에 추가할지 고를 수 있고, 하나를 고르면 다시 평소 상태로 돌아간다. */
+    .sp-add-page-btn {
+      position: absolute; left: 16px; right: 16px; bottom: 16px; z-index: 22;
+      height: 48px;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      background: rgba(0,0,0,0.86); color: #fff; border: none; border-radius: 100px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.18);
+      font-family: 'Pretendard', sans-serif; font-size: 15px; font-weight: 600;
+      letter-spacing: -0.045px; cursor: pointer;
+      transition: background 0.12s;
+    }
+    .sp-add-page-btn:hover { background: rgba(0,0,0,0.72); }
+    .sp-add-page-btn.active { background: rgba(0,0,0,0.6); }
 
     /* ─── SHOP / ITEM SCREENS ─────────────────────── */
     .shop-screen, .item-screen {
@@ -2786,11 +2803,6 @@
               <span class="sp-filter-check"></span>
               <span>기록 없는 날</span>
             </label>
-            <label class="sp-filter-option">
-              <input type="checkbox" data-filter-key="blank" checked>
-              <span class="sp-filter-check"></span>
-              <span>빈 날짜</span>
-            </label>
           </div>
         </div>
         <div id="spDateList"></div>
@@ -2801,6 +2813,12 @@
           <svg viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M11.25 3L15 6.75L11.25 10.5M15 6.75H7.125C6.03098 6.75 4.98177 7.1846 4.20818 7.95818C3.4346 8.73177 3 9.78098 3 10.875C3 11.4167 3.1067 11.9531 3.314 12.4536C3.5213 12.954 3.82514 13.4088 4.20818 13.7918C4.98177 14.5654 6.03098 15 7.125 15H9.75" stroke="rgba(0,0,0,0.86)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </span>
         <span>오늘</span>
+      </button>
+      <!-- 패널 하단 고정 페이지 추가 버튼 — 누르면 그때만 빈 날짜("+")들이 목록에 나타나
+           어디에 추가할지 고를 수 있다. 평소엔 빈 날짜를 아예 표시하지 않는다. -->
+      <button class="sp-add-page-btn" id="spAddPageBtn" type="button">
+        <i data-lucide="plus" style="width:16px;height:16px;"></i>
+        <span>페이지 추가</span>
       </button>
     </div>
 
@@ -3437,9 +3455,13 @@
     return false;
   }
 
-  // 헤더 우측 다중 선택 필터 — "기록 있는 날/기록 없는 날/빈 날짜"를 각각 독립적으로 켜고 끌 수
-  // 있다. 기본은 전부 켜짐(과거의 "기록만" 토글이 꺼진 상태와 동일하게 전부 표시).
-  const spFilterEnabled = { hasRecord: true, noRecord: true, blank: true };
+  // 헤더 우측 다중 선택 필터 — "기록 있는 날/기록 없는 날"을 각각 독립적으로 켜고 끌 수 있다.
+  // 기본은 전부 켜짐(과거의 "기록만" 토글이 꺼진 상태와 동일하게 전부 표시).
+  const spFilterEnabled = { hasRecord: true, noRecord: true };
+
+  // 빈 날짜("+")는 평소엔 아예 표시하지 않는다 — 패널 하단의 "페이지 추가" 버튼을 눌렀을 때만
+  // 켜지는 "어디에 추가할지 고르는" 모드. 페이지를 하나 고르면 다시 꺼진다.
+  let spAddModeActive = false;
 
   // 접힌 월(예: "2026-7") 목록 — rebuildPanel이 다시 그려도 접힘 상태가 유지되도록 여기서 관리한다
   const spCollapsedMonths = new Set();
@@ -3448,9 +3470,8 @@
   // 무관하게 기간 밖의 날짜는 절대 표시되지 않는다.
   // - 페이지가 이미 있는 날짜는(기록 유무와 무관하게) 그 페이지의 썸네일로 표시된다 — 방금 빈 칸을
   //   눌러 새로 만든 페이지도 여기 포함되어 바로 보인다.
-  // - 페이지가 없는 날짜는 오늘·미래에 한해서만 빈 칸("+")으로 표시된다 — 과거인데 페이지가 없는
-  //   날짜는 목록에서 아예 노출되지 않는다.
-  //   ("기록만" 토글이 켜져 있으면 기록 없는 항목은 전부 생략된다.)
+  // - 페이지가 없는 날짜는 spAddModeActive일 때만(하단 "페이지 추가" 버튼을 누른 동안) 오늘·미래에
+  //   한해 빈 칸("+")으로 표시된다 — 평소에는 아예 목록에 나타나지 않는다.
   function rebuildPanel(datedCards, selectedCard) {
     // 스크롤 영역 최상단에 고정된 .sp-sticky-filter-bar는 건드리지 않고, 날짜 목록만 다시 그린다
     const spContent = document.getElementById('spDateList');
@@ -3477,7 +3498,7 @@
         if (spFilterEnabled[hasRecord ? 'hasRecord' : 'noRecord']) {
           items.push({ card: existingCard, time: t, label: `${cursor.getMonth() + 1}/${cursor.getDate()}` });
         }
-      } else if (spFilterEnabled.blank && t >= today.getTime()) {
+      } else if (spAddModeActive && t >= today.getTime()) {
         items.push({
           isBlank: true, time: t,
           y: cursor.getFullYear(), m: cursor.getMonth() + 1, d: cursor.getDate(),
@@ -3570,6 +3591,14 @@
       spFilterToggle.classList.toggle('active', anyOff);
       sortPages();
     });
+  });
+
+  // ── 패널 하단 "페이지 추가" 버튼 — 누르면 빈 날짜들이 나타나 어디에 추가할지 고를 수 있다 ──
+  const spAddPageBtn = document.getElementById('spAddPageBtn');
+  spAddPageBtn.addEventListener('click', () => {
+    spAddModeActive = !spAddModeActive;
+    spAddPageBtn.classList.toggle('active', spAddModeActive);
+    sortPages();
   });
 
   // ── 노트 표지·이름·기간 요약 + 우측 "수정" 버튼 → 기간(시작일~종료일) 수정 팝업 ──
@@ -3968,6 +3997,9 @@
 
     const blank = e.target.closest('.sp-blank');
     if (blank) {
+      // 날짜를 하나 골랐으니 "어디에 추가할지 고르는" 모드는 끝 — 다음 렌더부터 빈 칸을 다시 숨긴다
+      spAddModeActive = false;
+      document.getElementById('spAddPageBtn').classList.remove('active');
       if (blank.dataset.today === '1') {
         // 오늘 빈칸 → 이미 캔버스에 떠 있는 "오늘' 페이지 추가" 미리보기를 그대로 활성화한다
         const gc = document.querySelector('.card.card-ghost');
