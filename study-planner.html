@@ -941,34 +941,17 @@
 
     /* ─── SIDE PANEL: 오늘로 이동 버튼 ───────────────
        .sp-panel(position:absolute) 안에 떠서, 오늘자 슬롯이 목록(.sp-content) 자체 스크롤
-       밖으로 나가면 나타난다. 위/아래 중 오늘 슬롯이 있는 쪽에 뜬다. */
+       밖으로 나가면 나타난다. 캔버스의 #todayFabBtn과 동일한 위치(하단 고정)·스타일(유리 필)을 쓴다. */
     .sp-today-fab {
       position: absolute; left: 50%; bottom: 16px; z-index: 20;
       transform: translateX(-50%) translateY(12px);
       opacity: 0; pointer-events: none;
       transition: opacity 0.22s ease, transform 0.22s cubic-bezier(0.4, 0, 0.2, 1);
     }
-    .sp-today-fab.pos-top {
-      /* .sp-header(56px) + .sp-note-info 아래, 목록(.sp-content)이 실제로 시작하는 지점에 맞춘다 */
-      top: 124px; bottom: auto;
-      transform: translateX(-50%) translateY(-12px);
-    }
     .sp-today-fab.visible {
       opacity: 1; pointer-events: auto;
       transform: translateX(-50%) translateY(0);
     }
-    /* .sp-panel은 캔버스처럼 다채로운 배경이 아니라 흰 배경이라, 반투명 유리 스타일(.glass-pill-btn
-       기본값)은 대비가 거의 없어 눈에 안 띈다 — 흰 배경 위에서 잘 보이는 짙은 필로 덮어쓴다 */
-    .sp-today-fab {
-      background: rgba(0,0,0,0.86);
-      border-color: transparent;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.18);
-      backdrop-filter: none;
-      -webkit-backdrop-filter: none;
-      color: #fff;
-    }
-    .sp-today-fab:hover { background: rgba(0,0,0,0.72); }
-    .sp-today-fab .glass-pill-btn-icon svg path { stroke: #fff; }
 
     /* ─── SHOP / ITEM SCREENS ─────────────────────── */
     .shop-screen, .item-screen {
@@ -3538,7 +3521,6 @@
     if (spTodayFabObserver) spTodayFabObserver.disconnect();
     spTodayFabObserver = new IntersectionObserver(([entry]) => {
       spTodayFabBtn.classList.toggle('visible', !entry.isIntersecting);
-      spTodayFabBtn.classList.toggle('pos-top', entry.boundingClientRect.top < entry.rootBounds.top);
     }, { root: spContentEl, threshold: 0 });
     spTodayFabObserver.observe(el);
   }
