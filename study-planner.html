@@ -870,29 +870,37 @@
     .sp-thumb-add { cursor: pointer; }
 
     /* ─── SIDE PANEL: 다중 선택 필터 ───────────
-       헤더의 "필터" 버튼을 누르면 패널 하단에 필터 카드가 뜨고, 그 안에서
-       "기록 있는 날/기록 없는 날/빈 날짜"를 각각 체크박스로 켜고 끌 수 있다
-       (단일 온오프 토글이 아니라 다중 선택). X 버튼으로 명시적으로 닫을 수 있다. */
-    .sp-filter-wrap { flex-shrink: 0; }
+       "필터" 버튼은 스크롤 목록(.sp-content) 맨 위에 고정(position:sticky)되어, 월 타이틀들이
+       그 아래로 스크롤되어도 항상 최상단에 붙어있다. 누르면 바로 아래에 체크박스 팝오버가 뜨고,
+       "기록 있는 날/기록 없는 날/빈 날짜"를 각각 켜고 끌 수 있다(단일 토글이 아니라 다중 선택).
+       닫기(X) 버튼은 패널 고정 헤더 우측 상단에 따로 두어, 스크롤 위치와 무관하게 항상 같은
+       자리에서 필터를 닫을 수 있게 한다. */
+    .sp-sticky-filter-bar {
+      position: sticky; top: 0; z-index: 25;
+      background: white;
+      padding-bottom: 8px; margin-bottom: 4px;
+      flex-shrink: 0;
+    }
     .sp-filter-toggle {
       display: flex; align-items: center; gap: 4px;
-      background: none; border: none; padding: 0;
+      background: rgba(0,0,0,0.05); border: none; border-radius: 100px;
+      padding: 5px 10px;
       font-family: 'Pretendard', sans-serif; font-size: 12px; font-weight: 500;
       color: rgba(0,0,0,0.5); letter-spacing: -0.036px;
       cursor: pointer; white-space: nowrap;
     }
-    .sp-filter-toggle.active { color: rgba(0,0,0,0.86); font-weight: 600; }
+    .sp-filter-toggle.active { color: rgba(0,0,0,0.86); font-weight: 600; background: rgba(0,0,0,0.09); }
     .sp-filter-toggle-chevron {
       width: 12px; height: 12px; flex-shrink: 0;
       transition: transform 0.15s ease;
     }
     .sp-filter-toggle[aria-expanded="true"] .sp-filter-toggle-chevron { transform: rotate(180deg); }
     .sp-filter-popover {
-      position: absolute; left: 16px; right: 16px; bottom: 16px; z-index: 30;
+      position: absolute; top: calc(100% + 2px); left: 0; z-index: 30;
       background: white; border-radius: 14px;
       box-shadow: 0 4px 24px rgba(0,0,0,0.16), 0 0 0 1px rgba(0,0,0,0.06);
-      padding: 8px;
-      opacity: 0; transform: translateY(8px) scale(0.98);
+      padding: 8px; min-width: 160px;
+      opacity: 0; transform: translateY(-4px) scale(0.98);
       pointer-events: none;
       transition: opacity 0.18s ease, transform 0.18s ease;
     }
@@ -900,20 +908,16 @@
       opacity: 1; transform: translateY(0) scale(1);
       pointer-events: auto;
     }
-    .sp-filter-popover-header {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 4px 6px 6px;
-    }
-    .sp-filter-popover-title {
-      font-family: 'Pretendard', sans-serif; font-size: 13px; font-weight: 700;
-      color: rgba(0,0,0,0.7); letter-spacing: -0.039px;
-    }
+    /* 패널 고정 헤더 우측 상단의 필터 닫기 버튼 — 필터가 펼쳐졌을 때만 보인다 */
     .sp-filter-close-btn {
-      width: 22px; height: 22px; flex-shrink: 0;
+      width: 26px; height: 26px; flex-shrink: 0;
       display: flex; align-items: center; justify-content: center;
       background: rgba(0,0,0,0.06); border: none; border-radius: 50%;
       color: rgba(0,0,0,0.6); cursor: pointer;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.15s ease;
     }
+    .sp-filter-close-btn.show { opacity: 1; pointer-events: auto; }
     .sp-filter-close-btn:hover { background: rgba(0,0,0,0.1); }
     .sp-filter-option {
       display: flex; align-items: center; gap: 8px;
@@ -2747,13 +2751,10 @@
       <div class="sp-header">
         <span class="sp-header-spacer" id="spHeaderSpacerLeft">구매</span>
         <span class="sp-header-title" id="spHeaderTitle">페이지</span>
-        <!-- 다중 선택 필터: 버튼을 누르면 패널 하단에 필터 카드가 뜨고, 안에서 표시할 항목을 각각 체크한다 -->
-        <div class="sp-filter-wrap">
-          <button class="sp-filter-toggle" id="spFilterToggle" type="button" aria-expanded="false">
-            <span>필터</span>
-            <i data-lucide="chevron-down" class="sp-filter-toggle-chevron"></i>
-          </button>
-        </div>
+        <!-- 필터가 펼쳐졌을 때만 나타나는 닫기 버튼. 패널 우측 상단 고정 위치라 스크롤해도 항상 같은 자리 -->
+        <button class="sp-filter-close-btn" id="spFilterCloseBtn" type="button" aria-label="필터 닫기">
+          <i data-lucide="x" style="width:14px;height:14px;"></i>
+        </button>
       </div>
       <!-- 노트 표지·이름·기간 요약. 기간은 왼쪽에 텍스트로, 수정은 오른쪽 버튼으로 분리 -->
       <div class="sp-note-info">
@@ -2766,30 +2767,33 @@
           </div>
         </div>
       </div>
-      <div class="sp-content"></div>
-      <!-- 다중 선택 필터 카드 — 목록 영역 하단에 뜨고, X 버튼으로 닫을 수 있다 -->
-      <div class="sp-filter-popover" id="spFilterPopover">
-        <div class="sp-filter-popover-header">
-          <span class="sp-filter-popover-title">필터</span>
-          <button class="sp-filter-close-btn" id="spFilterCloseBtn" type="button" aria-label="필터 닫기">
-            <i data-lucide="x" style="width:14px;height:14px;"></i>
+      <div class="sp-content">
+        <!-- 스크롤 영역 최상단에 붙어있는 필터 바 — 월 타이틀들 위에 항상 고정된다.
+             다중 선택 필터: 누르면 바로 아래에 체크박스 팝오버가 뜬다. -->
+        <div class="sp-sticky-filter-bar">
+          <button class="sp-filter-toggle" id="spFilterToggle" type="button" aria-expanded="false">
+            <span>필터</span>
+            <i data-lucide="chevron-down" class="sp-filter-toggle-chevron"></i>
           </button>
+          <div class="sp-filter-popover" id="spFilterPopover">
+            <label class="sp-filter-option">
+              <input type="checkbox" data-filter-key="hasRecord" checked>
+              <span class="sp-filter-check"></span>
+              <span>기록 있는 날</span>
+            </label>
+            <label class="sp-filter-option">
+              <input type="checkbox" data-filter-key="noRecord" checked>
+              <span class="sp-filter-check"></span>
+              <span>기록 없는 날</span>
+            </label>
+            <label class="sp-filter-option">
+              <input type="checkbox" data-filter-key="blank" checked>
+              <span class="sp-filter-check"></span>
+              <span>빈 날짜</span>
+            </label>
+          </div>
         </div>
-        <label class="sp-filter-option">
-          <input type="checkbox" data-filter-key="hasRecord" checked>
-          <span class="sp-filter-check"></span>
-          <span>기록 있는 날</span>
-        </label>
-        <label class="sp-filter-option">
-          <input type="checkbox" data-filter-key="noRecord" checked>
-          <span class="sp-filter-check"></span>
-          <span>기록 없는 날</span>
-        </label>
-        <label class="sp-filter-option">
-          <input type="checkbox" data-filter-key="blank" checked>
-          <span class="sp-filter-check"></span>
-          <span>빈 날짜</span>
-        </label>
+        <div id="spDateList"></div>
       </div>
       <!-- 오늘자 슬롯이 패널 스크롤 밖으로 나가면(목록 자체 스크롤 기준) 뜨는 이동 버튼 -->
       <button class="glass-pill-btn sp-today-fab" id="spTodayFabBtn" type="button" aria-label="오늘로 이동">
@@ -3448,7 +3452,8 @@
   //   날짜는 목록에서 아예 노출되지 않는다.
   //   ("기록만" 토글이 켜져 있으면 기록 없는 항목은 전부 생략된다.)
   function rebuildPanel(datedCards, selectedCard) {
-    const spContent = document.querySelector('.sp-content');
+    // 스크롤 영역 최상단에 고정된 .sp-sticky-filter-bar는 건드리지 않고, 날짜 목록만 다시 그린다
+    const spContent = document.getElementById('spDateList');
     spContent.innerHTML = '';
 
     const activeTabEl = document.querySelector('.tab.active');
@@ -3538,23 +3543,26 @@
     watchSpTodayFab();
   }
 
-  // ── 헤더 우측 다중 선택 필터 팝오버 ────────────────────────
+  // ── 스크롤 목록 최상단 고정 필터 팝오버 + 패널 헤더의 닫기(X) 버튼 ──────────
   const spFilterToggle = document.getElementById('spFilterToggle');
   const spFilterPopover = document.getElementById('spFilterPopover');
+  const spFilterCloseBtn = document.getElementById('spFilterCloseBtn');
   function closeSpFilterPopover() {
     spFilterPopover.classList.remove('show');
     spFilterToggle.setAttribute('aria-expanded', 'false');
+    spFilterCloseBtn.classList.remove('show');
   }
   spFilterToggle.addEventListener('click', (e) => {
     e.stopPropagation();
     const willShow = !spFilterPopover.classList.contains('show');
     spFilterPopover.classList.toggle('show', willShow);
     spFilterToggle.setAttribute('aria-expanded', String(willShow));
+    spFilterCloseBtn.classList.toggle('show', willShow);
   });
-  document.getElementById('spFilterCloseBtn').addEventListener('click', closeSpFilterPopover);
+  spFilterCloseBtn.addEventListener('click', closeSpFilterPopover);
   document.addEventListener('click', (e) => {
     if (!spFilterPopover.classList.contains('show')) return;
-    if (e.target.closest('.sp-filter-wrap') || e.target.closest('.sp-filter-popover')) return;
+    if (e.target.closest('.sp-sticky-filter-bar') || e.target.closest('.sp-filter-close-btn')) return;
     closeSpFilterPopover();
   });
   spFilterPopover.querySelectorAll('input[data-filter-key]').forEach(input => {
