@@ -3883,6 +3883,31 @@
   spFocusSyncReady = true;
   syncPanelFocusFromScroll();
 
+  // ── 패널의 빈 칸을 누르면 바로 페이지를 만들지 않고, "페이지 추가" 버튼 하나가 있는
+  // 오버레이 팝업을 그 칸 위치에 띄운다 — 버튼을 눌러야 실제로 페이지가 생성된다.
+  let blankCellTarget = null; // { y, m, d, isToday } | null
+  const blankAddMenu = new OverlayMenu({
+    items: [
+      {
+        lucideIcon: 'plus',
+        label: '페이지 추가',
+        onClick() {
+          if (!blankCellTarget) return;
+          const { y, m, d, isToday } = blankCellTarget;
+          if (isToday) {
+            // 오늘 빈칸 → 이미 캔버스에 떠 있는 "오늘' 페이지 추가" 미리보기를 그대로 활성화한다
+            const gc = document.querySelector('.card.card-ghost');
+            const frame = gc && gc.closest('.ghost-frame');
+            if (gc && frame) activateGhostCard(frame, gc, gc.dataset.dateText);
+          } else {
+            createPage(y, m, d);
+          }
+          blankCellTarget = null;
+        }
+      }
+    ]
+  });
+
   document.querySelector('.sp-content').addEventListener('click', e => {
     const monthHeader = e.target.closest('.sp-month-header');
     if (monthHeader) {
@@ -3897,14 +3922,14 @@
 
     const blank = e.target.closest('.sp-blank');
     if (blank) {
-      if (blank.dataset.today === '1') {
-        // 오늘 빈칸 → 이미 캔버스에 떠 있는 "오늘' 페이지 추가" 미리보기를 그대로 활성화한다
-        const gc = document.querySelector('.card.card-ghost');
-        const frame = gc && gc.closest('.ghost-frame');
-        if (gc && frame) activateGhostCard(frame, gc, gc.dataset.dateText);
-      } else {
-        createPage(parseInt(blank.dataset.y, 10), parseInt(blank.dataset.m, 10), parseInt(blank.dataset.d, 10));
-      }
+      blankCellTarget = {
+        y: parseInt(blank.dataset.y, 10),
+        m: parseInt(blank.dataset.m, 10),
+        d: parseInt(blank.dataset.d, 10),
+        isToday: blank.dataset.today === '1',
+      };
+      const rect = blank.getBoundingClientRect();
+      blankAddMenu.open(rect.left + rect.width / 2, rect.top, { above: true });
       return;
     }
 
