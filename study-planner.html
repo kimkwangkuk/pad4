@@ -4051,7 +4051,13 @@
         lucideIcon: 'calendar-days',
         label: '직접 선택',
         onClick() {
-          datePicker.open();
+          // 캔버스의 "직접 선택"도 캘린더를 따로 띄우지 않고, 페이지 패널의 페이지 추가
+          // 모드를 그대로 불러온다 — 패널이 닫혀 있으면 열고, 툴바 토글 버튼 상태도 맞춘다.
+          if (!sidePanel.isOpen()) {
+            sidePanel.open();
+            panelToggleBtn.classList.add('panel-open');
+          }
+          setAddMode(true);
         }
       }
     ],
