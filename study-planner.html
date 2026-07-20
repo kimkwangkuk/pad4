@@ -3292,6 +3292,10 @@
   const spCollapsedMonths = new Set();
   const SP_WEEKDAY_LABELS = ['월', '화', '수', '목', '금', '토', '일'];
 
+  // syncPanelFocusFromScroll은 이 함수보다 뒤에서(mainArea 등을 정의한 뒤) 정의되므로, rebuildPanel의
+  // 첫 실행 시점(아직 mainArea가 초기화되기 전)에는 호출하지 않도록 준비완료 플래그로 가드한다.
+  let spFocusSyncReady = false;
+
   // 사이드 패널 = 월 단위 진짜 달력 그리드 — "노트 기간"(시작일~종료일)이 걸치는 달만큼 그려진다.
   // - 기간 밖의 날짜(달력 앞뒤 채움 칸 포함)는 상호작용 없는 흐린 칸으로만 표시된다.
   // - 기간 안에서 페이지가 있는 날짜는(기록 유무와 무관하게) 그 페이지의 썸네일 칸으로 표시된다.
@@ -3396,6 +3400,8 @@
     // watchSpTodayFab은 이 함수보다 뒤에서 정의되지만, rebuildPanel의 첫 실행(맨 아래 "Initial
     // panel build")은 그 정의 블록보다도 더 나중에 일어나므로 호이스팅 문제 없이 안전하다.
     watchSpTodayFab();
+    // 다시 그려도 캔버스 스크롤 위치 기준 포커스가 유지되도록 재동기화한다(가드 이유는 위 플래그 선언부 참고)
+    if (spFocusSyncReady) syncPanelFocusFromScroll();
   }
 
   // ── 헤더 우측 "기록만" 필터 토글 ──────────────────────────
@@ -3752,6 +3758,39 @@
     return Array.from(canvasScroll.querySelectorAll('.card[data-canvas-state="with-date"]'))
       .find(c => dateKey(parseCardDate(c)) === key);
   }
+
+  // ── 캔버스를 스크롤하면 화면 중앙에 가장 가까운 페이지를 패널에서도 자동으로 포커스한다 ──
+  // scrollToCard가 카드를 "카드.offsetTop - CENTER_OFFSET()"에 맞춰 정렬하므로, 반대로 현재
+  // scrollTop에서 그 위치에 가장 가까운 카드를 역산하면 지금 화면 중앙에 있는 카드를 알 수 있다.
+  function getFocusedDateCard() {
+    const cards = Array.from(canvasScroll.querySelectorAll('.card[data-canvas-state="with-date"]'));
+    if (!cards.length) return null;
+    const targetTop = mainArea.scrollTop + CENTER_OFFSET();
+    let closest = null, closestDist = Infinity;
+    cards.forEach(c => {
+      const dist = Math.abs(c.offsetTop - targetTop);
+      if (dist < closestDist) { closestDist = dist; closest = c; }
+    });
+    return closest;
+  }
+
+  function syncPanelFocusFromScroll() {
+    const focusedCard = getFocusedDateCard();
+    if (!focusedCard) return;
+    const key = dateKey(parseCardDate(focusedCard));
+    document.querySelectorAll('.sp-card.sp-selected').forEach(el => el.classList.remove('sp-selected'));
+    const cell = document.querySelector(`.sp-card[data-date-key="${key}"]`);
+    if (cell) cell.classList.add('sp-selected');
+  }
+
+  let spFocusSyncScheduled = false;
+  mainArea.addEventListener('scroll', () => {
+    if (spFocusSyncScheduled) return;
+    spFocusSyncScheduled = true;
+    requestAnimationFrame(() => { spFocusSyncScheduled = false; syncPanelFocusFromScroll(); });
+  }, { passive: true });
+  spFocusSyncReady = true;
+  syncPanelFocusFromScroll();
 
   document.querySelector('.sp-content').addEventListener('click', e => {
     const monthHeader = e.target.closest('.sp-month-header');
