@@ -3288,16 +3288,12 @@
   // 있지만 실제 공부 기록이 없는 날짜도 함께 숨기고 진짜 기록이 있는 날짜만 보여준다
   let spFilterRecordsOnly = false;
 
-  // 접힌 월(예: "2026-7") 목록 — rebuildPanel이 다시 그려도 접힘 상태가 유지되도록 여기서 관리한다
-  const spCollapsedMonths = new Set();
-
-  // 사이드 패널 = "노트 기간"(시작일~종료일) 안의 날짜만 하루 단위로 나열한 목록 — 기록 유무와
-  // 무관하게 기간 밖의 날짜는 절대 표시되지 않는다.
-  // - 페이지가 이미 있는 날짜는(기록 유무와 무관하게) 그 페이지의 썸네일로 표시된다 — 방금 빈 칸을
-  //   눌러 새로 만든 페이지도 여기 포함되어 바로 보인다.
-  // - 페이지가 없는 날짜는 오늘·미래에 한해서만 빈 칸("+")으로 표시된다 — 과거인데 페이지가 없는
-  //   날짜는 목록에서 아예 노출되지 않는다.
-  //   ("기록만" 토글이 켜져 있으면 기록 없는 항목은 전부 생략된다.)
+  // 사이드 패널 = 진짜 달력 그리드(월 7칸) — "노트 기간"(시작일~종료일)이 걸치는 달만큼 그려진다.
+  // - 기간 밖의 날짜(달력 앞뒤 채움 칸 포함)는 상호작용 없는 흐린 칸으로만 표시된다.
+  // - 기간 안에서 페이지가 있는 날짜는(기록 유무와 무관하게) 그 페이지의 썸네일 칸으로 표시된다.
+  // - 기간 안에서 페이지가 없는 날짜는 오늘·미래에 한해서만 빈 칸("+")으로 표시된다 — 과거인데
+  //   페이지가 없는 날짜는 클릭 불가한 흐린 칸으로 표시된다.
+  //   ("기록만" 토글이 켜져 있으면 기록 없는 칸은 전부 흐린 칸으로 표시된다.)
   function rebuildPanel(datedCards, selectedCard) {
     const spContent = document.querySelector('.sp-content');
     spContent.innerHTML = '';
@@ -3310,75 +3306,65 @@
     const today = new Date(); today.setHours(0, 0, 0, 0);
     const startDate = new Date(period.start.year, period.start.month - 1, period.start.day);
     const endDate = new Date(period.end.year, period.end.month - 1, period.end.day);
+    const periodStartTime = startDate.getTime();
+    const periodEndTime = endDate.getTime();
 
     const cardByTime = new Map();
     datedCards.forEach(card => cardByTime.set(parseCardDate(card).getTime(), card));
 
-    const items = [];
-    const cursor = new Date(startDate);
-    while (cursor <= endDate) {
-      const t = cursor.getTime();
-      const existingCard = cardByTime.get(t) || null;
-      const hasRecord = existingCard ? cardHasRecord(existingCard) : false;
-      if (existingCard) {
-        if (!spFilterRecordsOnly || hasRecord) {
-          items.push({ card: existingCard, time: t, isToday: t === today.getTime(), label: `${cursor.getMonth() + 1}/${cursor.getDate()}` });
+    let gy = startDate.getFullYear(), gm = startDate.getMonth();
+    const lastGy = endDate.getFullYear(), lastGm = endDate.getMonth();
+
+    while (gy < lastGy || (gy === lastGy && gm <= lastGm)) {
+      const grid = document.createElement('div');
+      grid.className = 'sp-cal-grid';
+
+      const firstDay = new Date(gy, gm, 1).getDay(); // 0=일
+      const startOffset = (firstDay + 6) % 7; // 월요일 시작
+      const daysInMonth = new Date(gy, gm + 1, 0).getDate();
+      const totalCells = Math.ceil((startOffset + daysInMonth) / 7) * 7;
+
+      for (let i = 0; i < totalCells; i++) {
+        const dayNum = i - startOffset + 1;
+        const cell = document.createElement('div');
+
+        if (dayNum < 1 || dayNum > daysInMonth) {
+          cell.className = 'sp-cal-cell sp-cal-pad';
+          grid.appendChild(cell);
+          continue;
         }
-      } else if (!spFilterRecordsOnly && t >= today.getTime()) {
-        items.push({
-          isBlank: true, time: t,
-          y: cursor.getFullYear(), m: cursor.getMonth() + 1, d: cursor.getDate(),
-          isToday: t === today.getTime(),
-          label: `${cursor.getMonth() + 1}/${cursor.getDate()}`,
-        });
-      }
-      cursor.setDate(cursor.getDate() + 1);
-    }
 
-    // 월 단위로 묶는다 — 같은 연/월끼리 하나의 접을 수 있는 그룹으로 표시
-    const groups = [];
-    let curGroup = null;
-    items.forEach(item => {
-      const d = new Date(item.time);
-      const key = `${d.getFullYear()}-${d.getMonth() + 1}`;
-      if (!curGroup || curGroup.key !== key) {
-        curGroup = { key, year: d.getFullYear(), month: d.getMonth() + 1, items: [] };
-        groups.push(curGroup);
-      }
-      curGroup.items.push(item);
-    });
+        const cellDate = new Date(gy, gm, dayNum);
+        const t = cellDate.getTime();
+        const inPeriod = t >= periodStartTime && t <= periodEndTime;
+        const existingCard = cardByTime.get(t) || null;
+        const hasRecord = existingCard ? cardHasRecord(existingCard) : false;
+        const isToday = t === today.getTime();
 
-    groups.forEach(group => {
-      const collapsed = spCollapsedMonths.has(group.key);
+        cell.className = 'sp-cal-cell' + (isToday ? ' sp-cal-today' : '');
 
-      const header = document.createElement('div');
-      header.className = 'sp-month-header' + (collapsed ? ' collapsed' : '');
-      header.dataset.monthKey = group.key;
-      header.innerHTML = `<span class="sp-month-title">${group.year}년 ${group.month}월</span><i data-lucide="chevron-down" class="sp-month-chevron"></i>`;
-      spContent.appendChild(header);
-
-      const body = document.createElement('div');
-      body.className = 'sp-month-body';
-      if (collapsed) body.style.display = 'none';
-
-      group.items.forEach(item => {
-        const spCard = document.createElement('div');
-        spCard.className = 'sp-card' + (item.card && item.card === selectedCard ? ' sp-selected' : '');
-        const todayBadge = item.isToday ? '<span class="sp-today-badge">오늘</span>' : '';
-        if (item.isBlank) {
-          spCard.classList.add('sp-blank');
-          spCard.dataset.y = item.y; spCard.dataset.m = item.m; spCard.dataset.d = item.d;
-          if (item.isToday) spCard.dataset.today = '1';
-          spCard.innerHTML = `<div class="sp-thumb sp-thumb-add"><span class="sp-add-icon">+</span></div><div class="sp-list-info"><div class="sp-list-title-row"><span class="sp-list-title">${item.label}</span>${todayBadge}</div></div>`;
+        if (existingCard && inPeriod && (!spFilterRecordsOnly || hasRecord)) {
+          cell.classList.add('sp-card');
+          if (existingCard === selectedCard) cell.classList.add('sp-selected');
+          cell.dataset.dateKey = dateKey(cellDate);
+          cell.innerHTML = `<span class="sp-cal-daynum">${dayNum}</span><div class="sp-thumb"></div>`;
+        } else if (!existingCard && inPeriod && t >= today.getTime() && !spFilterRecordsOnly) {
+          cell.classList.add('sp-card', 'sp-blank');
+          cell.dataset.y = gy; cell.dataset.m = gm + 1; cell.dataset.d = dayNum;
+          if (isToday) cell.dataset.today = '1';
+          cell.innerHTML = `<span class="sp-cal-daynum">${dayNum}</span><div class="sp-thumb sp-thumb-add"><span class="sp-add-icon">+</span></div>`;
         } else {
-          const studyTime = item.card.querySelector('.hd-time-val')?.textContent?.trim() || '0:00:00';
-          spCard.dataset.dateKey = dateKey(parseCardDate(item.card));
-          spCard.innerHTML = `<div class="sp-thumb"></div><div class="sp-list-info"><div class="sp-list-title-row"><span class="sp-list-title">${item.label}</span>${todayBadge}</div><span class="sp-list-subtitle">${studyTime}</span></div><i data-lucide="more-horizontal" class="sp-more-icon"></i>`;
+          cell.classList.add('sp-cal-muted');
+          cell.innerHTML = `<span class="sp-cal-daynum">${dayNum}</span>`;
         }
-        body.appendChild(spCard);
-      });
-      spContent.appendChild(body);
-    });
+
+        grid.appendChild(cell);
+      }
+
+      spContent.appendChild(grid);
+      gm++;
+      if (gm > 11) { gm = 0; gy++; }
+    }
     lucide.createIcons({ nodes: [spContent] });
     // 목록을 새로 그렸으니 오늘 슬롯 DOM도 새 노드로 바뀐다 — 관찰 대상을 다시 연결해야 한다.
     // watchSpTodayFab은 이 함수보다 뒤에서 정의되지만, rebuildPanel의 첫 실행(맨 아래 "Initial
@@ -3742,17 +3728,6 @@
   }
 
   document.querySelector('.sp-content').addEventListener('click', e => {
-    const monthHeader = e.target.closest('.sp-month-header');
-    if (monthHeader) {
-      const key = monthHeader.dataset.monthKey;
-      const willCollapse = !monthHeader.classList.contains('collapsed');
-      if (willCollapse) spCollapsedMonths.add(key); else spCollapsedMonths.delete(key);
-      monthHeader.classList.toggle('collapsed', willCollapse);
-      const body = monthHeader.nextElementSibling;
-      if (body && body.classList.contains('sp-month-body')) body.style.display = willCollapse ? 'none' : '';
-      return;
-    }
-
     const blank = e.target.closest('.sp-blank');
     if (blank) {
       if (blank.dataset.today === '1') {
@@ -3763,18 +3738,6 @@
       } else {
         createPage(parseInt(blank.dataset.y, 10), parseInt(blank.dataset.m, 10), parseInt(blank.dataset.d, 10));
       }
-      return;
-    }
-
-    const moreIcon = e.target.closest('.sp-more-icon');
-    if (moreIcon) {
-      const spCard = moreIcon.closest('.sp-card[data-date-key]');
-      if (!spCard) return;
-      const card = findCardByDateKey(spCard.dataset.dateKey);
-      if (!card) return;
-      activePageCard = card;
-      const r = moreIcon.getBoundingClientRect();
-      pageMenu.open(r.left + r.width / 2, r.top, { above: true });
       return;
     }
 
