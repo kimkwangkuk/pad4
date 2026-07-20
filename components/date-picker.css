@@ -57,8 +57,6 @@
 }
 .dp-header-confirm-btn:hover { background: rgba(0,0,0,0.7); }
 .dp-header-confirm-btn:disabled { opacity: 0.35; cursor: default; pointer-events: none; }
-/* instantSelect 모드: 확인 버튼 대신 제목을 가운데 맞추기 위한 빈 자리 */
-.dp-header-spacer { width: 38px; height: 38px; flex-shrink: 0; }
 .dp-title {
   position: absolute;
   left: 50%; top: 19px;

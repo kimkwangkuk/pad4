@@ -29,10 +29,11 @@
       --text-2:       #787672;
       --text-3:       #ACABA8;
       --hover:        #F7F6F3;
-      --pink-1:       #FBCFE8;
-      --pink-2:       #F9A8D4;
-      --purple-1:     #E9D5FF;
-      --purple-2:     #D8B4FE;
+      /* 타임 테이블 형광펜 색 — 과목 왼쪽 재생 버튼 색(파랑=태블릿v2, 초록=테마)과 맞춘다 */
+      --blue-1:       #BFDBFE;
+      --blue-2:       #93C5FD;
+      --green-1:      #BBF7D0;
+      --green-2:      #86EFAC;
       --play-bg:      #FF6B81;
       --tab-inactive: #EBEBEB;
     }
@@ -420,24 +421,6 @@
       transform: translateX(-50%) translateY(0);
     }
 
-    /* ─── 캘린더 노트: 인라인 캘린더 위젯 ───────────────────────
-       기존 DatePicker는 화면 전체를 덮는 딤드 오버레이 위에 뜨지만, 캘린더 노트에서는
-       딤드 없이 캔버스 좌상단에 그 자리에서 뜨고, 날짜를 누르면 체크 버튼 없이 바로 그
-       페이지로 이동한다(DatePicker의 instantSelect 옵션 사용). */
-    .cal-inline-panel {
-      position: absolute; left: 16px; top: 16px; z-index: 130;
-      opacity: 0;
-      transform: translateY(-8px) scale(0.98);
-      transform-origin: top left;
-      pointer-events: none;
-      transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    .cal-inline-panel.visible {
-      opacity: 1;
-      transform: translateY(0) scale(1);
-      pointer-events: auto;
-    }
-    .cal-inline-panel .dp-sheet { width: 360px; }
 
     /* ─── DRAW CANVAS ────────────────────────────── */
     .card-draw-canvas {
@@ -793,10 +776,10 @@
     }
     /* Data cells: 6 × 25px = 150px */
     .g-cell { width: 25px; border-left: 0.5px solid var(--border-light); }
-    .g-cell.pk1 { background: var(--pink-1); }
-    .g-cell.pk2 { background: var(--pink-2); }
-    .g-cell.pu1 { background: var(--purple-1); }
-    .g-cell.pu2 { background: var(--purple-2); }
+    .g-cell.bl1 { background: var(--blue-1); }
+    .g-cell.bl2 { background: var(--blue-2); }
+    .g-cell.gr1 { background: var(--green-1); }
+    .g-cell.gr2 { background: var(--green-2); }
 
     /* 1px rule at y=624 */
     .grid-bottom-rule {
@@ -854,10 +837,10 @@
     [data-canvas-state="no-date"] .subj-add { visibility: hidden; }
     [data-canvas-state="no-date"] .sub-name,
     [data-canvas-state="no-date"] .sub-check-wrap { visibility: hidden; }
-    [data-canvas-state="no-date"] .g-cell.pk1,
-    [data-canvas-state="no-date"] .g-cell.pk2,
-    [data-canvas-state="no-date"] .g-cell.pu1,
-    [data-canvas-state="no-date"] .g-cell.pu2 { background: none; }
+    [data-canvas-state="no-date"] .g-cell.bl1,
+    [data-canvas-state="no-date"] .g-cell.bl2,
+    [data-canvas-state="no-date"] .g-cell.gr1,
+    [data-canvas-state="no-date"] .g-cell.gr2 { background: none; }
     [data-canvas-state="no-date"] .review-bar { visibility: hidden; }
 
     /* ─── CANVAS STATE: empty (날짜 미지정) ─────── */
@@ -870,10 +853,10 @@
     [data-canvas-state="empty"] .subj-add { visibility: hidden; }
     [data-canvas-state="empty"] .sub-name,
     [data-canvas-state="empty"] .sub-check-wrap { visibility: hidden; }
-    [data-canvas-state="empty"] .g-cell.pk1,
-    [data-canvas-state="empty"] .g-cell.pk2,
-    [data-canvas-state="empty"] .g-cell.pu1,
-    [data-canvas-state="empty"] .g-cell.pu2 { background: none; }
+    [data-canvas-state="empty"] .g-cell.bl1,
+    [data-canvas-state="empty"] .g-cell.bl2,
+    [data-canvas-state="empty"] .g-cell.gr1,
+    [data-canvas-state="empty"] .g-cell.gr2 { background: none; }
     [data-canvas-state="empty"] .review-bar { visibility: hidden; }
 
     /* 날짜 placeholder 스타일 */
@@ -882,8 +865,80 @@
     }
 
     /* ─── SIDE PANEL THUMBNAIL CLICK ─────────────── */
-    .sp-card[data-page-idx] { cursor: pointer; }
+    .sp-card[data-date-key] { cursor: pointer; }
+    .sp-blank { cursor: pointer; }
     .sp-thumb-add { cursor: pointer; }
+
+    /* ─── SIDE PANEL: 기록만 보기 필터 토글 (헤더 우측) ─────── */
+    .sp-filter-toggle {
+      display: flex; align-items: center; gap: 5px;
+      background: none; border: none; padding: 0;
+      font-family: 'Pretendard', sans-serif; font-size: 12px; font-weight: 500;
+      color: rgba(0,0,0,0.5); letter-spacing: -0.036px;
+      cursor: pointer; white-space: nowrap;
+    }
+    .sp-filter-toggle.active { color: rgba(0,0,0,0.86); font-weight: 600; }
+    .sp-filter-check {
+      width: 14px; height: 14px; border-radius: 4px; flex-shrink: 0;
+      border: 1.5px solid rgba(0,0,0,0.3);
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.12s, border-color 0.12s;
+    }
+    .sp-filter-toggle.active .sp-filter-check {
+      background: rgba(0,0,0,0.86); border-color: rgba(0,0,0,0.86);
+    }
+    .sp-filter-check::after {
+      content: ''; width: 7px; height: 4px;
+      border-left: 1.5px solid white; border-bottom: 1.5px solid white;
+      transform: rotate(-45deg) translateY(-1px);
+      opacity: 0;
+    }
+    .sp-filter-toggle.active .sp-filter-check::after { opacity: 1; }
+
+    /* ─── SIDE PANEL: 노트 기간 바 ────────────────── */
+    .sp-period-bar {
+      display: flex; align-items: center; gap: 6px;
+      padding: 0 16px 12px; flex-shrink: 0;
+    }
+    .sp-period-field {
+      flex: 1; min-width: 0; height: 32px; padding: 0 8px;
+      background: rgba(0,0,0,0.05); border: none; border-radius: 8px;
+      font-family: 'Pretendard', sans-serif; font-size: 12px; font-weight: 600;
+      color: rgba(0,0,0,0.7); cursor: pointer; text-align: center;
+    }
+    .sp-period-field:hover { background: rgba(0,0,0,0.08); }
+    .sp-period-sep { font-size: 11px; color: rgba(0,0,0,0.35); flex-shrink: 0; }
+
+    /* ─── SIDE PANEL: 오늘로 이동 버튼 ───────────────
+       .sp-panel(position:absolute) 안에 떠서, 오늘자 슬롯이 목록(.sp-content) 자체 스크롤
+       밖으로 나가면 나타난다. 위/아래 중 오늘 슬롯이 있는 쪽에 뜬다. */
+    .sp-today-fab {
+      position: absolute; left: 50%; bottom: 16px; z-index: 20;
+      transform: translateX(-50%) translateY(12px);
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.22s ease, transform 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .sp-today-fab.pos-top {
+      /* .sp-header(56px) + .sp-period-bar 아래, 목록(.sp-content)이 실제로 시작하는 지점에 맞춘다 */
+      top: 108px; bottom: auto;
+      transform: translateX(-50%) translateY(-12px);
+    }
+    .sp-today-fab.visible {
+      opacity: 1; pointer-events: auto;
+      transform: translateX(-50%) translateY(0);
+    }
+    /* .sp-panel은 캔버스처럼 다채로운 배경이 아니라 흰 배경이라, 반투명 유리 스타일(.glass-pill-btn
+       기본값)은 대비가 거의 없어 눈에 안 띈다 — 흰 배경 위에서 잘 보이는 짙은 필로 덮어쓴다 */
+    .sp-today-fab {
+      background: rgba(0,0,0,0.86);
+      border-color: transparent;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.18);
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+      color: #fff;
+    }
+    .sp-today-fab:hover { background: rgba(0,0,0,0.72); }
+    .sp-today-fab .glass-pill-btn-icon svg path { stroke: #fff; }
 
     /* ─── SHOP / ITEM SCREENS ─────────────────────── */
     .shop-screen, .item-screen {
@@ -1604,21 +1659,6 @@
       width: 1px; height: 28px; background: rgba(0,0,0,0.12); flex-shrink: 0;
     }
 
-    /* 노트 형식 토글 (새 노트 위저드 확인 단계에서 재사용) */
-    .qty-type-toggle {
-      display: flex; gap: 8px;
-      background: #eaeaea; border-radius: 12px; padding: 4px;
-    }
-    .qty-type-chip {
-      flex: 1; padding: 12px 0;
-      background: transparent; border: none; border-radius: 9px;
-      font-family: 'Pretendard', sans-serif;
-      font-size: 15px; font-weight: 600;
-      color: rgba(0,0,0,0.55); letter-spacing: -0.048px;
-      text-align: center; cursor: pointer;
-      transition: background 0.12s, color 0.12s;
-    }
-    .qty-type-chip.selected { background: white; color: black; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
 
     /* ─── MY PAGES POPUP (2-panel slider) ─────────── */
     .mp2-sheet {
@@ -1998,21 +2038,6 @@
       width: 1px; height: 28px; background: rgba(0,0,0,0.12); flex-shrink: 0;
     }
 
-    /* 노트 형식 토글 (새 노트 위저드 확인 단계에서 재사용) */
-    .qty-type-toggle {
-      display: flex; gap: 8px;
-      background: #eaeaea; border-radius: 12px; padding: 4px;
-    }
-    .qty-type-chip {
-      flex: 1; padding: 12px 0;
-      background: transparent; border: none; border-radius: 9px;
-      font-family: 'Pretendard', sans-serif;
-      font-size: 15px; font-weight: 600;
-      color: rgba(0,0,0,0.55); letter-spacing: -0.048px;
-      text-align: center; cursor: pointer;
-      transition: background 0.12s, color 0.12s;
-    }
-    .qty-type-chip.selected { background: white; color: black; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
 
     /* ─── MY PAGES POPUP (2-panel slider) ─────────── */
     .mp2-sheet {
@@ -2469,13 +2494,37 @@
     .nc-cover-cell-face .spine { position:absolute; right:0; top:0; bottom:0; width:11.9%; }
     .nc-cell.sel .nc-cover-cell-face { box-shadow:0 0 0 3px #0a84ff, 6.563px 6.563px 13.125px rgba(0,0,0,.15); }
 
-    .nc-format-pop {
-      position:fixed; z-index:910; background:#fff; border-radius:20px; box-shadow:0 8px 40px rgba(0,0,0,.18);
-      padding:16px; display:none; flex-direction:column; gap:12px; width:280px;
-      right:16px; bottom:70px;
+    /* .nc-detail-scrim(속지 상세)과 동일한 패턴: fixed+inset:0 스크림을 flex로 가운데 정렬하고,
+       팝업 자체는 그 안의 평범한 flex 자식으로 둔다 — position:fixed 트릭 대신 이 방식을 쓰면
+       transform이 걸린 조상(.nc-screen 등) 안에 있어도 항상 뷰포트 기준으로 정확히 중앙에 뜬다 */
+    .nc-format-backdrop {
+      position:fixed; inset:0; z-index:960; background:rgba(0,0,0,.34);
+      opacity:0; pointer-events:none; transition:opacity .22s ease;
+      display:flex; align-items:center; justify-content:center;
     }
-    .nc-format-pop.show { display:flex; }
+    .nc-format-backdrop.show { opacity:1; pointer-events:auto; }
+    .nc-format-pop {
+      background:#fff; border-radius:20px; box-shadow:0 8px 40px rgba(0,0,0,.18);
+      padding:20px; display:flex; flex-direction:column; gap:12px; width:300px;
+      transform:scale(0.96); transition:transform .22s ease;
+    }
+    .nc-format-backdrop.show .nc-format-pop { transform:scale(1); }
+    .nc-format-title { font-family:'Pretendard',sans-serif; font-size:17px; font-weight:700; color:rgba(0,0,0,.86); margin-bottom:4px; }
+    .nc-format-name-input {
+      width:100%; height:44px; padding:0 14px; background:rgba(0,0,0,.05); border:none;
+      border-radius:12px; font-family:'Pretendard',sans-serif; font-size:15px; font-weight:600;
+      color:rgba(0,0,0,.86);
+    }
+    .nc-format-name-input:focus { outline:2px solid rgba(0,0,0,.15); }
     .nc-format-label { font-family:'Pretendard',sans-serif; font-size:13px; font-weight:700; color:#8e8e93; }
+    .nc-period-row { display:flex; align-items:center; gap:8px; }
+    .nc-period-field {
+      flex:1; min-width:0; height:44px; padding:0 12px; background:rgba(0,0,0,.05); border:none;
+      border-radius:12px; font-family:'Pretendard',sans-serif; font-size:14px; font-weight:600;
+      color:rgba(0,0,0,.86); cursor:pointer; text-align:center;
+    }
+    .nc-period-field:hover { background:rgba(0,0,0,.08); }
+    .nc-period-sep { font-size:13px; color:#8e8e93; flex-shrink:0; }
     .nc-format-create-btn {
       width:100%; height:44px; background:rgba(0,0,0,.86); color:#fff; border:none; border-radius:12px;
       font-family:'Pretendard',sans-serif; font-size:15px; font-weight:600; cursor:pointer;
@@ -2591,9 +2640,6 @@
       </div>
     </div>
 
-    <!-- 캘린더 노트: 날짜 이동용 인라인 캘린더 위젯 (딤드 없이 캔버스 좌상단에 뜬다) -->
-    <div id="calInlinePanel" class="cal-inline-panel"></div>
-
     <!-- 오늘로 이동 플로팅 버튼: 오늘자 페이지가 화면 밖일 때만 표시 -->
     <button class="glass-pill-btn" id="todayFabBtn" type="button" aria-label="오늘로 이동">
       <span class="glass-pill-btn-icon">
@@ -2607,9 +2653,26 @@
       <div class="sp-header">
         <span class="sp-header-spacer" id="spHeaderSpacerLeft">구매</span>
         <span class="sp-header-title" id="spHeaderTitle">페이지</span>
-        <span class="sp-header-spacer" id="spHeaderSpacerRight">구매</span>
+        <!-- 켜면 기록 있는 날짜만 표시(빈 칸 전부 숨김), 끄면 오늘~기간 종료일까지 빈 칸도 함께 표시 -->
+        <button class="sp-filter-toggle" id="spFilterToggle" type="button" aria-pressed="false">
+          <span class="sp-filter-check"></span>
+          <span>기록만</span>
+        </button>
+      </div>
+      <!-- 노트 기간: 페이지를 만들 수 있는 날짜 범위. 눌러서 늘리거나 줄일 수 있다 -->
+      <div class="sp-period-bar">
+        <button class="sp-period-field" id="spPeriodStartBtn" type="button"></button>
+        <span class="sp-period-sep">~</span>
+        <button class="sp-period-field" id="spPeriodEndBtn" type="button"></button>
       </div>
       <div class="sp-content"></div>
+      <!-- 오늘자 슬롯이 패널 스크롤 밖으로 나가면(목록 자체 스크롤 기준) 뜨는 이동 버튼 -->
+      <button class="glass-pill-btn sp-today-fab" id="spTodayFabBtn" type="button" aria-label="오늘로 이동">
+        <span class="glass-pill-btn-icon">
+          <svg viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M11.25 3L15 6.75L11.25 10.5M15 6.75H7.125C6.03098 6.75 4.98177 7.1846 4.20818 7.95818C3.4346 8.73177 3 9.78098 3 10.875C3 11.4167 3.1067 11.9531 3.314 12.4536C3.5213 12.954 3.82514 13.4088 4.20818 13.7918C4.98177 14.5654 6.03098 15 7.125 15H9.75" stroke="rgba(0,0,0,0.86)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
+        <span>오늘</span>
+      </button>
     </div>
 
     <!-- 오늘자 임시 페이지 "속지 변경" → 페이지 설정 사이드 패널 (Figma 5017:326690 / 5017:326734)
@@ -2794,11 +2857,21 @@
       <div class="nc-section-title" id="ncSectionTitle"></div>
       <div class="nc-grid" id="ncGrid"></div>
     </div>
-    <div class="nc-format-pop" id="ncFormatPop">
-      <div class="nc-format-label">노트 형식</div>
-      <div class="qty-type-toggle" id="ncNoteTypeToggle">
-        <button class="qty-type-chip selected" data-note-type="scroll">스크롤형</button>
-        <button class="qty-type-chip" data-note-type="calendar">캘린더형</button>
+  </div>
+
+  <!-- 노트 이름/기간 입력 — .nc-detail-scrim과 동일한 패턴(fixed+flex 중앙 정렬)으로,
+       transform이 걸린 .nc-screen 안에 두지 않고 형제로 빼서 position:fixed가 뷰포트
+       기준으로 정확히 동작하게 한다 -->
+  <div class="nc-format-backdrop" id="ncFormatBackdrop">
+    <div class="nc-format-pop" id="ncFormatPop" onclick="event.stopPropagation()">
+      <div class="nc-format-title">노트 만들기</div>
+      <div class="nc-format-label">노트 이름</div>
+      <input class="nc-format-name-input" id="ncNameInput" type="text" placeholder="노트 이름">
+      <div class="nc-format-label">노트 기간</div>
+      <div class="nc-period-row">
+        <button class="nc-period-field" id="ncPeriodStartBtn" type="button"></button>
+        <span class="nc-period-sep">~</span>
+        <button class="nc-period-field" id="ncPeriodEndBtn" type="button"></button>
       </div>
       <button class="nc-format-create-btn" id="ncCreateBtn">만들기</button>
     </div>
@@ -3007,17 +3080,47 @@
 <script src="components/panel-slider.js"></script>
 <script>
   // ── Page data (matches side panel thumbnails) ──────────────
-  const _ydTmp = new Date(); _ydTmp.setDate(_ydTmp.getDate() - 1);
-  const _ydText  = `${String(_ydTmp.getFullYear()).slice(2)}.${String(_ydTmp.getMonth()+1).padStart(2,'0')}.${String(_ydTmp.getDate()).padStart(2,'0')}`;
-  const _ydLabel = `${_ydTmp.getMonth()+1}/${_ydTmp.getDate()}`;
-  const _yr2 = String(new Date().getFullYear()).slice(2);
+  // 노트 기본 기간이 "오늘~오늘+14일"이라, 더미 페이지도 오늘 기준 상대 날짜로 잡아야
+  // 항상 그 기간 근처에 나온다(하드코딩된 5월 날짜로 두면 실제 오늘 날짜와 안 맞아 보임).
+  function _relDate(offsetDays) {
+    const t = new Date(); t.setDate(t.getDate() + offsetDays);
+    return {
+      dateText: `${String(t.getFullYear()).slice(2)}.${String(t.getMonth() + 1).padStart(2, '0')}.${String(t.getDate()).padStart(2, '0')}`,
+      label: `${t.getMonth() + 1}/${t.getDate()}`,
+    };
+  }
+
+  // 타임 테이블에 10분 단위로 채워지는 "형광펜" 하이라이트 — 이게 실제 공부 기록이다.
+  // 색은 과목 컬러와 맞춘다: 파랑(bl) = 태블릿v2, 초록(gr) = 테마.
+  // 기록이 없는 날은 과목 시간도 0:00:00이고 타임 테이블도 빈 채로 둔다(임의로 일부 날짜만 기록 부여).
+  const TODAY_FILLS = { // 태블릿v2 + 테마 둘 다 공부한 날
+    7:  ['bl1','bl1','bl1','bl1','bl1','bl1'],
+    8:  ['bl2','bl2','',   'bl1','bl2','bl1'],
+    10: ['gr1','gr1','gr1','gr1','gr1','gr1'],
+    11: ['gr2','gr1','gr2','gr1','gr2','gr1'],
+  };
+  const FILLS_A = { // 테마만 공부한 날
+    2: ['gr1','gr1','gr1','gr1','',''],
+    3: ['gr2','gr1','gr2','gr1','',''],
+  };
+  const FILLS_B = { // 태블릿v2만 공부한 날
+    14: ['bl1','bl1','bl1','bl1','bl1','bl1'],
+    15: ['bl2','bl1','bl2','bl1','bl2','bl1'],
+    16: ['bl1','bl1','','','',''],
+  };
+  const NO_RECORD_TIMES = ['0:00:00', '0:00:00'];
 
   const PAGES = [
-    { id: 'p0', dateText: `${_yr2}.05.17`, label: '5/17',  today: false },
-    { id: 'p1', dateText: `${_yr2}.05.18`, label: '5/18',  today: false },
-    { id: 'p2', dateText: `${_yr2}.05.19`, label: '5/19',  today: false },
-    { id: 'p3', dateText: `${_yr2}.05.20`, label: '5/20',  today: false },
-    { id: 'p4', dateText: _ydText,    label: _ydLabel, today: false },
+    { id: 'p0', ..._relDate(-5), today: false,
+      hasRecord: false, times: NO_RECORD_TIMES, totalTime: null, fills: null },
+    { id: 'p1', ..._relDate(-4), today: false,
+      hasRecord: true, times: ['1:45:10', '0:52:40'], totalTime: '2:37:50', fills: FILLS_A },
+    { id: 'p2', ..._relDate(-3), today: false,
+      hasRecord: false, times: NO_RECORD_TIMES, totalTime: null, fills: null },
+    { id: 'p3', ..._relDate(-2), today: false,
+      hasRecord: true, times: ['2:10:05', '1:05:30'], totalTime: '3:15:35', fills: FILLS_B },
+    { id: 'p4', ..._relDate(-1), today: false,
+      hasRecord: true, times: ['2:30:25', '1:20:15'], totalTime: '3:50:40', fills: TODAY_FILLS },
   ];
 
   const GRID_LABELS = [
@@ -3027,19 +3130,13 @@
     '12','1','2','3','4'
   ];
 
-  const TODAY_FILLS = {
-    7:  ['pk1','pk1','pk1','pk1','pk1','pk1'],
-    8:  ['pk2','pk2','',   'pk1','pk2','pk1'],
-    10: ['pu1','pu1','pu1','pu1','pu1','pu1'],
-    11: ['pu2','pu1','pu2','pu1','pu2','pu1'],
-  };
-
   // ── Card HTML builder ──────────────────────────────────────
   function emptySubRow() {
     return `<div class="row-sub row-sub--empty"><div class="sub-inner"><input class="sub-name-input" type="text" placeholder="할 일 입력"></div><div class="sub-check-wrap"><div class="checkbox"></div></div></div>`;
   }
 
-  function subjGroupsHTML() {
+  function subjGroupsHTML(times) {
+    const t = times || ['2:30:25', '2:30:25'];
     const SUBJ_COLORS = [
       { bg: 'rgba(59,130,246,0.10)', fill: 'rgba(37,99,235,0.86)' },
       { bg: 'rgba(34,197,94,0.10)',  fill: 'rgba(22,163,74,0.86)'  },
@@ -3050,7 +3147,7 @@
           <div class="subj-inner">
             <div class="play-btn" style="background:${SUBJ_COLORS[idx].bg};"><i data-lucide="play" style="width:12px;height:12px;fill:${SUBJ_COLORS[idx].fill};stroke:none;margin-left:1px;"></i></div>
             <span class="subj-name">${name}</span>
-            <span class="subj-time">2:30:25</span>
+            <span class="subj-time">${t[idx]}</span>
           </div>
           <div class="subj-add"><i data-lucide="plus" style="width:20px;height:20px;"></i></div>
         </div>
@@ -3063,7 +3160,7 @@
     const dateVal = page.empty ? '날짜 선택' : page.dateText;
     const dateCls = page.empty ? 'hd-date-val placeholder' : 'hd-date-val';
     const dday    = page.today ? 'D-3'     : '–';
-    const time    = page.today ? '5:30:24' : '–';
+    const time    = page.totalTime || (page.today ? '5:30:24' : '–');
     return `
 <div class="card" data-page-id="${page.id}" data-canvas-state="${state}">
   ${page.empty ? `<button class="page-type-tab" id="pageTypeTabBtn">
@@ -3095,7 +3192,7 @@
     </div>
     <div class="card-gap"></div>
     <div class="list-area">
-      <div class="left-panel">${subjGroupsHTML()}</div>
+      <div class="left-panel">${subjGroupsHTML(page.times)}</div>
       <div class="panel-gap"></div>
       <div class="right-panel">
         <div class="grid-wrap">
@@ -3159,7 +3256,7 @@
   PAGES.forEach((page) => {
     canvasZoomWrap.insertAdjacentHTML('beforeend', buildCardHTML(page));
     const card = canvasZoomWrap.lastElementChild;
-    buildGrid(card, page.today ? TODAY_FILLS : null);
+    buildGrid(card, page.fills || null);
     initEmojiPicker(card);
   });
 
@@ -3172,34 +3269,197 @@
     return new Date(2000 + parseInt(yy, 10), parseInt(mm, 10) - 1, parseInt(dd, 10));
   }
 
-  function rebuildPanel(datedCards, selectedIdx) {
+  function dateKey(date) { return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`; }
+
+  // "공부 기록이 있다" = 타임 테이블에 10분 단위 형광펜 블록이 실제로 채워져 있다(.g-cell.bl1/bl2/gr1/gr2).
+  // 과목 시간(2:30:25 같은) 텍스트만으로는 판단하지 않는다 — 오른쪽 타임 테이블 하이라이트가 기준.
+  // "페이지 추가"로 만든 study형 페이지는 아직 이 기준 데이터를 안 쓰므로(더미 블록이 항상 렌더링됨)
+  // 일단 있는 것으로 간주한다.
+  function cardHasRecord(card) {
+    // 미래 날짜는 무슨 데이터가 있든 항상 "기록 없음"으로 취급한다(방어적 규칙).
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    if (parseCardDate(card) > today) return false;
+    if (card.querySelector('.g-cell.bl1, .g-cell.bl2, .g-cell.gr1, .g-cell.gr2')) return true;
+    if (card.dataset.pageType === 'study') return true;
+    return false;
+  }
+
+  // 헤더 우측 "기록만" 토글 — 켜면 빈 칸(오늘~기간 종료일의 미기록 날짜)뿐 아니라, 페이지는
+  // 있지만 실제 공부 기록이 없는 날짜도 함께 숨기고 진짜 기록이 있는 날짜만 보여준다
+  let spFilterRecordsOnly = false;
+
+  // 접힌 월(예: "2026-7") 목록 — rebuildPanel이 다시 그려도 접힘 상태가 유지되도록 여기서 관리한다
+  const spCollapsedMonths = new Set();
+
+  // 사이드 패널 = "노트 기간"(시작일~종료일) 안의 날짜만 하루 단위로 나열한 목록 — 기록 유무와
+  // 무관하게 기간 밖의 날짜는 절대 표시되지 않는다.
+  // - 페이지가 이미 있는 날짜는(기록 유무와 무관하게) 그 페이지의 썸네일로 표시된다 — 방금 빈 칸을
+  //   눌러 새로 만든 페이지도 여기 포함되어 바로 보인다.
+  // - 페이지가 없는 날짜는 오늘·미래에 한해서만 빈 칸("+")으로 표시된다 — 과거인데 페이지가 없는
+  //   날짜는 목록에서 아예 노출되지 않는다.
+  //   ("기록만" 토글이 켜져 있으면 기록 없는 항목은 전부 생략된다.)
+  function rebuildPanel(datedCards, selectedCard) {
     const spContent = document.querySelector('.sp-content');
     spContent.innerHTML = '';
-    const items = datedCards.map((card, idx) => {
-      const txt = card.dataset.dateText || card.querySelector('.hd-date-val').textContent;
-      const [, mm, dd] = txt.split('.');
-      return { idx, label: `${parseInt(mm, 10)}/${parseInt(dd, 10)}` };
-    });
-    items.push({ idx: datedCards.length, isAdd: true });
 
-    for (let i = 0; i < items.length; i += 2) {
-      const row = document.createElement('div');
-      row.className = 'sp-row';
-      for (let j = i; j < Math.min(i + 2, items.length); j++) {
-        const item = items[j];
-        const spCard = document.createElement('div');
-        spCard.className = 'sp-card' + (item.idx === selectedIdx ? ' sp-selected' : '');
-        if (item.isAdd) {
-          spCard.innerHTML = `<div class="sp-thumb sp-thumb-add"><span class="sp-add-icon">+</span></div><div class="sp-caption"><span class="sp-date">페이지 추가</span></div>`;
-        } else {
-          spCard.dataset.pageIdx = item.idx;
-          spCard.innerHTML = `<div class="sp-thumb"></div><div class="sp-caption"><span class="sp-date">${item.label}</span><i data-lucide="more-horizontal" class="sp-more-icon"></i></div>`;
+    const activeTabEl = document.querySelector('.tab.active');
+    const period = activeTabEl?._periodState || defaultNotePeriod();
+    spPeriodStartBtn.textContent = formatPeriodDate(period.start);
+    spPeriodEndBtn.textContent = formatPeriodDate(period.end);
+
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const startDate = new Date(period.start.year, period.start.month - 1, period.start.day);
+    const endDate = new Date(period.end.year, period.end.month - 1, period.end.day);
+
+    const cardByTime = new Map();
+    datedCards.forEach(card => cardByTime.set(parseCardDate(card).getTime(), card));
+
+    const items = [];
+    const cursor = new Date(startDate);
+    while (cursor <= endDate) {
+      const t = cursor.getTime();
+      const existingCard = cardByTime.get(t) || null;
+      const hasRecord = existingCard ? cardHasRecord(existingCard) : false;
+      if (existingCard) {
+        if (!spFilterRecordsOnly || hasRecord) {
+          items.push({ card: existingCard, time: t, label: `${cursor.getMonth() + 1}/${cursor.getDate()}` });
         }
-        row.appendChild(spCard);
+      } else if (!spFilterRecordsOnly && t >= today.getTime()) {
+        items.push({
+          isBlank: true, time: t,
+          y: cursor.getFullYear(), m: cursor.getMonth() + 1, d: cursor.getDate(),
+          isToday: t === today.getTime(),
+          label: `${cursor.getMonth() + 1}/${cursor.getDate()}`,
+        });
       }
-      spContent.appendChild(row);
+      cursor.setDate(cursor.getDate() + 1);
     }
+
+    // 월 단위로 묶는다 — 같은 연/월끼리 하나의 접을 수 있는 그룹으로 표시
+    const groups = [];
+    let curGroup = null;
+    items.forEach(item => {
+      const d = new Date(item.time);
+      const key = `${d.getFullYear()}-${d.getMonth() + 1}`;
+      if (!curGroup || curGroup.key !== key) {
+        curGroup = { key, year: d.getFullYear(), month: d.getMonth() + 1, items: [] };
+        groups.push(curGroup);
+      }
+      curGroup.items.push(item);
+    });
+
+    groups.forEach(group => {
+      const collapsed = spCollapsedMonths.has(group.key);
+
+      const header = document.createElement('div');
+      header.className = 'sp-month-header' + (collapsed ? ' collapsed' : '');
+      header.dataset.monthKey = group.key;
+      header.innerHTML = `<span class="sp-month-title">${group.year}년 ${group.month}월</span><i data-lucide="chevron-down" class="sp-month-chevron"></i>`;
+      spContent.appendChild(header);
+
+      const body = document.createElement('div');
+      body.className = 'sp-month-body';
+      if (collapsed) body.style.display = 'none';
+
+      for (let i = 0; i < group.items.length; i += 2) {
+        const row = document.createElement('div');
+        row.className = 'sp-row';
+        for (let j = i; j < Math.min(i + 2, group.items.length); j++) {
+          const item = group.items[j];
+          const spCard = document.createElement('div');
+          spCard.className = 'sp-card' + (item.card && item.card === selectedCard ? ' sp-selected' : '');
+          if (item.isBlank) {
+            spCard.classList.add('sp-blank');
+            spCard.dataset.y = item.y; spCard.dataset.m = item.m; spCard.dataset.d = item.d;
+            if (item.isToday) spCard.dataset.today = '1';
+            spCard.innerHTML = `<div class="sp-thumb sp-thumb-add"><span class="sp-add-icon">+</span></div><div class="sp-caption"><span class="sp-date">${item.label}</span></div>`;
+          } else {
+            spCard.dataset.dateKey = dateKey(parseCardDate(item.card));
+            spCard.innerHTML = `<div class="sp-thumb"></div><div class="sp-caption"><span class="sp-date">${item.label}</span><i data-lucide="more-horizontal" class="sp-more-icon"></i></div>`;
+          }
+          row.appendChild(spCard);
+        }
+        body.appendChild(row);
+      }
+      spContent.appendChild(body);
+    });
     lucide.createIcons({ nodes: [spContent] });
+    // 목록을 새로 그렸으니 오늘 슬롯 DOM도 새 노드로 바뀐다 — 관찰 대상을 다시 연결해야 한다.
+    // watchSpTodayFab은 이 함수보다 뒤에서 정의되지만, rebuildPanel의 첫 실행(맨 아래 "Initial
+    // panel build")은 그 정의 블록보다도 더 나중에 일어나므로 호이스팅 문제 없이 안전하다.
+    watchSpTodayFab();
+  }
+
+  // ── 헤더 우측 "기록만" 필터 토글 ──────────────────────────
+  const spFilterToggle = document.getElementById('spFilterToggle');
+  spFilterToggle.addEventListener('click', () => {
+    spFilterRecordsOnly = !spFilterRecordsOnly;
+    spFilterToggle.classList.toggle('active', spFilterRecordsOnly);
+    spFilterToggle.setAttribute('aria-pressed', String(spFilterRecordsOnly));
+    sortPages();
+  });
+
+  // ── 노트 기간 늘리기/줄이기: 시작일/종료일 버튼을 누르면 날짜 선택기가 뜬다 ──
+  const spPeriodStartBtn = document.getElementById('spPeriodStartBtn');
+  const spPeriodEndBtn = document.getElementById('spPeriodEndBtn');
+  const spStartPicker = new DatePicker({
+    onConfirm({ year, month, day }) {
+      const activeTabEl = tabLabels.querySelector('.tab.active');
+      if (!activeTabEl) return;
+      const period = activeTabEl._periodState || defaultNotePeriod();
+      period.start = { year, month, day };
+      if (periodDateValue(period.start) > periodDateValue(period.end)) period.end = period.start;
+      activeTabEl._periodState = period;
+      sortPages();
+    }
+  });
+  const spEndPicker = new DatePicker({
+    onConfirm({ year, month, day }) {
+      const activeTabEl = tabLabels.querySelector('.tab.active');
+      if (!activeTabEl) return;
+      const period = activeTabEl._periodState || defaultNotePeriod();
+      period.end = { year, month, day };
+      if (periodDateValue(period.end) < periodDateValue(period.start)) period.start = period.end;
+      activeTabEl._periodState = period;
+      sortPages();
+    }
+  });
+  spPeriodStartBtn.addEventListener('click', () => {
+    const period = (tabLabels.querySelector('.tab.active') || {})._periodState || defaultNotePeriod();
+    spStartPicker.year = period.start.year; spStartPicker.month = period.start.month; spStartPicker.selected = period.start.day;
+    spStartPicker.open();
+  });
+  spPeriodEndBtn.addEventListener('click', () => {
+    const period = (tabLabels.querySelector('.tab.active') || {})._periodState || defaultNotePeriod();
+    spEndPicker.year = period.end.year; spEndPicker.month = period.end.month; spEndPicker.selected = period.end.day;
+    spEndPicker.open();
+  });
+
+  // ── 사이드 패널의 "오늘로 이동" 버튼: 오늘자 슬롯(빈 칸 또는 실제 카드)이 .sp-content 자체
+  //    스크롤 밖으로 나가면 뜬다. rebuildPanel이 매번 슬롯 DOM을 새로 그리므로, 다시 그릴 때마다
+  //    관찰 대상도 새로 연결한다.
+  const spTodayFabBtn = document.getElementById('spTodayFabBtn');
+  const spContentEl = document.querySelector('.sp-content');
+  function getTodaySpCardEl() {
+    return document.querySelector('.sp-blank[data-today="1"]') ||
+      document.querySelector(`.sp-card[data-date-key="${dateKey(new Date())}"]`);
+  }
+  spTodayFabBtn.addEventListener('click', () => {
+    const el = getTodaySpCardEl();
+    if (!el) return;
+    const target = el.offsetTop - (spContentEl.clientHeight - el.offsetHeight) / 2;
+    spContentEl.scrollTo({ top: Math.max(0, target), behavior: 'smooth' });
+  });
+  let spTodayFabObserver = null;
+  function watchSpTodayFab() {
+    const el = getTodaySpCardEl();
+    if (!el) { spTodayFabBtn.classList.remove('visible'); return; }
+    if (spTodayFabObserver) spTodayFabObserver.disconnect();
+    spTodayFabObserver = new IntersectionObserver(([entry]) => {
+      spTodayFabBtn.classList.toggle('visible', !entry.isIntersecting);
+      spTodayFabBtn.classList.toggle('pos-top', entry.boundingClientRect.top < entry.rootBounds.top);
+    }, { root: spContentEl, threshold: 0 });
+    spTodayFabObserver.observe(el);
   }
 
   const premiumDialog = new Dialog({
@@ -3254,9 +3514,8 @@
     });
     canvasZoomWrap.appendChild(addPageBtn); // 항상 마지막 페이지 아래에 위치
 
-    const selectedPanelIdx = selectedCard ? datedCards.indexOf(selectedCard) : datedCards.length - 1;
     const selectedDomIdx = selectedCard ? orderedEls.indexOf(selectedCard) : orderedEls.length - 1;
-    rebuildPanel(datedCards, selectedPanelIdx);
+    rebuildPanel(datedCards, selectedCard);
     if (selectedCard) scrollToCard(selectedDomIdx, true);
     setTimeout(updateAllThumbs, 50);
     return newBanners;
@@ -3294,122 +3553,22 @@
   }
 
   function updateAllThumbs() {
-    const allCards = Array.from(canvasZoomWrap.querySelectorAll('.card[data-canvas-state="with-date"]'));
-    document.querySelectorAll('.sp-card[data-page-idx]').forEach(spCard => {
-      const idx    = parseInt(spCard.dataset.pageIdx);
-      const card   = allCards[idx];
+    document.querySelectorAll('.sp-card[data-date-key]').forEach(spCard => {
+      const card = findCardByDateKey(spCard.dataset.dateKey);
       const thumbEl = spCard.querySelector('.sp-thumb');
       if (card && thumbEl) renderThumb(card, thumbEl);
     });
   }
 
-  // ── Calendar note type: single-page canvas + calendar side panel ──
-  let scrollModeFragment = null;
-
-  function setCanvasMode(mode, tabEl) {
-    const spContent = document.querySelector('.sp-content');
-    if (mode === 'calendar') {
-      if (canvasZoomWrap.dataset.mode !== 'calendar') {
-        scrollModeFragment = document.createDocumentFragment();
-        while (canvasZoomWrap.firstChild) scrollModeFragment.appendChild(canvasZoomWrap.firstChild);
-        canvasZoomWrap.dataset.mode = 'calendar';
-      }
-      renderCalendarNoteCanvas(tabEl);
-      ensureCalendarPicker(tabEl);
-      // 캘린더 노트는 사이드바를 쓰지 않고 툴바의 사이드바 버튼이 좌상단 인라인 캘린더를
-      // 열고 닫는 토글로 쓰인다 (panelToggleBtn 핸들러 참고)
-      sidePanel.close();
-      panelToggleBtn.classList.remove('panel-open');
-      closeCalInlinePanel(); // 탭 전환 시 이전 탭에서 열려있던 인라인 캘린더는 닫아둔다
-    } else {
-      if (canvasZoomWrap.dataset.mode === 'calendar') {
-        canvasZoomWrap.innerHTML = '';
-        if (scrollModeFragment) { canvasZoomWrap.appendChild(scrollModeFragment); scrollModeFragment = null; }
-        canvasZoomWrap.dataset.mode = 'scroll';
-      }
-      closeCalInlinePanel();
-      document.getElementById('spHeaderTitle').textContent = '페이지';
-      document.getElementById('spHeaderSpacerLeft').textContent = '구매';
-      document.getElementById('spHeaderSpacerRight').textContent = '구매';
-      sortPages();
-    }
-    // 캘린더 노트 ↔ 일반 노트 전환 시 "오늘로 이동" 플로팅 버튼이 감시하는 대상도 새로
-    // 고른다(그렇지 않으면 전환 전에 연결해둔 관찰자가 DOM에서 떨어져나간 옛 카드를 계속
-    // 붙들고 있어 판정이 어긋난다). 전역 함수 선언은 호이스팅으로 인해 정의 이전에도
-    // window.watchTodayFab이 이미 존재하는 것처럼 보이므로(TDZ 오류 유발), 별도의 준비완료
-    // 플래그로 안전하게 가드한다 — 최초 페이지 로드 시점엔 아직 준비 전이라 조용히 무시된다.
+  function setCanvasMode() {
+    document.getElementById('spHeaderTitle').textContent = '페이지';
+    document.getElementById('spHeaderSpacerLeft').textContent = '구매';
+    sortPages();
+    // 노트 전환 시 "오늘로 이동" 플로팅 버튼이 감시하는 대상도 새로 고른다. 전역 함수 선언은
+    // 호이스팅으로 인해 정의 이전에도 window.watchTodayFab이 이미 존재하는 것처럼 보이므로
+    // (TDZ 오류 유발), 별도의 준비완료 플래그로 안전하게 가드한다 — 최초 페이지 로드 시점엔
+    // 아직 준비 전이라 조용히 무시된다.
     if (window.__todayFabReady) window.watchTodayFab();
-  }
-
-  function ensureCalendarPageCard(tabEl, dateText) {
-    const state = tabEl._calState;
-    let card = state.pages.get(dateText);
-    if (!card) {
-      const t = new Date();
-      const todayText = `${String(t.getFullYear()).slice(2)}.${String(t.getMonth() + 1).padStart(2, '0')}.${String(t.getDate()).padStart(2, '0')}`;
-      const isToday = dateText === todayText;
-      canvasZoomWrap.insertAdjacentHTML('beforeend',
-        buildCardHTML({ id: 'cal-' + dateText.replace(/\./g, ''), dateText, empty: false, today: isToday }));
-      card = canvasZoomWrap.lastElementChild;
-      buildGrid(card, isToday ? TODAY_FILLS : null);
-      initEmojiPicker(card);
-      lucide.createIcons({ nodes: [card] });
-      state.pages.set(dateText, card);
-    }
-    return card;
-  }
-
-  function renderCalendarNoteCanvas(tabEl) {
-    const state = tabEl._calState;
-    const before = canvasZoomWrap.firstElementChild;
-    const card = ensureCalendarPageCard(tabEl, state.activeDateText);
-    if (before && before !== card) before.remove(); // still referenced in state.pages, safe to detach
-    if (!canvasZoomWrap.contains(card)) canvasZoomWrap.appendChild(card);
-    requestAnimationFrame(() => scrollToCard(0, false));
-  }
-
-  // 캘린더 노트는 사이드바를 쓰지 않으므로, DatePicker 인스턴스만 미리 만들어두고
-  // 실제로 여는 건 panelToggleBtn 클릭 핸들러가 담당한다. 확인 버튼 없이 날짜를 누르면
-  // 바로 그 페이지로 이동하고(instantSelect), 인라인 캘린더 위젯 자체도 접힌다.
-  function ensureCalendarPicker(tabEl) {
-    const state = tabEl._calState;
-    if (!state.picker) {
-      state.picker = new DatePicker({
-        year: state.year, month: state.month, // no takenDates -> every date stays clickable
-        instantSelect: true,
-        onConfirm({ year, month, day }) {
-          const y = String(year).slice(2), m = String(month).padStart(2, '0'), d = String(day).padStart(2, '0');
-          state.activeDateText = `${y}.${m}.${d}`;
-          state.year = year; state.month = month;
-          renderCalendarNoteCanvas(tabEl);
-          closeCalInlinePanel();
-        }
-      });
-    }
-    return state.picker;
-  }
-
-  // ── 캘린더 노트: 좌상단 인라인 캘린더 위젯(딤드 없음) 열기/닫기 ──────────
-  const calInlinePanel = document.getElementById('calInlinePanel');
-  function openCalInlinePanel(tabEl) {
-    const picker = ensureCalendarPicker(tabEl);
-    if (!picker._sheet) {
-      picker.mount(calInlinePanel);
-    } else if (picker._sheet.parentElement !== calInlinePanel) {
-      calInlinePanel.innerHTML = '';
-      calInlinePanel.appendChild(picker._sheet);
-    }
-    picker.refresh();
-    calInlinePanel.classList.add('visible');
-    panelToggleBtn.classList.add('panel-open');
-  }
-  function closeCalInlinePanel() {
-    calInlinePanel.classList.remove('visible');
-    panelToggleBtn.classList.remove('panel-open');
-  }
-  function toggleCalInlinePanel(tabEl) {
-    if (calInlinePanel.classList.contains('visible')) closeCalInlinePanel();
-    else openCalInlinePanel(tabEl);
   }
 
   // Initial panel build
@@ -3440,6 +3599,20 @@
     const t = new Date();
     return `${String(t.getFullYear()).slice(2)}.${String(t.getMonth() + 1).padStart(2, '0')}.${String(t.getDate()).padStart(2, '0')}`;
   }
+
+  // ── 노트 기간(페이지를 만들 수 있는 날짜 범위) 공용 헬퍼 ──────────────
+  function defaultNotePeriod() {
+    const s = new Date();
+    const e = new Date(); e.setDate(e.getDate() + 14);
+    return {
+      start: { year: s.getFullYear(), month: s.getMonth() + 1, day: s.getDate() },
+      end:   { year: e.getFullYear(), month: e.getMonth() + 1, day: e.getDate() },
+    };
+  }
+  function formatPeriodDate(d) {
+    return `${d.year}.${String(d.month).padStart(2, '0')}.${String(d.day).padStart(2, '0')}`;
+  }
+  function periodDateValue(d) { return d.year * 10000 + d.month * 100 + d.day; }
 
   function insertGhostTodayCard() {
     const todayText = todayDateText();
@@ -3567,31 +3740,55 @@
   scrollToCard(canvasScroll.querySelectorAll('.card').length - 1, false);
 
   // ── Side panel: single delegation handler (works for dynamic cards too) ──
+  function findCardByDateKey(key) {
+    return Array.from(canvasScroll.querySelectorAll('.card[data-canvas-state="with-date"]'))
+      .find(c => dateKey(parseCardDate(c)) === key);
+  }
+
   document.querySelector('.sp-content').addEventListener('click', e => {
-    const addThumb = e.target.closest('.sp-thumb-add');
-    if (addThumb) {
-      const rect = addThumb.getBoundingClientRect();
-      openAddPageMenu(rect.left + rect.width / 2, rect.top, { above: true });
+    const monthHeader = e.target.closest('.sp-month-header');
+    if (monthHeader) {
+      const key = monthHeader.dataset.monthKey;
+      const willCollapse = !monthHeader.classList.contains('collapsed');
+      if (willCollapse) spCollapsedMonths.add(key); else spCollapsedMonths.delete(key);
+      monthHeader.classList.toggle('collapsed', willCollapse);
+      const body = monthHeader.nextElementSibling;
+      if (body && body.classList.contains('sp-month-body')) body.style.display = willCollapse ? 'none' : '';
       return;
     }
+
+    const blank = e.target.closest('.sp-blank');
+    if (blank) {
+      if (blank.dataset.today === '1') {
+        // 오늘 빈칸 → 이미 캔버스에 떠 있는 "오늘' 페이지 추가" 미리보기를 그대로 활성화한다
+        const gc = document.querySelector('.card.card-ghost');
+        const frame = gc && gc.closest('.ghost-frame');
+        if (gc && frame) activateGhostCard(frame, gc, gc.dataset.dateText);
+      } else {
+        createPage(parseInt(blank.dataset.y, 10), parseInt(blank.dataset.m, 10), parseInt(blank.dataset.d, 10));
+      }
+      return;
+    }
+
     const moreIcon = e.target.closest('.sp-more-icon');
     if (moreIcon) {
-      const spCard = moreIcon.closest('.sp-card[data-page-idx]');
+      const spCard = moreIcon.closest('.sp-card[data-date-key]');
       if (!spCard) return;
-      const idx = parseInt(spCard.dataset.pageIdx, 10);
-      const datedCards = Array.from(canvasScroll.querySelectorAll('.card[data-canvas-state="with-date"]'));
-      datedCards.sort((a, b) => parseCardDate(a) - parseCardDate(b));
-      activePageCard = datedCards[idx];
+      const card = findCardByDateKey(spCard.dataset.dateKey);
+      if (!card) return;
+      activePageCard = card;
       const r = moreIcon.getBoundingClientRect();
       pageMenu.open(r.left + r.width / 2, r.top, { above: true });
       return;
     }
 
-    const pageCard = e.target.closest('.sp-card[data-page-idx]');
+    const pageCard = e.target.closest('.sp-card[data-date-key]');
     if (pageCard) {
-      const idx = parseInt(pageCard.dataset.pageIdx, 10);
+      const card = findCardByDateKey(pageCard.dataset.dateKey);
+      if (!card) return;
       document.querySelectorAll('.sp-card').forEach(t => t.classList.remove('sp-selected'));
       pageCard.classList.add('sp-selected');
+      const idx = Array.from(canvasScroll.querySelectorAll('.card')).indexOf(card);
       scrollToCard(idx, true);
     }
   });
@@ -3652,6 +3849,14 @@
 
   // 새 페이지를 캔버스에 생성 (속지 설정에서 구성한 템플릿 + 컬러를 그대로 반영)
   function createPage(year, month, day) {
+    const period = document.querySelector('.tab.active')?._periodState;
+    if (period) {
+      const v = year * 10000 + month * 100 + day;
+      if (v < periodDateValue(period.start) || v > periodDateValue(period.end)) {
+        pageToast.show('설정된 노트 기간 밖의 날짜입니다');
+        return;
+      }
+    }
     if (datePicker.takenDates.has(`${year}-${month}-${day}`)) return;
     const y = String(year).slice(2);
     const m = String(month).padStart(2, '0');
@@ -3877,11 +4082,6 @@
   const sidePanel = new SidePanel(document.getElementById('sidePanel'));
   const panelToggleBtn = document.getElementById('panelToggleBtn');
   panelToggleBtn.addEventListener('click', () => {
-    const activeTabEl = tabLabels.querySelector('.tab.active');
-    if (activeTabEl && activeTabEl.dataset.noteType === 'calendar') {
-      toggleCalInlinePanel(activeTabEl); // 캘린더 노트: 딤드 팝업 대신 좌상단 인라인 캘린더를 토글
-      return;
-    }
     sidePanel.toggle();
     panelToggleBtn.classList.toggle('panel-open', sidePanel.isOpen());
   });
@@ -4028,11 +4228,13 @@
   // ── 상태 ─────────────────────────────────────
   let ncState = {};
   function ncResetState(type) {
+    const period = defaultNotePeriod();
     ncState = {
       type, activeTab: 'insert', coverFilterTab: '컬러',
       coverId: NW_COVERS[0].id, coverPattern: 'none',
       insertId: NW_INSERTS[type][0].id, insertColors: {},
       noteType: 'scroll',
+      periodStart: period.start, periodEnd: period.end,
     };
   }
 
@@ -4044,13 +4246,13 @@
     ncRenderPreviewTabs();
     ncRenderPreviewThumbs();
     ncRenderBody();
-    document.getElementById('ncFormatPop').classList.remove('show');
+    document.getElementById('ncFormatBackdrop').classList.remove('show');
     document.getElementById('noteCreateScreen').classList.add('visible');
     lucide.createIcons({ nodes: [document.getElementById('noteCreateScreen')] });
   }
   function ncCloseScreen() {
     document.getElementById('noteCreateScreen').classList.remove('visible');
-    document.getElementById('ncFormatPop').classList.remove('show');
+    document.getElementById('ncFormatBackdrop').classList.remove('show');
   }
   document.getElementById('ncCloseBtn').addEventListener('click', ncCloseScreen);
 
@@ -4217,39 +4419,74 @@
   ncSubtitleInputEl.addEventListener('blur', ncCommitSubtitle);
   ncSubtitleInputEl.addEventListener('keydown', (e) => { if (e.key === 'Enter') ncSubtitleInputEl.blur(); });
 
-  // 확인(✓) → 노트 형식 미니팝업
-  const ncFormatPop = document.getElementById('ncFormatPop');
-  document.getElementById('ncConfirmBtn').addEventListener('click', (e) => {
-    if (ncFormatPop.classList.contains('show')) { ncFormatPop.classList.remove('show'); return; }
-    const br = e.currentTarget.getBoundingClientRect();
-    ncFormatPop.style.top = (br.bottom + 8) + 'px';
-    ncFormatPop.style.right = (window.innerWidth - br.right) + 'px';
-    ncFormatPop.style.bottom = 'auto';
-    ncFormatPop.classList.add('show');
+  // 확인(✓) → 노트 기간 미니팝업
+  const ncPeriodStartBtn = document.getElementById('ncPeriodStartBtn');
+  const ncPeriodEndBtn = document.getElementById('ncPeriodEndBtn');
+  function ncUpdatePeriodLabels() {
+    ncPeriodStartBtn.textContent = formatPeriodDate(ncState.periodStart);
+    ncPeriodEndBtn.textContent = formatPeriodDate(ncState.periodEnd);
+  }
+  const ncFormatBackdrop = document.getElementById('ncFormatBackdrop');
+  const ncNameInput = document.getElementById('ncNameInput');
+  function ncCloseFormatPop() {
+    ncFormatBackdrop.classList.remove('show');
+  }
+  document.getElementById('ncConfirmBtn').addEventListener('click', () => {
+    ncNameInput.value = ncSubtitleEl.textContent;
+    ncUpdatePeriodLabels();
+    ncFormatBackdrop.classList.add('show');
+    ncNameInput.focus();
+    ncNameInput.select();
   });
-  document.getElementById('ncNoteTypeToggle').querySelectorAll('.qty-type-chip').forEach(chip => {
-    chip.addEventListener('click', () => {
-      ncState.noteType = chip.dataset.noteType;
-      document.getElementById('ncNoteTypeToggle').querySelectorAll('.qty-type-chip').forEach(c =>
-        c.classList.toggle('selected', c === chip));
-    });
+  ncFormatBackdrop.addEventListener('click', ncCloseFormatPop);
+  // 노트가 유효한 날짜 범위(기간) — 시작일이 종료일보다 늦어지면 종료일을 시작일로 맞춘다(반대도 동일)
+  const ncStartPicker = new DatePicker({
+    onConfirm({ year, month, day }) {
+      ncState.periodStart = { year, month, day };
+      if (periodDateValue(ncState.periodStart) > periodDateValue(ncState.periodEnd)) {
+        ncState.periodEnd = ncState.periodStart;
+      }
+      ncUpdatePeriodLabels();
+    }
+  });
+  const ncEndPicker = new DatePicker({
+    onConfirm({ year, month, day }) {
+      ncState.periodEnd = { year, month, day };
+      if (periodDateValue(ncState.periodEnd) < periodDateValue(ncState.periodStart)) {
+        ncState.periodStart = ncState.periodEnd;
+      }
+      ncUpdatePeriodLabels();
+    }
+  });
+  ncPeriodStartBtn.addEventListener('click', () => {
+    ncStartPicker.year = ncState.periodStart.year;
+    ncStartPicker.month = ncState.periodStart.month;
+    ncStartPicker.selected = ncState.periodStart.day;
+    ncStartPicker.open();
+  });
+  ncPeriodEndBtn.addEventListener('click', () => {
+    ncEndPicker.year = ncState.periodEnd.year;
+    ncEndPicker.month = ncState.periodEnd.month;
+    ncEndPicker.selected = ncState.periodEnd.day;
+    ncEndPicker.open();
   });
 
   document.getElementById('ncCreateBtn').addEventListener('click', () => {
     const cover = NW_COVERS.find(c => c.id === ncState.coverId);
-    const name = ncSubtitleEl.textContent;
+    const name = ncNameInput.value.trim() || ncSubtitleEl.textContent;
     const noteType = ncState.noteType;
+    const period = { start: ncState.periodStart, end: ncState.periodEnd };
 
     ncCloseScreen();
 
-    const note = { name, date: '방금 전', icon: NW_TYPE_ICON[ncState.type] || 'file-text', color: cover.bg, pattern: ncState.coverPattern !== 'none' ? ncState.coverPattern : null, noteType };
+    const note = { name, date: '방금 전', icon: NW_TYPE_ICON[ncState.type] || 'file-text', color: cover.bg, pattern: ncState.coverPattern !== 'none' ? ncState.coverPattern : null, noteType, period };
     const cardEl = buildNoteCardEl(note);
     HOME_NOTES.unshift(note);
     hsNotesEl.insertBefore(cardEl, hsNotesEl.firstChild);
     lucide.createIcons({ nodes: [cardEl] });
 
     nwShowNoteCreated(name, { bg: cover.bg, pattern: ncState.coverPattern !== 'none' ? ncState.coverPattern : null });
-    openTabFromHome(note.name, note.icon, 'note', note.noteType);
+    openTabFromHome(note.name, note.icon, 'note', note.noteType, note.period);
   });
 
   function nwDetailPreviewHTML(ins, color) {
@@ -4689,7 +4926,6 @@
     { name: '3학년 5반 A조 프로젝트 노트', date: '2일 전', icon: 'users',          color: '#343434' },
     { name: '수학 1:1 과외 노트',          date: '2일 전', icon: 'book-open',      color: '#5a8dee' },
     { name: '일주일 관리 노트',            date: '2일 전', icon: 'calendar-range', color: '#34c78a' },
-    { name: '캘린더 노트',                 date: '방금 전', icon: 'calendar', noteType: 'calendar', color: '#b48be8' },
   ];
 
   // rgb() 문자열로 커버색을 어둡게 만들어 책등(spine) 색을 계산 (참고: note-creation-ipad-v5.html darkenHex)
@@ -4718,7 +4954,7 @@
         <div class="chev">⌄</div>
       </div>
     `;
-    card.addEventListener('click', () => openTabFromHome(note.name, note.icon || 'file-text', 'note', note.noteType || 'scroll'));
+    card.addEventListener('click', () => openTabFromHome(note.name, note.icon || 'file-text', 'note', note.noteType || 'scroll', note.period));
     return card;
   }
 
@@ -4820,7 +5056,6 @@
   function updateView() {
     const activeTab = tabLabels.querySelector('.tab.active');
     const isQuick   = activeTab?.dataset.tabType === 'quick';
-    const isCalendar = !isQuick && activeTab?.dataset.noteType === 'calendar';
     const tabName   = activeTab?.dataset.tabName  || '';
 
     toolbar.style.display        = isQuick ? 'none' : '';
@@ -4828,15 +5063,15 @@
     viewPlaceholder.style.display = isQuick ? 'flex' : 'none';
     viewPlaceholderLabel.textContent = isQuick ? tabName : '';
 
-    if (!isQuick) setCanvasMode(isCalendar ? 'calendar' : 'scroll', activeTab);
+    if (!isQuick) setCanvasMode();
   }
 
-  function openTabFromHome(name, icon, type, noteType) {
+  function openTabFromHome(name, icon, type, noteType, period) {
     closeHomeScreen();
-    addHomeTab(name, icon, type || 'note', noteType);
+    addHomeTab(name, icon, type || 'note', noteType, period);
   }
 
-  function addHomeTab(name, icon, type, noteType) {
+  function addHomeTab(name, icon, type, noteType, period) {
     // Deactivate current active tab
     const prevActive = tabLabels.querySelector('.tab.active');
     if (prevActive) setTabActive(null); // clear all active states first
@@ -4846,17 +5081,8 @@
     newTab.className = 'tab active';
     newTab.dataset.tabType = type;
     newTab.dataset.tabName = name;
+    newTab._periodState = period ? { start: period.start, end: period.end } : defaultNotePeriod();
     newTab.dataset.noteType = noteType || 'scroll';
-    if (newTab.dataset.noteType === 'calendar') {
-      const t = new Date();
-      newTab._calState = {
-        pages: new Map(), // dateText -> cached card element
-        activeDateText: `${String(t.getFullYear()).slice(2)}.${String(t.getMonth() + 1).padStart(2, '0')}.${String(t.getDate()).padStart(2, '0')}`,
-        year: t.getFullYear(),
-        month: t.getMonth() + 1,
-        picker: null,
-      };
-    }
     newTab.innerHTML = `
       <img class="tab-curve" src="assets/tab-active-left.svg" style="width:29px;height:36px;flex-shrink:0;display:block;">
       <div class="tab-inner">
@@ -4890,6 +5116,8 @@
   }
 
   // Initialise z-index / margin on the static tabs already in HTML
+  // HTML에 미리 박혀 있는 초기 탭은 새 노트 마법사를 거치지 않으므로 기간을 직접 부여해준다
+  tabLabels.querySelectorAll('.tab').forEach(t => { if (!t._periodState) t._periodState = defaultNotePeriod(); });
   refreshTabLayout();
   updateView();
   insertGhostTodayCard(); // updateView()의 sortPages() 재정렬이 모두 끝난 뒤에 삽입해야 배너 위치·피크 스크롤이 흔들리지 않음
@@ -4898,8 +5126,6 @@
   //    캔버스 스크롤 영역 밖으로 나가면 나타나고, 누르면 그 위치로 스크롤한다 ──
   const todayFabBtn = document.getElementById('todayFabBtn');
   function getTodayCardEl() {
-    // 캘린더 노트는 스크롤 캔버스와 별개의 네비게이션(좌상단 인라인 캘린더)을 쓰므로 대상에서 제외
-    if (canvasZoomWrap.dataset.mode === 'calendar') return null;
     const ghost = canvasZoomWrap.querySelector('[data-page-id="ghost-today"]');
     if (ghost) return ghost;
     const t = new Date();
