@@ -3325,8 +3325,8 @@
   // 무관하게 기간 밖의 날짜는 절대 표시되지 않는다.
   // - 페이지가 이미 있는 날짜는(기록 유무와 무관하게) 그 페이지의 썸네일로 표시된다 — 방금 빈 칸을
   //   눌러 새로 만든 페이지도 여기 포함되어 바로 보인다.
-  // - 페이지가 없는 날짜는 오늘·미래에 한해서만 빈 칸("+")으로 표시된다 — 과거인데 페이지가 없는
-  //   날짜는 목록에서 아예 노출되지 않는다.
+  // - 페이지가 없는 날짜는 과거·미래 구분 없이 전부 빈 칸("+")으로 표시된다("빈 날짜 안보기"가
+  //   꺼져 있을 때). 기간을 과거로 잡은 새 노트도 시작일부터 빈 날짜가 그대로 보인다.
   function rebuildPanel(datedCards, selectedCard) {
     const spContent = document.querySelector('.sp-content');
     spContent.innerHTML = '';
@@ -3349,7 +3349,9 @@
       const existingCard = cardByTime.get(t) || null;
       if (existingCard) {
         items.push({ card: existingCard, time: t, isToday: t === today.getTime(), label: `${cursor.getMonth() + 1}/${cursor.getDate()}` });
-      } else if (!spHideBlankDates && t >= today.getTime()) {
+      } else if (!spHideBlankDates) {
+        // 과거·미래 구분 없이 기간 안에서 페이지가 없는 날짜는 전부 빈 칸으로 나열한다 —
+        // 7/1~8/1 노트를 새로 만들면 7/1부터 빈 날짜가 보여야 한다
         items.push({
           isBlank: true, time: t,
           y: cursor.getFullYear(), m: cursor.getMonth() + 1, d: cursor.getDate(),
