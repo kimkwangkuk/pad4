@@ -842,12 +842,6 @@
       font-size: 14px; font-weight: 600;
       color: rgba(0,0,0,0.86); letter-spacing: -0.042px; white-space: nowrap;
     }
-    .sls-pop-row-value {
-      flex: 1; min-width: 0; text-align: right;
-      font-size: 13px; font-weight: 500;
-      color: rgba(0,0,0,0.45); letter-spacing: -0.039px;
-      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-    }
     .sls-switch {
       position: relative; margin-left: auto; flex-shrink: 0;
       width: 40px; height: 24px; border-radius: 999px;
@@ -2483,8 +2477,8 @@
     }
 
     /* 노트 생성 마지막 단계 팝업 — 마무리 느낌을 강하게: 더 큰 팝업 + 완성될 노트 표지 미리보기 +
-       "기간이 있는 플래너"임을 강조하는 타임라인 커넥터·총 일수 표시. spPeriodEditPop과는
-       .nc-format-pop 클래스를 공유하지만, 이 확대 스타일은 #ncFormatPop에만 적용해 분리한다 */
+       "기간이 있는 플래너"임을 강조하는 타임라인 커넥터·총 일수 표시.
+       .nc-format-pop 기본형과 달리 이 확대 스타일은 #ncFormatPop에만 적용해 분리한다 */
     #ncFormatPop { width:360px; padding:28px 24px 24px; gap:14px; }
     .nc-format-cover-preview {
       display:flex; justify-content:center; padding-bottom:6px;
@@ -2653,12 +2647,13 @@
         <button class="bsm-close-btn" id="slsCloseBtn">✕</button>
       </div>
       <div class="sls-body">
-        <div class="nc-format-label">노트</div>
-        <button class="sls-pop-row" id="slsPeriodRow" type="button">
-          <span class="sls-pop-row-label">플래너 기간</span>
-          <span class="sls-pop-row-value" id="slsPeriodValue"></span>
-          <i data-lucide="chevron-right" style="width:16px;height:16px;color:rgba(0,0,0,0.3);flex-shrink:0;"></i>
-        </button>
+        <div class="nc-format-label">플래너 기간</div>
+        <!-- 시작일/종료일을 따로 두고, 각각 누르면 중간 팝업 없이 날짜 선택 캘린더(z2000)가 바로 뜬다 -->
+        <div class="nc-period-row">
+          <button class="nc-period-field" id="spEditPeriodStartBtn" type="button"></button>
+          <span class="nc-period-sep">~</span>
+          <button class="nc-period-field" id="spEditPeriodEndBtn" type="button"></button>
+        </div>
         <div class="nc-format-label">페이지 목록</div>
         <div class="sls-pop-row sls-toggle-row" id="slsAutoHideRow">
           <span class="sls-pop-row-label">기록 없는 날 자동 숨기기</span>
@@ -2881,18 +2876,6 @@
 
   <!-- 사이드 패널 상단 "수정" 버튼 → 노트 기간 수정 팝업. ncFormatBackdrop과 동일한
        fixed+flex 중앙 정렬/딤 패턴을 재사용한다 -->
-  <div class="nc-format-backdrop" id="spPeriodEditBackdrop">
-    <div class="nc-format-pop" id="spPeriodEditPop" onclick="event.stopPropagation()">
-      <div class="nc-format-title">노트 기간 수정</div>
-      <div class="nc-format-label">노트 기간</div>
-      <div class="nc-period-row">
-        <button class="nc-period-field" id="spEditPeriodStartBtn" type="button"></button>
-        <span class="nc-period-sep">~</span>
-        <button class="nc-period-field" id="spEditPeriodEndBtn" type="button"></button>
-      </div>
-      <button class="nc-format-create-btn" id="spPeriodEditDoneBtn">완료</button>
-    </div>
-  </div>
 
   <!-- 속지 상세 (참고: Figma 4791:616876) -->
   <div class="nc-detail-scrim" id="ncDetailScrim">
@@ -3403,9 +3386,8 @@
     spViewMenu.open(r.left + r.width / 2, r.bottom + 6);
   });
 
-  // ── 노트 정보 줄(플래너 기간 텍스트) + 우측 "설정" → 목록 설정 패널 ──
+  // ── 노트 정보 줄(플래너 기간 텍스트) + 우측 "설정" → 목록 설정 팝업 ──
   const spNotePeriodSub = document.getElementById('spNotePeriodSub');
-  const spPeriodEditBackdrop = document.getElementById('spPeriodEditBackdrop');
   const spEditPeriodStartBtn = document.getElementById('spEditPeriodStartBtn');
   const spEditPeriodEndBtn = document.getElementById('spEditPeriodEndBtn');
 
@@ -3415,14 +3397,8 @@
     const activeTabEl = document.querySelector('.tab.active');
     if (!activeTabEl) return;
     const period = activeTabEl._periodState || defaultNotePeriod();
-    const periodText = `${formatPeriodDate(period.start)} ~ ${formatPeriodDate(period.end)}`;
-    spNotePeriodSub.textContent = `플래너 기간: ${periodText}`;
-    // 목록 설정 패널의 "플래너 기간" 행 값도 같은 데이터로 함께 갱신한다
-    document.getElementById('slsPeriodValue').textContent = periodText;
-  }
-
-  function updateSpPeriodEditLabels() {
-    const period = (tabLabels.querySelector('.tab.active') || {})._periodState || defaultNotePeriod();
+    spNotePeriodSub.textContent = `플래너 기간: ${formatPeriodDate(period.start)} ~ ${formatPeriodDate(period.end)}`;
+    // 목록 설정 팝업의 시작일/종료일 필드도 같은 데이터로 함께 갱신한다
     spEditPeriodStartBtn.textContent = formatPeriodDate(period.start);
     spEditPeriodEndBtn.textContent = formatPeriodDate(period.end);
   }
@@ -3438,7 +3414,6 @@
       ensurePagesForPeriod(period); // 기간이 넓어졌으면 새로 포함된 날짜에도 페이지를 미리 만들어둔다
       sortPages();
       updateSpNoteInfo();
-      updateSpPeriodEditLabels();
     }
   });
   const spEndPicker = new DatePicker({
@@ -3452,9 +3427,9 @@
       ensurePagesForPeriod(period); // 기간이 넓어졌으면 새로 포함된 날짜에도 페이지를 미리 만들어둔다
       sortPages();
       updateSpNoteInfo();
-      updateSpPeriodEditLabels();
     }
   });
+  // 시작일/종료일 필드 — 누르면 중간 팝업 없이 날짜 선택 캘린더가 바로 뜬다
   spEditPeriodStartBtn.addEventListener('click', () => {
     const period = (tabLabels.querySelector('.tab.active') || {})._periodState || defaultNotePeriod();
     spStartPicker.year = period.start.year; spStartPicker.month = period.start.month; spStartPicker.selected = period.start.day;
@@ -3465,8 +3440,6 @@
     spEndPicker.year = period.end.year; spEndPicker.month = period.end.month; spEndPicker.selected = period.end.day;
     spEndPicker.open();
   });
-  spPeriodEditBackdrop.addEventListener('click', () => spPeriodEditBackdrop.classList.remove('show'));
-  document.getElementById('spPeriodEditDoneBtn').addEventListener('click', () => spPeriodEditBackdrop.classList.remove('show'));
 
   // ── 목록 설정 팝업: 노트 정보 줄의 "설정"으로 진입. 속지 변경 팝업과 같은 중앙 팝업으로
   //    뜨며(중앙 타이틀 네비바 + ✕), 설정은 실시간 적용이라 완료 버튼 없이 ✕·딤 클릭으로 닫는다 ──
@@ -3484,10 +3457,6 @@
   });
   listSettingsBackdrop.addEventListener('click', closeListSettings);
   document.getElementById('slsCloseBtn').addEventListener('click', closeListSettings);
-  document.getElementById('slsPeriodRow').addEventListener('click', () => {
-    updateSpPeriodEditLabels();
-    spPeriodEditBackdrop.classList.add('show');
-  });
   document.getElementById('slsAutoHideRow').addEventListener('click', () => {
     spAutoHideNoRecord = !spAutoHideNoRecord;
     slsAutoHideSwitch.classList.toggle('on', spAutoHideNoRecord);
