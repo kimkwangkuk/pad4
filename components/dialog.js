@@ -1,8 +1,10 @@
 /* ── Dialog Component ───────────────────────────────────────── */
 class Dialog {
-  constructor({ title, message, confirmLabel = '확인', cancelLabel = '취소', onConfirm, onCancel } = {}) {
+  /* content: 메시지 아래에 넣을 커스텀 UI(HTMLElement). cancelLabel에 null을 주면 취소 버튼 없이 확인 버튼만 표시된다. */
+  constructor({ title, message, content, confirmLabel = '확인', cancelLabel = '취소', onConfirm, onCancel } = {}) {
     this._title = title;
     this._message = message;
+    this._content = content;
     this._confirmLabel = confirmLabel;
     this._cancelLabel = cancelLabel;
     this._onConfirm = onConfirm;
@@ -25,16 +27,19 @@ class Dialog {
           ${this._message ? `<p class="dlg-message">${this._message}</p>` : ''}
         </div>
         <div class="dlg-buttons">
-          <button class="dlg-btn dlg-cancel">${this._cancelLabel}</button>
+          ${this._cancelLabel !== null ? `<button class="dlg-btn dlg-cancel">${this._cancelLabel}</button>` : ''}
           <button class="dlg-btn dlg-confirm">${this._confirmLabel}</button>
         </div>
       </div>
     `;
+    if (this._content instanceof HTMLElement) {
+      this._wrap.querySelector('.dlg-container').appendChild(this._content);
+    }
 
     document.body.appendChild(this._backdrop);
     document.body.appendChild(this._wrap);
 
-    this._wrap.querySelector('.dlg-cancel').addEventListener('click', () => {
+    this._wrap.querySelector('.dlg-cancel')?.addEventListener('click', () => {
       this.close();
       this._onCancel?.();
     });
@@ -74,7 +79,8 @@ class Dialog {
       this._wrap.querySelector('.dlg-title').textContent = this._title || '';
       const msgEl = this._wrap.querySelector('.dlg-message');
       if (msgEl) msgEl.textContent = this._message || '';
-      this._wrap.querySelector('.dlg-cancel').textContent = this._cancelLabel;
+      const cancelEl = this._wrap.querySelector('.dlg-cancel');
+      if (cancelEl && this._cancelLabel !== null) cancelEl.textContent = this._cancelLabel;
       this._wrap.querySelector('.dlg-confirm').textContent = this._confirmLabel;
     }
   }
