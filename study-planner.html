@@ -3422,6 +3422,7 @@
     spAddModeActive = active;
     spPendingPages = [];
     document.getElementById('sidePanel').classList.toggle('sp-add-mode', active);
+    document.getElementById('spHeaderTitle').textContent = active ? '페이지 추가' : '페이지';
     sortPages();
   }
   spAddPageBtn.addEventListener('click', () => setAddMode(true));
