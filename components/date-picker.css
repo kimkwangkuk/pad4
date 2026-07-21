@@ -6,7 +6,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 2000;
+  /* Dialog(7000/7001) 안의 기간 필드에서 열려도 항상 위에 뜨도록 다이얼로그보다 높게 둔다 */
+  z-index: 7500;
 }
 .dp-overlay.dp-hidden { display: none; }
 /* 앵커 모드: 시트를 flex 중앙 정렬 대신 좌표 기준 절대배치로 놓는다(딤은 그대로) */

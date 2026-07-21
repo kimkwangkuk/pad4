@@ -73,6 +73,8 @@
   line-height: 1.4;
   margin: 0;
 }
+/* 타이틀 없는 다이얼로그(content만 있는 경우) — 빈 p가 자리 차지하지 않게 */
+.dlg-title:empty { display: none; }
 
 .dlg-message {
   font-family: 'Pretendard', sans-serif;

@@ -2552,6 +2552,9 @@
     }
     .nc-period-field:hover { background:rgba(0,0,0,.08); }
     .nc-period-sep { font-size:13px; color:#8e8e93; flex-shrink:0; }
+    /* 노트 만들기 마무리 다이얼로그(UI 키트 Dialog)의 content — 타이틀 없이 표지 프리뷰가 주인공 */
+    .ncf-content { display:flex; flex-direction:column; gap:12px; }
+    .ncf-cover-preview { display:flex; justify-content:center; padding:10px 0 14px; }
     .nc-format-create-btn {
       width:100%; height:44px; background:rgba(0,0,0,.86); color:#fff; border:none; border-radius:12px;
       font-family:'Pretendard',sans-serif; font-size:15px; font-weight:600; cursor:pointer;
@@ -2896,26 +2899,11 @@
     </div>
   </div>
 
-  <!-- 노트 이름/기간 입력 — .nc-detail-scrim과 동일한 패턴(fixed+flex 중앙 정렬)으로,
-       transform이 걸린 .nc-screen 안에 두지 않고 형제로 빼서 position:fixed가 뷰포트
-       기준으로 정확히 동작하게 한다 -->
-  <div class="nc-format-backdrop" id="ncFormatBackdrop">
-    <div class="nc-format-pop" id="ncFormatPop" onclick="event.stopPropagation()">
-      <div class="nc-format-title">노트 만들기</div>
-      <div class="nc-format-label">노트 이름</div>
-      <input class="nc-format-name-input" id="ncNameInput" type="text" placeholder="노트 이름">
-      <div class="nc-format-label">노트 기간</div>
-      <div class="nc-period-row">
-        <button class="nc-period-field" id="ncPeriodStartBtn" type="button"></button>
-        <span class="nc-period-sep">~</span>
-        <button class="nc-period-field" id="ncPeriodEndBtn" type="button"></button>
-      </div>
-      <button class="nc-format-create-btn" id="ncCreateBtn">만들기</button>
-    </div>
-  </div>
+  <!-- 노트 만들기 마무리 팝업은 UI 키트 Dialog(components/dialog.js)로 대체 —
+       내용(표지 프리뷰 + 이름/기간)은 JS에서 content 엘리먼트로 만들어 넣는다 -->
 
-  <!-- 사이드 패널 상단 "수정" 버튼 → 노트 기간 수정 팝업. ncFormatBackdrop과 동일한
-       fixed+flex 중앙 정렬/딤 패턴을 재사용한다 -->
+  <!-- 사이드 패널 상단 "수정" 버튼 → 노트 기간 수정 팝업.
+       .nc-format-backdrop의 fixed+flex 중앙 정렬/딤 패턴을 재사용한다 -->
   <div class="nc-format-backdrop" id="spPeriodEditBackdrop">
     <div class="nc-format-pop" id="spPeriodEditPop" onclick="event.stopPropagation()">
       <div class="nc-format-title">노트 기간 수정</div>
@@ -4333,13 +4321,13 @@
     ncRenderPreviewTabs();
     ncRenderPreviewThumbs();
     ncRenderBody();
-    document.getElementById('ncFormatBackdrop').classList.remove('show');
+    ncCreateDialog.close();
     document.getElementById('noteCreateScreen').classList.add('visible');
     lucide.createIcons({ nodes: [document.getElementById('noteCreateScreen')] });
   }
   function ncCloseScreen() {
     document.getElementById('noteCreateScreen').classList.remove('visible');
-    document.getElementById('ncFormatBackdrop').classList.remove('show');
+    ncCreateDialog.close();
   }
   document.getElementById('ncCloseBtn').addEventListener('click', ncCloseScreen);
 
@@ -4506,26 +4494,52 @@
   ncSubtitleInputEl.addEventListener('blur', ncCommitSubtitle);
   ncSubtitleInputEl.addEventListener('keydown', (e) => { if (e.key === 'Enter') ncSubtitleInputEl.blur(); });
 
-  // 확인(✓) → 노트 기간 미니팝업
-  const ncPeriodStartBtn = document.getElementById('ncPeriodStartBtn');
-  const ncPeriodEndBtn = document.getElementById('ncPeriodEndBtn');
+  // 확인(✓) → 노트 만들기 마무리 다이얼로그(UI 키트 Dialog)
+  // 타이틀 없이, 사용자가 고른 표지를 크게 보여주는 프리뷰 + 이름/기간 입력 + "만들기" 버튼.
+  // content 엘리먼트는 문서에 미리 붙어있지 않아도 리스너가 정상 동작한다.
+  const ncCreateContent = document.createElement('div');
+  ncCreateContent.className = 'ncf-content';
+  ncCreateContent.innerHTML = `
+    <div class="ncf-cover-preview">
+      <div class="nb">
+        <div class="nb-cover" id="ncfCoverBg"></div>
+        <div class="nb-band1"></div><div class="nb-band2"></div>
+        <div class="nb-spine" id="ncfCoverSpine"><i></i><i></i><i></i><i></i><i></i></div>
+        <div class="nb-inset"></div>
+      </div>
+    </div>
+    <div class="nc-format-label">노트 이름</div>
+    <input class="nc-format-name-input" id="ncNameInput" type="text" placeholder="노트 이름">
+    <div class="nc-format-label">노트 기간</div>
+    <div class="nc-period-row">
+      <button class="nc-period-field" id="ncPeriodStartBtn" type="button"></button>
+      <span class="nc-period-sep">~</span>
+      <button class="nc-period-field" id="ncPeriodEndBtn" type="button"></button>
+    </div>`;
+  const ncPeriodStartBtn = ncCreateContent.querySelector('#ncPeriodStartBtn');
+  const ncPeriodEndBtn = ncCreateContent.querySelector('#ncPeriodEndBtn');
+  const ncNameInput = ncCreateContent.querySelector('#ncNameInput');
   function ncUpdatePeriodLabels() {
     ncPeriodStartBtn.textContent = formatPeriodDate(ncState.periodStart);
     ncPeriodEndBtn.textContent = formatPeriodDate(ncState.periodEnd);
   }
-  const ncFormatBackdrop = document.getElementById('ncFormatBackdrop');
-  const ncNameInput = document.getElementById('ncNameInput');
-  function ncCloseFormatPop() {
-    ncFormatBackdrop.classList.remove('show');
-  }
+  const ncCreateDialog = new Dialog({
+    content: ncCreateContent,
+    confirmLabel: '만들기',
+    cancelLabel: null,
+    onConfirm: () => ncCreateNote(),
+  });
   document.getElementById('ncConfirmBtn').addEventListener('click', () => {
     ncNameInput.value = ncSubtitleEl.textContent;
     ncUpdatePeriodLabels();
-    ncFormatBackdrop.classList.add('show');
+    // 마무리 단계 — 지금까지 설정한 표지(색·패턴)를 프리뷰 북에 그대로 입힌다
+    const cover = NW_COVERS.find(c => c.id === ncState.coverId);
+    ncCreateContent.querySelector('#ncfCoverBg').style.background = patternCSS(ncState.coverPattern || 'none', cover.bg);
+    ncCreateContent.querySelector('#ncfCoverSpine').style.background = darkenHex(cover.bg, 0.32);
+    ncCreateDialog.open();
     ncNameInput.focus();
     ncNameInput.select();
   });
-  ncFormatBackdrop.addEventListener('click', ncCloseFormatPop);
   // 노트가 유효한 날짜 범위(기간) — 시작일이 종료일보다 늦어지면 종료일을 시작일로 맞춘다(반대도 동일)
   const ncStartPicker = new DatePicker({
     onConfirm({ year, month, day }) {
@@ -4558,7 +4572,7 @@
     ncEndPicker.open();
   });
 
-  document.getElementById('ncCreateBtn').addEventListener('click', () => {
+  function ncCreateNote() {
     const cover = NW_COVERS.find(c => c.id === ncState.coverId);
     const name = ncNameInput.value.trim() || ncSubtitleEl.textContent;
     const noteType = ncState.noteType;
@@ -4574,7 +4588,7 @@
 
     nwShowNoteCreated(name, { bg: cover.bg, pattern: ncState.coverPattern !== 'none' ? ncState.coverPattern : null });
     openTabFromHome(note.name, note.icon, 'note', note.noteType, note.period, { color: note.color, pattern: note.pattern });
-  });
+  }
 
   function nwDetailPreviewHTML(ins, color) {
     const head = `<div class="dp-head">
