@@ -3833,17 +3833,39 @@
       .find(c => dateKey(parseCardDate(c)) === key);
   }
 
+  // ── 빈 날짜 클릭 → 바로 추가하지 않고 작은 오버레이 팝업(OverlayMenu)으로 먼저 확인 ──
+  let spPendingBlank = null; // 팝업이 열려있는 동안 기억해두는 클릭된 빈 날짜 { y, m, d, isToday }
+  const spBlankAddMenu = new OverlayMenu({
+    items: [{
+      lucideIcon: 'plus',
+      label: '페이지 추가',
+      onClick() {
+        if (!spPendingBlank) return;
+        if (spPendingBlank.isToday) {
+          // 오늘 빈칸 → 이미 캔버스에 떠 있는 "오늘' 페이지 추가" 미리보기를 그대로 활성화한다
+          const gc = document.querySelector('.card.card-ghost');
+          const frame = gc && gc.closest('.ghost-frame');
+          if (gc && frame) activateGhostCard(frame, gc, gc.dataset.dateText);
+        } else {
+          createPage(spPendingBlank.y, spPendingBlank.m, spPendingBlank.d);
+        }
+        spPendingBlank = null;
+      }
+    }]
+  });
+
   document.querySelector('.sp-content').addEventListener('click', e => {
     const blank = e.target.closest('.sp-blank');
     if (blank) {
-      if (blank.dataset.today === '1') {
-        // 오늘 빈칸 → 이미 캔버스에 떠 있는 "오늘' 페이지 추가" 미리보기를 그대로 활성화한다
-        const gc = document.querySelector('.card.card-ghost');
-        const frame = gc && gc.closest('.ghost-frame');
-        if (gc && frame) activateGhostCard(frame, gc, gc.dataset.dateText);
-      } else {
-        createPage(parseInt(blank.dataset.y, 10), parseInt(blank.dataset.m, 10), parseInt(blank.dataset.d, 10));
-      }
+      spPendingBlank = {
+        y: parseInt(blank.dataset.y, 10),
+        m: parseInt(blank.dataset.m, 10),
+        d: parseInt(blank.dataset.d, 10),
+        isToday: blank.dataset.today === '1',
+      };
+      spBlankAddMenu.setTitle(`${spPendingBlank.m}월 ${spPendingBlank.d}일`);
+      const r = blank.getBoundingClientRect();
+      spBlankAddMenu.open(r.left + r.width / 2, r.bottom + 4);
       return;
     }
 
