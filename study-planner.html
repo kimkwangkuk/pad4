@@ -249,8 +249,22 @@
       overflow-y: auto;
       overflow-x: hidden;
       scrollbar-width: none;
+      /* 캔버스는 전체 스크롤이 아니라 한 장씩 넘겨보는 페이지네이션 —
+         카드마다 스냅이 걸리고, stop: always로 한 번에 한 장만 넘어간다 */
+      scroll-snap-type: y mandatory;
     }
     .main-area::-webkit-scrollbar { display: none; }
+    /* 핀치/트랙패드 줌 중에는 스냅을 끈다 — transform scale과 스냅 좌표가 어긋나서
+       확대 상태에서 자유롭게 훑어볼 수 없게 되는 문제 방지 (zoom이 1.0으로 돌아오면 복원) */
+    .main-area.zoom-active { scroll-snap-type: none; }
+    /* 페이지 단위 스냅 지점: 실제 카드 + 오늘 미리보기 프레임.
+       마지막 카드 뒤의 끝 마커(기간 설정 UI)도 스냅 대상이어야 페이지처럼 도달할 수 있다 */
+    .canvas-zoom-wrap > .card,
+    .canvas-zoom-wrap > .ghost-frame,
+    .canvas-zoom-wrap > .canvas-end-ui {
+      scroll-snap-align: center;
+      scroll-snap-stop: always;
+    }
 
     /* ─── CANVAS SCROLL CONTAINER ─────────────────── */
     .canvas-scroll {
@@ -5348,6 +5362,8 @@
       zoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, z));
       wrap.style.transform = `scale(${zoom})`;
       spacer.style.height = Math.max(0, naturalH * (zoom - 1)) + 'px';
+      // 확대/축소 중에는 페이지 스냅을 끈다(스냅 좌표가 scale과 어긋남) — 1.0 복귀 시 다시 켠다
+      mainArea.classList.toggle('zoom-active', Math.abs(zoom - 1) > 0.01);
     }
 
     // ── Prevent browser pinch-zoom page-wide (iOS Safari ignores viewport user-scalable)
