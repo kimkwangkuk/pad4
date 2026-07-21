@@ -308,8 +308,8 @@
     .add-page-btn:active { background: rgba(0,0,0,0.07); }
 
     /* ─── 기간 끝 마커 (B안) ───────────────────────
-       노트 기간 마지막 날짜의 페이지가 캔버스에 있으면 맨 끝에 붙는다:
-       "M월 D일까지의 플래너" 구분선 + 누르면 종료일 캘린더가 열리는 "기간 연장하기" 버튼 */
+       노트 기간 마지막 날짜의 페이지가 캔버스에 있으면 맨 끝에 붙는다("페이지 추가" 버튼 대신):
+       "M월 D일까지의 플래너" 구분선 + 누르면 종료일 캘린더가 열리는 "기간 설정" 버튼 */
     .canvas-end-marker {
       width: 600px; flex-shrink: 0;
       display: flex; flex-direction: column; align-items: center;
@@ -3470,7 +3470,7 @@
     return el;
   }
 
-  // 기간 끝 마커(B안): "M월 D일까지의 플래너" 구분선 + 종료일 캘린더를 여는 "기간 연장하기" 버튼
+  // 기간 끝 마커(B안): "M월 D일까지의 플래너" 구분선 + 종료일 캘린더를 여는 "기간 설정" 버튼
   function buildEndMarker(period) {
     const el = document.createElement('div');
     el.className = 'canvas-end-marker';
@@ -3478,7 +3478,7 @@
       <div class="cem-divider"><span class="cem-label">${period.end.month}월 ${period.end.day}일까지의 플래너</span></div>
       <button class="cem-extend-btn" type="button">
         <i data-lucide="calendar-plus" style="width:18px;height:18px;color:#fff;"></i>
-        <span>기간 연장하기</span>
+        <span>기간 설정</span>
       </button>`;
     el.querySelector('.cem-extend-btn').addEventListener('click', () => {
       // 종료일 수정용 캘린더(spEndPicker)를 현재 종료일로 맞춰 바로 연다 — 고르면 즉시 반영됨.
@@ -3542,9 +3542,11 @@
     });
     canvasZoomWrap.appendChild(addPageBtn); // 항상 마지막 페이지 아래에 위치
 
-    // 노트 기간 마지막 날짜의 페이지가 캔버스에 보이면, 맨 끝에 기간 끝 마커(B안)를 붙인다
+    // 노트 기간 마지막 날짜의 페이지가 캔버스에 보이면, 맨 끝에 기간 끝 마커(B안)를 붙인다.
+    // 이때 마지막 페이지 아래의 기존 "페이지 추가" 버튼은 숨긴다(마커가 그 자리를 대신함).
     canvasZoomWrap.querySelector('.canvas-end-marker')?.remove();
     if (datedCards.some(c => parseCardDate(c).getTime() === periodEndTime)) {
+      addPageBtn.style.display = 'none';
       canvasZoomWrap.appendChild(buildEndMarker(canvasPeriod));
     }
 
