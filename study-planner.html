@@ -3577,9 +3577,9 @@
     });
     canvasZoomWrap.appendChild(addPageBtn); // 항상 마지막 페이지 아래에 위치
 
-    const selectedDomIdx = selectedCard ? orderedEls.indexOf(selectedCard) : orderedEls.length - 1;
     rebuildPanel(datedCards, selectedCard);
-    if (selectedCard) scrollToCard(selectedDomIdx, true);
+    // 새로 추가/선택된 페이지 엘리먼트로 직접 스크롤 — 인덱스 계산은 숨김 카드가 끼면 어긋난다
+    if (selectedCard) scrollToCard(selectedCard, true);
     setTimeout(updateAllThumbs, 50);
     return newBanners;
   }
@@ -3743,12 +3743,12 @@
     requestAnimationFrame(() => requestAnimationFrame(() => {
       const now = new Date();
       const pastCards = Array.from(canvasZoomWrap.querySelectorAll('.card[data-canvas-state="with-date"]'))
+        .filter(c => !c.classList.contains('card-out-of-period')) // 기간 밖(숨김) 페이지는 랜딩 대상에서 제외
         .filter(c => parseCardDate(c) < now)
         .sort((a, b) => parseCardDate(b) - parseCardDate(a)); // 최신순 정렬 → 첫 번째가 가장 가까운 과거
       const nearestPast = pastCards[0];
       if (nearestPast) {
-        const idx = Array.from(canvasScroll.querySelectorAll('.card')).indexOf(nearestPast);
-        scrollToCard(idx, false); // 가장 가까운 과거 페이지에 즉시 랜딩
+        scrollToCard(nearestPast, false); // 가장 가까운 과거 페이지에 즉시 랜딩
         setTimeout(() => scrollToGhostCard(ghostFrame, true), 800); // 잠시 뒤 오늘 페이지로 부드럽게 스크롤
       } else {
         scrollToGhostCard(ghostFrame); // 과거 페이지가 없으면 바로 오늘 페이지로
@@ -3785,16 +3785,23 @@
   const CARD_H = 800;
   function CENTER_OFFSET() { return Math.max(0, (document.querySelector('.workspace').clientHeight - CARD_H) / 2); }
 
-  function scrollToCard(idx, smooth) {
-    const cards = canvasScroll.querySelectorAll('.card');
-    if (!cards[idx]) return;
-    const target = cards[idx].offsetTop - CENTER_OFFSET();
+  // target: DOM 전체 .card 목록 기준 인덱스(number) 또는 카드 엘리먼트 자체.
+  // 숨김/기간 밖 카드가 목록 앞에 끼면 orderedEls 기준 인덱스와 어긋나므로,
+  // "추가된 페이지로 스크롤" 같은 경우엔 반드시 엘리먼트를 직접 넘긴다.
+  function scrollToCard(target, smooth) {
+    const el = typeof target === 'number'
+      ? canvasScroll.querySelectorAll('.card')[target]
+      : target;
+    if (!el) return;
+    // 고스트 카드는 .ghost-frame(position:relative) 안에 있어 offsetTop이 프레임 기준이 된다 — 프레임으로 계산
+    const anchor = el.closest('.ghost-frame') || el;
+    const targetTop = anchor.offsetTop - CENTER_OFFSET();
     if (smooth) {
-      mainArea.scrollTo({ top: Math.max(0, target), behavior: 'smooth' });
+      mainArea.scrollTo({ top: Math.max(0, targetTop), behavior: 'smooth' });
       // fallback: ensure arrival after animation time
-      setTimeout(() => mainArea.scrollTo({ top: Math.max(0, target), behavior: 'instant' }), 350);
+      setTimeout(() => mainArea.scrollTo({ top: Math.max(0, targetTop), behavior: 'instant' }), 350);
     } else {
-      mainArea.scrollTo({ top: Math.max(0, target), behavior: 'instant' });
+      mainArea.scrollTo({ top: Math.max(0, targetTop), behavior: 'instant' });
     }
   }
 
@@ -3839,8 +3846,7 @@
       if (!card) return;
       document.querySelectorAll('.sp-card').forEach(t => t.classList.remove('sp-selected'));
       pageCard.classList.add('sp-selected');
-      const idx = Array.from(canvasScroll.querySelectorAll('.card')).indexOf(card);
-      scrollToCard(idx, true);
+      scrollToCard(card, true);
     }
   });
 
