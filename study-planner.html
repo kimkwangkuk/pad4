@@ -770,7 +770,7 @@
     /* ─── SIDE PANEL THUMBNAIL CLICK ─────────────── */
     .sp-card[data-date-key] { cursor: pointer; }
     /* ─── SIDE PANEL: 전체/숨김 보기 태그 바 ───────────
-       바는 스크롤 목록(.sp-content) 맨 위에 고정(position:sticky)되어, 월 타이틀들이
+       바는 스크롤 목록(.sp-content) 맨 위에 고정(position:sticky)되어, 날짜 카드들이
        그 아래로 스크롤되어도 항상 최상단에 붙어있다. "전체/숨김" 태그로 숨긴 페이지 목록을
        오갈 수 있고(숨긴 페이지는 숨김 탭에서 복원), 숨김 태그에는 숨긴 개수가 붙는다.
        "기록 있는/없는 날" 다중 선택 필터는 제거됐다 — 노트 정보 줄의 "설정"으로 들어가는
@@ -2615,7 +2615,7 @@
         <button class="sp-note-settings-btn" id="spListSettingsBtn" type="button">설정</button>
       </div>
       <div class="sp-content">
-        <!-- 스크롤 영역 최상단에 붙어있는 전체/숨김 보기 태그 바 — 월 타이틀들 위에 항상 고정된다.
+        <!-- 스크롤 영역 최상단에 붙어있는 전체/숨김 보기 태그 바 — 날짜 목록 위에 항상 고정된다.
              숨긴 페이지(수동·자동)는 숨김 탭에서 확인·복원하고, 숨김 태그에 개수가 표시된다. -->
         <div class="sp-sticky-filter-bar" id="spStickyFilterBar">
           <div class="sp-view-tags">
@@ -3293,9 +3293,6 @@
     return card.dataset.spHidden === 'true' || card.dataset.autoHidden === 'true';
   }
 
-  // 접힌 월(예: "2026-7") 목록 — rebuildPanel이 다시 그려도 접힘 상태가 유지되도록 여기서 관리한다
-  const spCollapsedMonths = new Set();
-
   // 사이드 패널 = "노트 기간"(시작일~종료일) 안의 날짜를 하루 단위로 나열한 목록 — 기간의 모든
   // 날짜에 이미 페이지가 미리 등록되어 있으므로(ensurePagesForPeriod), 빈 칸 상태는 없다.
   function rebuildPanel(datedCards, selectedCard) {
@@ -3336,50 +3333,23 @@
       cursor.setDate(cursor.getDate() + 1);
     }
 
-    // 월 단위로 묶는다 — 같은 연/월끼리 하나의 접을 수 있는 그룹으로 표시
-    const groups = [];
-    let curGroup = null;
-    items.forEach(item => {
-      const d = new Date(item.time);
-      const key = `${d.getFullYear()}-${d.getMonth() + 1}`;
-      if (!curGroup || curGroup.key !== key) {
-        curGroup = { key, year: d.getFullYear(), month: d.getMonth() + 1, items: [] };
-        groups.push(curGroup);
+    // 날짜 카드를 2열 행으로 바로 그린다 — 월 단위 그루핑 없이 기간 전체가 하나의 목록
+    for (let i = 0; i < items.length; i += 2) {
+      const row = document.createElement('div');
+      row.className = 'sp-row';
+      for (let j = i; j < Math.min(i + 2, items.length); j++) {
+        const item = items[j];
+        const spCard = document.createElement('div');
+        spCard.className = 'sp-card' + (item.card === selectedCard ? ' sp-selected' : '');
+        spCard.dataset.dateKey = dateKey(parseCardDate(item.card));
+        const todayBadge = item.isToday ? '<span class="sp-badge">오늘</span>' : '';
+        // 자동 숨김 규칙으로 숨겨진 페이지는 수동 숨김과 구분되도록 날짜 옆에 "자동" 칩을 붙인다
+        const autoChip = item.card.dataset.autoHidden === 'true' ? '<span class="sp-auto-chip">자동</span>' : '';
+        spCard.innerHTML = `<div class="sp-thumb">${todayBadge}</div><div class="sp-caption"><span class="sp-date">${item.label}${autoChip}</span><i data-lucide="more-horizontal" class="sp-more-icon"></i></div>`;
+        row.appendChild(spCard);
       }
-      curGroup.items.push(item);
-    });
-
-    groups.forEach(group => {
-      const collapsed = spCollapsedMonths.has(group.key);
-
-      const header = document.createElement('div');
-      header.className = 'sp-month-header' + (collapsed ? ' collapsed' : '');
-      header.dataset.monthKey = group.key;
-      header.innerHTML = `<span class="sp-month-title">${group.year}년 ${group.month}월</span><i data-lucide="chevron-down" class="sp-month-chevron"></i>`;
-      spContent.appendChild(header);
-
-      const body = document.createElement('div');
-      body.className = 'sp-month-body';
-      if (collapsed) body.style.display = 'none';
-
-      for (let i = 0; i < group.items.length; i += 2) {
-        const row = document.createElement('div');
-        row.className = 'sp-row';
-        for (let j = i; j < Math.min(i + 2, group.items.length); j++) {
-          const item = group.items[j];
-          const spCard = document.createElement('div');
-          spCard.className = 'sp-card' + (item.card === selectedCard ? ' sp-selected' : '');
-          spCard.dataset.dateKey = dateKey(parseCardDate(item.card));
-          const todayBadge = item.isToday ? '<span class="sp-badge">오늘</span>' : '';
-          // 자동 숨김 규칙으로 숨겨진 페이지는 수동 숨김과 구분되도록 날짜 옆에 "자동" 칩을 붙인다
-          const autoChip = item.card.dataset.autoHidden === 'true' ? '<span class="sp-auto-chip">자동</span>' : '';
-          spCard.innerHTML = `<div class="sp-thumb">${todayBadge}</div><div class="sp-caption"><span class="sp-date">${item.label}${autoChip}</span><i data-lucide="more-horizontal" class="sp-more-icon"></i></div>`;
-          row.appendChild(spCard);
-        }
-        body.appendChild(row);
-      }
-      spContent.appendChild(body);
-    });
+      spContent.appendChild(row);
+    }
 
     if (showHiddenOnly && items.length === 0) {
       const empty = document.createElement('div');
@@ -3661,17 +3631,6 @@
   }
 
   document.querySelector('.sp-content').addEventListener('click', e => {
-    const monthHeader = e.target.closest('.sp-month-header');
-    if (monthHeader) {
-      const key = monthHeader.dataset.monthKey;
-      const willCollapse = !monthHeader.classList.contains('collapsed');
-      if (willCollapse) spCollapsedMonths.add(key); else spCollapsedMonths.delete(key);
-      monthHeader.classList.toggle('collapsed', willCollapse);
-      const body = monthHeader.nextElementSibling;
-      if (body && body.classList.contains('sp-month-body')) body.style.display = willCollapse ? 'none' : '';
-      return;
-    }
-
     const moreIcon = e.target.closest('.sp-more-icon');
     if (moreIcon) {
       const spCard = moreIcon.closest('.sp-card[data-date-key]');
