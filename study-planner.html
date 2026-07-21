@@ -807,7 +807,30 @@
       color: rgba(0,0,0,0.6); cursor: pointer;
     }
     .sp-panel-close-btn:hover { background: rgba(0,0,0,0.1); }
-    /* ─── 목록 설정 팝업(중앙 nc-format 팝업) — 행·토글 스위치·설명문 ─── */
+    /* ─── 목록 설정 팝업 — 속지 변경(#changeTypePopup)과 같은 중앙 팝업 패턴(bsm 네비바+그래버).
+       기간 수정 팝업(nc-format, z960)과 날짜 선택(z2000)이 이 위로 떠야 하므로
+       z-index를 그보다 낮게 둔다 ─── */
+    #listSettingsBackdrop { z-index: 940; }
+    #listSettingsPopup {
+      position: fixed; z-index: 941;
+      left: 50%; top: 50%;
+      transform: translateX(-50%) translateY(calc(-50% + 20px));
+      width: 520px;
+      max-width: calc(100vw - 32px);
+      background: white;
+      border-radius: 36px;
+      box-shadow: 0px 15px 75px rgba(0,0,0,0.18);
+      overflow: hidden;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.22s ease, transform 0.22s cubic-bezier(0.34,1.1,0.64,1);
+      padding-bottom: 24px;
+    }
+    #listSettingsPopup.visible {
+      opacity: 1; pointer-events: auto;
+      transform: translateX(-50%) translateY(-50%);
+    }
+    .sls-body { padding: 0 24px; display: flex; flex-direction: column; gap: 12px; }
+    .sls-body .nc-format-create-btn { margin-top: 8px; }
     .sls-pop-row {
       width: 100%; display: flex; align-items: center; gap: 6px;
       height: 44px; padding: 0 12px;
@@ -2619,13 +2642,18 @@
       </div>
     </div>
 
-    <!-- 페이지 패널의 "설정" → 화면 중앙 팝업(노트 기간 수정 팝업과 같은 nc-format 패턴).
-         플래너 기간 수정 진입점과 "기록 없는 날 자동 숨기기" 스위치를 담는다.
-         "플래너 기간"을 누르면 나중에 선언된 spPeriodEditBackdrop(z-index 동일, DOM 순서상 뒤)이
-         이 팝업 위로 뜬다 -->
-    <div class="nc-format-backdrop" id="listSettingsBackdrop">
-      <div class="nc-format-pop" onclick="event.stopPropagation()">
-        <div class="nc-format-title">설정</div>
+    <!-- 페이지 패널의 "설정" → 속지 변경 팝업과 같은 중앙 팝업(bsm 그래버·중앙 타이틀 네비바·✕)
+         + 하단 완료 버튼. "플래너 기간"을 누르면 기간 수정(z960)·날짜 선택(z2000)이
+         이 팝업(z941) 위로 뜬다 -->
+    <div id="listSettingsBackdrop" class="bsm-backdrop"></div>
+    <div id="listSettingsPopup">
+      <div class="bsm-grabber-row"></div>
+      <div class="bsm-header">
+        <div class="bsm-spacer"></div>
+        <span class="bsm-title">설정</span>
+        <button class="bsm-close-btn" id="slsCloseBtn">✕</button>
+      </div>
+      <div class="sls-body">
         <div class="nc-format-label">노트</div>
         <button class="sls-pop-row" id="slsPeriodRow" type="button">
           <span class="sls-pop-row-label">플래너 기간</span>
@@ -2638,6 +2666,7 @@
           <button class="sls-switch" id="slsAutoHideSwitch" type="button" role="switch" aria-checked="false"></button>
         </div>
         <div class="sls-desc">오늘 이전 날짜 중 기록이 없는 페이지를 자동으로 숨깁니다. 숨긴 페이지는 "숨김" 탭에서 확인하고 복원할 수 있습니다.</div>
+        <button class="nc-format-create-btn" id="slsDoneBtn" type="button">완료</button>
       </div>
     </div>
 
@@ -3441,15 +3470,23 @@
   spPeriodEditBackdrop.addEventListener('click', () => spPeriodEditBackdrop.classList.remove('show'));
   document.getElementById('spPeriodEditDoneBtn').addEventListener('click', () => spPeriodEditBackdrop.classList.remove('show'));
 
-  // ── 목록 설정 팝업: 노트 정보 줄의 "설정"으로 진입. 화면 중앙에 뜨며 플래너 기간
-  //    수정 진입점과 "기록 없는 날 자동 숨기기" 스위치를 담는다. 바깥(딤)을 누르면 닫힌다 ──
+  // ── 목록 설정 팝업: 노트 정보 줄의 "설정"으로 진입. 속지 변경 팝업과 같은 중앙 팝업으로
+  //    뜨며(중앙 타이틀 네비바 + ✕), 하단 완료 버튼·딤 클릭으로 닫는다 ──
   const listSettingsBackdrop = document.getElementById('listSettingsBackdrop');
+  const listSettingsPopup = document.getElementById('listSettingsPopup');
   const slsAutoHideSwitch = document.getElementById('slsAutoHideSwitch');
+  function closeListSettings() {
+    listSettingsBackdrop.classList.remove('visible');
+    listSettingsPopup.classList.remove('visible');
+  }
   document.getElementById('spListSettingsBtn').addEventListener('click', () => {
     updateSpNoteInfo(); // "플래너 기간" 행 값을 최신으로 맞춘 뒤 연다
-    listSettingsBackdrop.classList.add('show');
+    listSettingsBackdrop.classList.add('visible');
+    listSettingsPopup.classList.add('visible');
   });
-  listSettingsBackdrop.addEventListener('click', () => listSettingsBackdrop.classList.remove('show'));
+  listSettingsBackdrop.addEventListener('click', closeListSettings);
+  document.getElementById('slsCloseBtn').addEventListener('click', closeListSettings);
+  document.getElementById('slsDoneBtn').addEventListener('click', closeListSettings);
   document.getElementById('slsPeriodRow').addEventListener('click', () => {
     updateSpPeriodEditLabels();
     spPeriodEditBackdrop.classList.add('show');
