@@ -75,9 +75,10 @@
   color: rgba(0,0,0,0.18); letter-spacing: -0.096px; line-height: 1.4;
 }
 
-/* "오늘" badge */
+/* "오늘" badge — 썸네일 좌측 하단. 기준이 .sp-card라서 아래 캡션(17px)+간격(4px)만큼
+   띄워야 썸네일 안쪽 5px 지점에 온다 */
 .sp-badge {
-  position: absolute; top: 5px; right: 5px;
+  position: absolute; left: 5px; bottom: 26px;
   background: rgba(0,0,0,0.68);
   padding: 2px 6px; border-radius: 4px;
   font-family: 'Pretendard', sans-serif;
