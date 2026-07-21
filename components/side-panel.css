@@ -37,25 +37,17 @@
 }
 .sp-content::-webkit-scrollbar { display: none; }
 
-/* 월 단위 접을 수 있는 타이틀바 */
+/* 월 단위 섹션 라벨(연·월) — 접기 기능 없이 라벨만 표시 */
 .sp-month-header {
-  display: flex; align-items: center; justify-content: space-between;
-  height: 36px; flex-shrink: 0;
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
+  display: flex; align-items: center;
+  height: 30px; flex-shrink: 0;
   user-select: none;
 }
 .sp-month-title {
   font-family: 'Pretendard', sans-serif;
-  font-size: 14px; font-weight: 700;
-  color: rgba(0,0,0,0.7); letter-spacing: -0.042px;
+  font-size: 12px; font-weight: 600;
+  color: rgba(0,0,0,0.4); letter-spacing: -0.036px;
 }
-.sp-month-chevron {
-  width: 16px; height: 16px; flex-shrink: 0;
-  color: rgba(0,0,0,0.4);
-  transition: transform 0.18s ease;
-}
-.sp-month-header.collapsed .sp-month-chevron { transform: rotate(-90deg); }
 .sp-month-body { flex-shrink: 0; }
 
 /* 리스트 행 — 왼쪽 작은 썸네일 + 오른쪽 타이틀(날짜)/서브타이틀(공부 시간) */

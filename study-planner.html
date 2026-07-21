@@ -3330,9 +3330,6 @@
 
   function dateKey(date) { return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`; }
 
-  // 접힌 월(예: "2026-7") 목록 — rebuildPanel이 다시 그려도 접힘 상태가 유지되도록 여기서 관리한다
-  const spCollapsedMonths = new Set();
-
   // 섹션바의 "빈 날짜 안보기" 토글 — 켜면 페이지 없는 날짜(+ 슬롯)를 목록에서 숨긴다
   let spHideBlankDates = false;
 
@@ -3389,17 +3386,13 @@
     });
 
     groups.forEach(group => {
-      const collapsed = spCollapsedMonths.has(group.key);
-
       const header = document.createElement('div');
-      header.className = 'sp-month-header' + (collapsed ? ' collapsed' : '');
-      header.dataset.monthKey = group.key;
-      header.innerHTML = `<span class="sp-month-title">${group.year}년 ${group.month}월</span><i data-lucide="chevron-down" class="sp-month-chevron"></i>`;
+      header.className = 'sp-month-header';
+      header.innerHTML = `<span class="sp-month-title">${group.year}년 ${group.month}월</span>`;
       spContent.appendChild(header);
 
       const body = document.createElement('div');
       body.className = 'sp-month-body';
-      if (collapsed) body.style.display = 'none';
 
       group.items.forEach(item => {
         const spCard = document.createElement('div');
@@ -3825,17 +3818,6 @@
   }
 
   document.querySelector('.sp-content').addEventListener('click', e => {
-    const monthHeader = e.target.closest('.sp-month-header');
-    if (monthHeader) {
-      const key = monthHeader.dataset.monthKey;
-      const willCollapse = !monthHeader.classList.contains('collapsed');
-      if (willCollapse) spCollapsedMonths.add(key); else spCollapsedMonths.delete(key);
-      monthHeader.classList.toggle('collapsed', willCollapse);
-      const body = monthHeader.nextElementSibling;
-      if (body && body.classList.contains('sp-month-body')) body.style.display = willCollapse ? 'none' : '';
-      return;
-    }
-
     const blank = e.target.closest('.sp-blank');
     if (blank) {
       if (blank.dataset.today === '1') {
