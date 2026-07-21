@@ -867,23 +867,7 @@
 
     /* ─── SIDE PANEL THUMBNAIL CLICK ─────────────── */
     .sp-card[data-date-key] { cursor: pointer; }
-    .sp-blank { cursor: pointer; }
     .sp-thumb-add { cursor: pointer; }
-
-    /* ─── SIDE PANEL: 페이지 추가 모드 ───────────
-       날짜 선택 팝업에서 "직접 선택"을 고르면 패널 전체가 "어디에 추가할지 고르는" 모드로 전환된다:
-       노트 정보 요약(.sp-note-info)이 숨겨져 목록(.sp-content)이 패널 전체를 채우고, 헤더
-       우측에 체크(완료) 버튼이 나타난다 — 누르면 모드를 빠져나와 원래 화면으로 돌아간다. */
-    .sp-panel.sp-add-mode .sp-note-info { display: none; }
-    .sp-add-done-btn {
-      width: 30px; height: 30px; flex-shrink: 0;
-      display: flex; align-items: center; justify-content: center;
-      background: rgba(0,0,0,0.86); border: none; border-radius: 50%;
-      color: #fff; cursor: pointer;
-      visibility: hidden;
-    }
-    .sp-add-done-btn:hover { background: rgba(0,0,0,0.72); }
-    .sp-panel.sp-add-mode .sp-add-done-btn { visibility: visible; }
 
     /* ─── SIDE PANEL: 노트 기간 요약 ──────────────
        기간은 왼쪽 텍스트로, 수정은 오른쪽 별도 버튼으로 분리(전체를 하나의 버튼으로 묶지 않는다) */
@@ -910,8 +894,7 @@
 
     /* ─── SIDE PANEL: 목록 끝 페이지 추가 타일 ───────────
        마지막 페이지 썸네일 바로 다음 칸에 점선 테두리 + 가운데 "+" 타일로 표시된다.
-       누르면 캔버스의 "페이지 추가" 버튼과 동일한 날짜 선택 오버레이 팝업이 뜬다.
-       페이지 추가 모드에서는 빈 날짜 "+" 칸들이 이 역할을 대신하므로 표시하지 않는다. */
+       누르면 캔버스의 "페이지 추가" 버튼과 동일한 날짜 선택 오버레이 팝업이 뜬다. */
     .sp-add-tile { cursor: pointer; }
     .sp-add-tile .sp-thumb-add:hover { background: rgba(0,0,0,0.03); }
 
@@ -2645,10 +2628,7 @@
       <div class="sp-header">
         <span class="sp-header-spacer" id="spHeaderSpacerLeft"></span>
         <span class="sp-header-title" id="spHeaderTitle">페이지</span>
-        <!-- 페이지 추가 모드일 때만 나타나는 완료 버튼 — 누르면 모드를 빠져나온다 -->
-        <button class="sp-add-done-btn" id="spAddDoneBtn" type="button" aria-label="완료">
-          <i data-lucide="check" style="width:16px;height:16px;"></i>
-        </button>
+        <span class="sp-header-spacer"></span>
       </div>
       <!-- 노트 기간 요약. 기간은 왼쪽에 텍스트로, 수정은 오른쪽 버튼으로 분리 -->
       <div class="sp-note-info">
@@ -3280,23 +3260,14 @@
 
   function dateKey(date) { return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`; }
 
-  // 빈 날짜("+")는 평소엔 아예 표시하지 않는다 — 날짜 선택 팝업의 "직접 선택"으로만 켜지는
-  // "어디에 추가할지 고르는" 모드. 빈 칸을 누르면 그 자리에서 실제 카드(썸네일)를 만들어
-  // 미리 보여주지만 캔버스에는 아직 붙이지 않는다 — 여러 날짜를 이어서 고를 수 있고, 헤더의
-  // 완료(체크) 버튼을 눌러야 골라둔 페이지들이 한 번에 캔버스에 반영되고 모드가 끝난다.
-  let spAddModeActive = false;
-  let spPendingPages = []; // { y, m, d, isToday, cardEl } — isToday면 cardEl은 null(고스트 카드를 그대로 씀)
-
   // 접힌 월(예: "2026-7") 목록 — rebuildPanel이 다시 그려도 접힘 상태가 유지되도록 여기서 관리한다
   const spCollapsedMonths = new Set();
 
   // 사이드 패널 = "노트 기간"(시작일~종료일) 안의 날짜만 하루 단위로 나열한 목록 — 기록 유무와
   // 무관하게 기간 밖의 날짜는 절대 표시되지 않는다.
-  // - 페이지가 이미 있는 날짜는(기록 유무와 무관하게) 그 페이지의 썸네일로 표시된다 — 방금 빈 칸을
-  //   눌러 새로 만든 페이지도 여기 포함되어 바로 보인다.
-  // - 페이지가 없는 날짜는 spAddModeActive일 때만(페이지 추가 모드 동안) 오늘·미래에
-  //   한해 빈 칸("+")으로 표시된다 — 평소에는 아예 목록에 나타나지 않고, 대신 마지막 페이지
-  //   바로 다음 칸의 "+" 타일이 페이지 추가 진입점이 된다.
+  // - 페이지가 이미 있는 날짜만 그 페이지의 썸네일로 표시된다(기록 유무와 무관하게).
+  // - 페이지가 없는 날짜는 목록에 나타나지 않는다 — 마지막 페이지 바로 다음 칸의 "+" 타일이
+  //   유일한 페이지 추가 진입점이다.
   function rebuildPanel(datedCards, selectedCard) {
     const spContent = document.getElementById('spDateList');
     spContent.innerHTML = '';
@@ -3305,7 +3276,6 @@
     const period = activeTabEl?._periodState || defaultNotePeriod();
     updateSpNoteInfo();
 
-    const today = new Date(); today.setHours(0, 0, 0, 0);
     const startDate = new Date(period.start.year, period.start.month - 1, period.start.day);
     const endDate = new Date(period.end.year, period.end.month - 1, period.end.day);
 
@@ -3319,15 +3289,6 @@
       const existingCard = cardByTime.get(t) || null;
       if (existingCard) {
         items.push({ card: existingCard, time: t, label: `${cursor.getMonth() + 1}/${cursor.getDate()}` });
-      } else if (spAddModeActive && t >= today.getTime()) {
-        const y = cursor.getFullYear(), m = cursor.getMonth() + 1, d = cursor.getDate();
-        const pending = spPendingPages.find(p => p.y === y && p.m === m && p.d === d) || null;
-        items.push({
-          isBlank: true, time: t, y, m, d,
-          isToday: t === today.getTime(),
-          label: `${m}/${d}`,
-          pending,
-        });
       }
       cursor.setDate(cursor.getDate() + 1);
     }
@@ -3364,21 +3325,9 @@
         for (let j = i; j < Math.min(i + 2, group.items.length); j++) {
           const item = group.items[j];
           const spCard = document.createElement('div');
-          spCard.className = 'sp-card' + ((item.card && item.card === selectedCard) || item.pending ? ' sp-selected' : '');
-          if (item.isBlank) {
-            spCard.classList.add('sp-blank');
-            spCard.dataset.y = item.y; spCard.dataset.m = item.m; spCard.dataset.d = item.d;
-            if (item.isToday) spCard.dataset.today = '1';
-            if (item.pending) {
-              spCard.classList.add('sp-pending');
-              spCard.innerHTML = `<div class="sp-thumb"></div><div class="sp-caption"><span class="sp-date">${item.label}</span></div>`;
-            } else {
-              spCard.innerHTML = `<div class="sp-thumb sp-thumb-add"><span class="sp-add-icon">+</span></div><div class="sp-caption"><span class="sp-date">${item.label}</span></div>`;
-            }
-          } else {
-            spCard.dataset.dateKey = dateKey(parseCardDate(item.card));
-            spCard.innerHTML = `<div class="sp-thumb"></div><div class="sp-caption"><span class="sp-date">${item.label}</span><i data-lucide="more-horizontal" class="sp-more-icon"></i></div>`;
-          }
+          spCard.className = 'sp-card' + (item.card === selectedCard ? ' sp-selected' : '');
+          spCard.dataset.dateKey = dateKey(parseCardDate(item.card));
+          spCard.innerHTML = `<div class="sp-thumb"></div><div class="sp-caption"><span class="sp-date">${item.label}</span><i data-lucide="more-horizontal" class="sp-more-icon"></i></div>`;
           row.appendChild(spCard);
         }
         body.appendChild(row);
@@ -3388,69 +3337,23 @@
 
     // 마지막 페이지 바로 다음 칸에 붙는 "페이지 추가" 타일 — 점선 테두리 + 가운데 "+".
     // 누르면 캔버스의 "페이지 추가" 버튼과 동일한 날짜 선택 팝업이 뜬다.
-    // 페이지 추가 모드에서는 빈 날짜 "+" 칸들이 이 역할을 대신하므로 표시하지 않는다.
-    if (!spAddModeActive) {
-      const addTile = document.createElement('div');
-      addTile.className = 'sp-card sp-add-tile';
-      addTile.innerHTML = '<div class="sp-thumb sp-thumb-add"><span class="sp-add-icon">+</span></div><div class="sp-caption"></div>';
-      const lastBody = spContent.lastElementChild;
-      const lastRow = lastBody && lastBody.classList.contains('sp-month-body') ? lastBody.lastElementChild : null;
-      if (lastRow && lastRow.classList.contains('sp-row') && lastRow.children.length < 2) {
-        lastRow.appendChild(addTile);
-      } else {
-        const row = document.createElement('div');
-        row.className = 'sp-row';
-        row.appendChild(addTile);
-        // 기간 안에 페이지가 하나도 없으면(월 그룹 자체가 없음) 목록 맨 위에 타일만 놓인다
-        if (lastRow) lastBody.appendChild(row); else spContent.appendChild(row);
-      }
+    const addTile = document.createElement('div');
+    addTile.className = 'sp-card sp-add-tile';
+    addTile.innerHTML = '<div class="sp-thumb sp-thumb-add"><span class="sp-add-icon">+</span></div><div class="sp-caption"></div>';
+    const lastBody = spContent.lastElementChild;
+    const lastRow = lastBody && lastBody.classList.contains('sp-month-body') ? lastBody.lastElementChild : null;
+    if (lastRow && lastRow.classList.contains('sp-row') && lastRow.children.length < 2) {
+      lastRow.appendChild(addTile);
+    } else {
+      const row = document.createElement('div');
+      row.className = 'sp-row';
+      row.appendChild(addTile);
+      // 기간 안에 페이지가 하나도 없으면(월 그룹 자체가 없음) 목록 맨 위에 타일만 놓인다
+      if (lastRow) lastBody.appendChild(row); else spContent.appendChild(row);
     }
 
-    // 대기 중인(캔버스에는 아직 안 붙은) 선택 페이지는 빈 칸 "+" 대신 실제 미리보기 썸네일을 그린다.
-    // 오늘은 아직 별도 카드를 안 만들고 이미 떠 있는 고스트 카드를 그대로 미리보기 소스로 쓴다.
-    spContent.querySelectorAll('.sp-blank.sp-pending').forEach(el => {
-      const y = parseInt(el.dataset.y, 10), m = parseInt(el.dataset.m, 10), d = parseInt(el.dataset.d, 10);
-      const p = spPendingPages.find(pp => pp.y === y && pp.m === m && pp.d === d);
-      const previewEl = p && (p.cardEl || document.querySelector('.card.card-ghost'));
-      const thumbEl = el.querySelector('.sp-thumb');
-      if (previewEl && thumbEl) renderThumb(previewEl, thumbEl);
-    });
     lucide.createIcons({ nodes: [spContent] });
   }
-
-  // ── 페이지 추가 모드 진입/이탈 — 패널 전체가 "어디에 추가할지 고르는" 화면으로 바뀐다:
-  // 날짜 선택 팝업(목록 끝 "+" 타일 · 캔버스 버튼 공용)에서 "직접 선택"을 고르면 켜진다.
-  // 노트 정보가 숨겨지고 헤더 우측에 완료(체크) 버튼이 나타난다.
-  // 빈 칸을 누르면 그 자리에서 실제 카드(썸네일)를 만들어 미리 보여주되 캔버스에는 붙이지
-  // 않는다 — 여러 날짜를 이어서 고를 수 있고, 완료 버튼을 눌러야 골라둔 페이지들이 한 번에
-  // 캔버스에 반영되고 모드가 끝난다.
-  const spAddDoneBtn = document.getElementById('spAddDoneBtn');
-  function setAddMode(active) {
-    spAddModeActive = active;
-    spPendingPages = [];
-    document.getElementById('sidePanel').classList.toggle('sp-add-mode', active);
-    document.getElementById('spHeaderTitle').textContent = active ? '페이지 추가' : '페이지';
-    sortPages();
-  }
-  spAddDoneBtn.addEventListener('click', () => {
-    const toCommit = spPendingPages;
-    if (toCommit.length === 0) { setAddMode(false); return; }
-    const regularCards = [];
-    toCommit.forEach(p => {
-      if (p.isToday) {
-        // 오늘 선택 → 이미 캔버스에 떠 있는 "오늘' 페이지 추가" 미리보기를 그대로 활성화한다
-        const gc = document.querySelector('.card.card-ghost');
-        const frame = gc && gc.closest('.ghost-frame');
-        if (gc && frame) activateGhostCard(frame, gc, gc.dataset.dateText);
-      } else {
-        datePicker.takenDates.add(`${p.y}-${p.m}-${p.d}`);
-        regularCards.push(p.cardEl);
-      }
-    });
-    if (regularCards.length) insertCardsIntoCanvas(regularCards, regularCards[regularCards.length - 1]);
-    pageToast.show(`${toCommit.length}장의 페이지가 추가되었습니다`);
-    setAddMode(false);
-  });
 
   // ── 노트 기간 요약 + 우측 "수정" 버튼 → 기간(시작일~종료일) 수정 팝업 ──
   const spNotePeriodSub = document.getElementById('spNotePeriodSub');
@@ -3836,24 +3739,6 @@
       return;
     }
 
-    const blank = e.target.closest('.sp-blank');
-    if (blank) {
-      // 빈 칸을 누르면 바로 캔버스에 붙이지는 않지만, 실제 카드(썸네일)는 미리 만들어 보여준다.
-      // 다시 같은 칸을 누르면 대기 목록에서 빠진다. 여러 날짜를 이어서 고를 수 있고, 실제 캔버스
-      // 반영은 헤더의 완료 버튼을 눌러야 한 번에 일어난다.
-      const y = parseInt(blank.dataset.y, 10), m = parseInt(blank.dataset.m, 10), d = parseInt(blank.dataset.d, 10);
-      const idx = spPendingPages.findIndex(p => p.y === y && p.m === m && p.d === d);
-      if (idx !== -1) {
-        spPendingPages.splice(idx, 1);
-      } else {
-        const isToday = blank.dataset.today === '1';
-        const cardEl = isToday ? null : buildPageCardEl(y, m, d);
-        spPendingPages.push({ y, m, d, isToday, cardEl });
-      }
-      sortPages();
-      return;
-    }
-
     const moreIcon = e.target.closest('.sp-more-icon');
     if (moreIcon) {
       const spCard = moreIcon.closest('.sp-card[data-date-key]');
@@ -4051,13 +3936,9 @@
         lucideIcon: 'calendar-days',
         label: '직접 선택',
         onClick() {
-          // 캔버스의 "직접 선택"도 캘린더를 따로 띄우지 않고, 페이지 패널의 페이지 추가
-          // 모드를 그대로 불러온다 — 패널이 닫혀 있으면 열고, 툴바 토글 버튼 상태도 맞춘다.
-          if (!sidePanel.isOpen()) {
-            sidePanel.open();
-            panelToggleBtn.classList.add('panel-open');
-          }
-          setAddMode(true);
+          // 캘린더에서 날짜를 하나 골라 추가한다 — openAddPageMenu가 activeCard를 null로
+          // 리셋해 두므로, 확인 시 datePicker.onConfirm이 createPage로 이어진다.
+          datePicker.open();
         }
       }
     ],
