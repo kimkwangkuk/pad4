@@ -3392,10 +3392,11 @@
   `;
   const spEditPeriodStartBtn = spPeriodEditContent.querySelector('#spEditPeriodStartBtn');
   const spEditPeriodEndBtn = spPeriodEditContent.querySelector('#spEditPeriodEndBtn');
+  // 기간은 날짜를 고르는 즉시 반영되므로 완료 버튼 없이 바깥 클릭으로만 닫는다
   const spPeriodEditDialog = new Dialog({
     title: '노트 기간 수정',
     content: spPeriodEditContent,
-    confirmLabel: '완료',
+    confirmLabel: null,
     cancelLabel: null,
   });
 
