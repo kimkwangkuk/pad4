@@ -769,15 +769,12 @@
 
     /* ─── SIDE PANEL THUMBNAIL CLICK ─────────────── */
     .sp-card[data-date-key] { cursor: pointer; }
-    /* ─── SIDE PANEL: 다중 선택 필터 + 전체/숨김 보기 태그 ───────────
+    /* ─── SIDE PANEL: 전체/숨김 보기 태그 바 ───────────
        바는 스크롤 목록(.sp-content) 맨 위에 고정(position:sticky)되어, 월 타이틀들이
-       그 아래로 스크롤되어도 항상 최상단에 붙어있다. 왼쪽에는 "전체/숨김" 보기 태그가 있어
-       숨긴 페이지 목록으로 전환할 수 있고(숨긴 페이지는 여기서 복원), 오른쪽의 "필터" 버튼은
-       고스트(배경 없는) 버튼으로 누르면 바로 아래에 체크박스 팝오버가 뜨고
-       "기록 있는 날/기록 없는 날"을 각각 켜고 끌 수 있다(단일 토글이 아니라 다중 선택).
-       필터는 전체 보기에만 적용되므로 숨김 탭에서는 필터 버튼을 감춘다.
-       패널 고정 헤더 우측 상단의 X 버튼은 필터 상태와 무관하게 항상 표시되며,
-       눌렀을 때 필터가 열려 있으면 닫는다.
+       그 아래로 스크롤되어도 항상 최상단에 붙어있다. "전체/숨김" 태그로 숨긴 페이지 목록을
+       오갈 수 있고(숨긴 페이지는 숨김 탭에서 복원), 숨김 태그에는 숨긴 개수가 붙는다.
+       "기록 있는/없는 날" 다중 선택 필터는 제거됐다 — 노트 정보 줄의 "설정"으로 들어가는
+       목록 설정 패널의 "기록 없는 날 자동 숨기기" 스위치가 그 역할을 대신한다.
        .sp-content의 위쪽 padding을 없애고 그만큼을 이 바 자체의 padding-top으로 옮겨서,
        바의 불투명한 배경이 상단 여백까지 완전히 덮도록 한다(그 틈으로 목록이 비쳐 보이는 문제 방지). */
     .sp-sticky-filter-bar {
@@ -800,122 +797,82 @@
     .sp-view-tag.active {
       background: rgba(0,0,0,0.86); color: white; font-weight: 600;
     }
-    /* 숨김 보기에서는 기록 필터가 적용되지 않으므로 필터 버튼을 감춘다 */
-    .sp-sticky-filter-bar.hidden-mode .sp-filter-toggle { display: none; }
-    /* 숨긴 페이지 캔버스에서 감춤 — .sp-thumb 안의 썸네일 클론에는 적용되지 않도록
-       canvas-zoom-wrap의 직계 자식으로 한정한다 */
-    .canvas-zoom-wrap > .card[data-sp-hidden="true"] { display: none; }
+    .sp-view-tag-count {
+      margin-left: 4px;
+      font-size: 11px; font-weight: 600;
+      color: rgba(0,0,0,0.35);
+    }
+    .sp-view-tag.active .sp-view-tag-count { color: rgba(255,255,255,0.72); }
+    /* 숨긴 페이지(수동·자동 모두) 캔버스에서 감춤 — .sp-thumb 안의 썸네일 클론에는 적용되지
+       않도록 canvas-zoom-wrap의 직계 자식으로 한정한다 */
+    .canvas-zoom-wrap > .card[data-sp-hidden="true"],
+    .canvas-zoom-wrap > .card[data-auto-hidden="true"] { display: none; }
+    /* 숨김 탭에서 "기록 없는 날 자동 숨기기" 규칙으로 들어온 페이지에 붙는 칩 */
+    .sp-auto-chip {
+      display: inline-block; margin-left: 4px; padding: 1px 5px;
+      border-radius: 4px; background: rgba(0,0,0,0.06);
+      font-size: 10px; font-weight: 500; color: rgba(0,0,0,0.45);
+      letter-spacing: -0.03px;
+    }
     /* 숨김 탭이 비었을 때 안내 문구 */
     .sp-empty-msg {
       padding: 40px 0; text-align: center;
       font-family: 'Pretendard', sans-serif; font-size: 12px; font-weight: 500;
       color: rgba(0,0,0,0.35); letter-spacing: -0.036px;
     }
-    .sp-filter-toggle {
-      display: flex; align-items: center; gap: 4px;
-      background: none; border: none;
-      padding: 4px 2px;
-      font-family: 'Pretendard', sans-serif; font-size: 12px; font-weight: 500;
-      color: rgba(0,0,0,0.4); letter-spacing: -0.036px;
-      cursor: pointer; white-space: nowrap;
-    }
-    .sp-filter-toggle.active { color: rgba(0,0,0,0.86); font-weight: 600; }
-    .sp-filter-toggle-chevron {
-      width: 12px; height: 12px; flex-shrink: 0;
-      transition: transform 0.15s ease;
-    }
-    .sp-filter-toggle[aria-expanded="true"] .sp-filter-toggle-chevron { transform: rotate(180deg); }
-    .sp-filter-popover {
-      position: absolute; top: calc(100% + 2px); right: 0; z-index: 30;
-      background: white; border-radius: 14px;
-      box-shadow: 0 4px 24px rgba(0,0,0,0.16), 0 0 0 1px rgba(0,0,0,0.06);
-      padding: 8px; min-width: 160px;
-      opacity: 0; transform: translateY(-4px) scale(0.98);
-      pointer-events: none;
-      transition: opacity 0.18s ease, transform 0.18s ease;
-    }
-    .sp-filter-popover.show {
-      opacity: 1; transform: translateY(0) scale(1);
-      pointer-events: auto;
-    }
-    /* 패널 고정 헤더 우측 상단의 필터 닫기 버튼 — 필터 상태와 무관하게 항상 표시된다 */
-    .sp-filter-close-btn {
+    /* 패널 고정 헤더 우측 상단의 패널 닫기(X) 버튼 */
+    .sp-panel-close-btn {
       width: 26px; height: 26px; flex-shrink: 0;
       display: flex; align-items: center; justify-content: center;
       background: rgba(0,0,0,0.06); border: none; border-radius: 50%;
       color: rgba(0,0,0,0.6); cursor: pointer;
     }
-    .sp-filter-close-btn:hover { background: rgba(0,0,0,0.1); }
-    .sp-filter-option {
-      display: flex; align-items: center; gap: 8px;
-      padding: 8px 8px; border-radius: 8px;
-      cursor: pointer; -webkit-tap-highlight-color: transparent;
+    .sp-panel-close-btn:hover { background: rgba(0,0,0,0.1); }
+    /* ─── 목록 설정 패널(설정 진입형) — 토글 스위치와 설명문 ─── */
+    .sls-toggle-row { cursor: pointer; }
+    .sls-switch {
+      position: relative; margin-left: auto; flex-shrink: 0;
+      width: 40px; height: 24px; border-radius: 999px;
+      border: none; background: rgba(0,0,0,0.15); cursor: pointer;
+      transition: background 0.15s;
     }
-    .sp-filter-option:hover { background: rgba(0,0,0,0.05); }
-    .sp-filter-option input { display: none; }
-    .sp-filter-option span:last-child {
-      font-family: 'Pretendard', sans-serif; font-size: 13px; font-weight: 500;
-      color: rgba(0,0,0,0.8); letter-spacing: -0.039px; white-space: nowrap;
+    .sls-switch::after {
+      content: ''; position: absolute; top: 2px; left: 2px;
+      width: 20px; height: 20px; border-radius: 50%;
+      background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+      transition: left 0.15s;
     }
-    .sp-filter-check {
-      width: 16px; height: 16px; border-radius: 4px; flex-shrink: 0;
-      border: 1.5px solid rgba(0,0,0,0.3);
-      display: flex; align-items: center; justify-content: center;
-      transition: background 0.12s, border-color 0.12s;
+    .sls-switch.on { background: rgba(0,0,0,0.86); }
+    .sls-switch.on::after { left: 18px; }
+    .sls-desc {
+      padding: 2px 16px 12px;
+      font-family: 'Pretendard', sans-serif; font-size: 12px; font-weight: 400;
+      color: rgba(0,0,0,0.4); letter-spacing: -0.036px; line-height: 1.5;
     }
-    .sp-filter-option input:checked ~ .sp-filter-check {
-      background: rgba(0,0,0,0.86); border-color: rgba(0,0,0,0.86);
-    }
-    .sp-filter-check::after {
-      content: ''; width: 7px; height: 4px;
-      border-left: 1.5px solid white; border-bottom: 1.5px solid white;
-      transform: rotate(-45deg) translateY(-1px);
-      opacity: 0;
-    }
-    .sp-filter-option input:checked ~ .sp-filter-check::after { opacity: 1; }
 
-    /* ─── SIDE PANEL: 노트 표지·이름·기간 요약 ──────────────
-       기간은 왼쪽 텍스트로, 수정은 오른쪽 별도 버튼으로 분리(전체를 하나의 버튼으로 묶지 않는다) */
+    /* ─── SIDE PANEL: 노트 정보 줄 ──────────────
+       노트 표지·이름 없이 플래너 기간 텍스트(왼쪽)와 "설정" 버튼(오른쪽)만 한 줄로 표시한다.
+       기간 수정은 이 줄에서 직접 하지 않고 "설정" → 목록 설정 패널의 "플래너 기간" 행으로 들어간다. */
     .sp-note-info {
-      display: flex; align-items: center; gap: 10px;
+      display: flex; align-items: center; justify-content: space-between; gap: 8px;
       padding: 8px 16px 14px; flex-shrink: 0;
       border-bottom: 1px solid rgba(0,0,0,0.08);
-    }
-    .sp-note-cover {
-      width: 34px; flex-shrink: 0;
-      aspect-ratio: 133 / 177.658;
-      border-radius: 3px;
-      border: 1px solid rgba(0,0,0,0.1);
-      background: #d8dbe2;
-    }
-    .sp-note-info-text {
-      flex: 1; min-width: 0;
-      display: flex; flex-direction: column; gap: 4px;
-    }
-    .sp-note-name {
-      font-family: 'Pretendard', sans-serif;
-      font-size: 14px; font-weight: 700;
-      color: rgba(0,0,0,0.86); letter-spacing: -0.042px; line-height: 1.3;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    }
-    .sp-note-period-row {
-      display: flex; align-items: center; justify-content: space-between; gap: 8px;
     }
     .sp-note-period-sub {
       min-width: 0; flex: 1;
       font-family: 'Pretendard', sans-serif;
-      font-size: 12px; font-weight: 400;
-      color: rgba(0,0,0,0.45); letter-spacing: -0.036px; line-height: 1.3;
+      font-size: 13px; font-weight: 500;
+      color: rgba(0,0,0,0.45); letter-spacing: -0.039px; line-height: 1.3;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
-    .sp-note-period-edit-btn {
+    .sp-note-settings-btn {
       flex-shrink: 0;
-      height: 22px; padding: 0 8px;
-      background: rgba(0,0,0,0.06); border: none; border-radius: 6px;
-      font-family: 'Pretendard', sans-serif; font-size: 11px; font-weight: 600;
-      color: rgba(0,0,0,0.55); cursor: pointer;
+      background: none; border: none; padding: 4px 2px;
+      font-family: 'Pretendard', sans-serif; font-size: 13px; font-weight: 500;
+      color: rgba(0,0,0,0.45); letter-spacing: -0.039px;
+      cursor: pointer; white-space: nowrap;
     }
-    .sp-note-period-edit-btn:hover { background: rgba(0,0,0,0.1); }
+    .sp-note-settings-btn:hover { color: rgba(0,0,0,0.75); }
 
     /* ─── SHOP / ITEM SCREENS ─────────────────────── */
     .shop-screen, .item-screen {
@@ -2647,49 +2604,52 @@
       <div class="sp-header">
         <span class="sp-header-spacer" id="spHeaderSpacerLeft">구매</span>
         <span class="sp-header-title" id="spHeaderTitle">페이지</span>
-        <!-- 필터가 펼쳐졌을 때만 나타나는 닫기 버튼. 패널 우측 상단 고정 위치라 스크롤해도 항상 같은 자리 -->
-        <button class="sp-filter-close-btn" id="spFilterCloseBtn" type="button" aria-label="필터 닫기">
+        <!-- 패널 닫기 버튼. 패널 우측 상단 고정 위치라 스크롤해도 항상 같은 자리 -->
+        <button class="sp-panel-close-btn" id="spPanelCloseBtn" type="button" aria-label="패널 닫기">
           <i data-lucide="x" style="width:14px;height:14px;"></i>
         </button>
       </div>
-      <!-- 노트 표지·이름·기간 요약. 기간은 왼쪽에 텍스트로, 수정은 오른쪽 버튼으로 분리 -->
+      <!-- 노트 정보 줄 — 표지·이름 없이 플래너 기간만 표시, 우측 "설정"으로 목록 설정 패널 진입 -->
       <div class="sp-note-info">
-        <div class="sp-note-cover" id="spNoteCover"></div>
-        <div class="sp-note-info-text">
-          <span class="sp-note-name" id="spNoteName"></span>
-          <div class="sp-note-period-row">
-            <span class="sp-note-period-sub" id="spNotePeriodSub"></span>
-            <button class="sp-note-period-edit-btn" id="spPeriodEditBtn" type="button">수정</button>
-          </div>
-        </div>
+        <span class="sp-note-period-sub" id="spNotePeriodSub"></span>
+        <button class="sp-note-settings-btn" id="spListSettingsBtn" type="button">설정</button>
       </div>
       <div class="sp-content">
-        <!-- 스크롤 영역 최상단에 붙어있는 필터 바 — 월 타이틀들 위에 항상 고정된다.
-             왼쪽: 전체/숨김 보기 태그(숨긴 페이지는 숨김 탭에서 복원 가능).
-             오른쪽: 다중 선택 필터 — 누르면 바로 아래에 체크박스 팝오버가 뜬다. -->
+        <!-- 스크롤 영역 최상단에 붙어있는 전체/숨김 보기 태그 바 — 월 타이틀들 위에 항상 고정된다.
+             숨긴 페이지(수동·자동)는 숨김 탭에서 확인·복원하고, 숨김 태그에 개수가 표시된다. -->
         <div class="sp-sticky-filter-bar" id="spStickyFilterBar">
           <div class="sp-view-tags">
             <button class="sp-view-tag active" data-view-mode="all" type="button">전체</button>
-            <button class="sp-view-tag" data-view-mode="hidden" type="button">숨김</button>
-          </div>
-          <button class="sp-filter-toggle" id="spFilterToggle" type="button" aria-expanded="false">
-            <span>필터</span>
-            <i data-lucide="chevron-down" class="sp-filter-toggle-chevron"></i>
-          </button>
-          <div class="sp-filter-popover" id="spFilterPopover">
-            <label class="sp-filter-option">
-              <input type="checkbox" data-filter-key="hasRecord" checked>
-              <span class="sp-filter-check"></span>
-              <span>기록 있는 날</span>
-            </label>
-            <label class="sp-filter-option">
-              <input type="checkbox" data-filter-key="noRecord" checked>
-              <span class="sp-filter-check"></span>
-              <span>기록 없는 날</span>
-            </label>
+            <button class="sp-view-tag" data-view-mode="hidden" type="button">숨김<span class="sp-view-tag-count" id="spHiddenCount" style="display:none;"></span></button>
           </div>
         </div>
         <div id="spDateList"></div>
+      </div>
+    </div>
+
+    <!-- 페이지 패널의 "설정" → 목록 설정 패널 — gps-panel과 같은 패턴으로 workspace 안에서 슬라이드.
+         플래너 기간 수정 진입점과 "기록 없는 날 자동 숨기기" 스위치를 담는다 -->
+    <div id="slsBackdrop" class="gps-backdrop"></div>
+    <div id="listSettingsPanel" class="gps-panel">
+      <div class="bsm-header">
+        <button class="bsm-close-btn" id="slsCloseBtn"><i data-lucide="x" style="width:20px;height:20px;color:rgba(0,0,0,0.6);"></i></button>
+        <span class="bsm-title">설정</span>
+        <div class="bsm-spacer"></div>
+      </div>
+      <div class="gps-scroll-body">
+        <div class="gps-section-label">노트</div>
+        <button class="gps-row" id="slsPeriodRow">
+          <span class="gps-row-label">플래너 기간</span>
+          <span class="gps-row-value" id="slsPeriodValue"></span>
+          <i data-lucide="chevron-right" style="width:16px;height:16px;color:rgba(0,0,0,0.3);"></i>
+        </button>
+        <div class="gps-divider"></div>
+        <div class="gps-section-label">페이지 목록</div>
+        <div class="gps-row sls-toggle-row" id="slsAutoHideRow">
+          <span class="gps-row-label">기록 없는 날 자동 숨기기</span>
+          <button class="sls-switch" id="slsAutoHideSwitch" type="button" role="switch" aria-checked="false"></button>
+        </div>
+        <div class="sls-desc">오늘 이전 날짜 중 기록이 없는 페이지를 자동으로 숨깁니다. 숨긴 페이지는 "숨김" 탭에서 확인하고 복원할 수 있습니다.</div>
       </div>
     </div>
 
@@ -3320,13 +3280,18 @@
     return false;
   }
 
-  // 헤더 우측 다중 선택 필터 — "기록 있는 날/기록 없는 날"을 각각 독립적으로 켜고 끌 수 있다.
-  // 기본은 전부 켜짐(과거의 "기록만" 토글이 꺼진 상태와 동일하게 전부 표시).
-  const spFilterEnabled = { hasRecord: true, noRecord: true };
+  // "기록 없는 날 자동 숨기기" — 목록 설정 패널의 스위치. 켜면 오늘 이전 날짜 중 기록이 없는
+  // 페이지에 data-auto-hidden을 매겨 캔버스·전체 탭에서 감춘다. 자동으로 숨겨진 페이지도
+  // 숨김 탭에 나타나며, 거기서 복원하면 data-sp-keep 예외가 붙어 규칙이 다시 숨기지 않는다.
+  let spAutoHideNoRecord = false;
 
-  // 필터 바 왼쪽의 전체/숨김 보기 태그 — 'all'은 숨기지 않은 페이지 목록(기록 필터 적용),
-  // 'hidden'은 숨긴 페이지 목록(여기서 복원 가능). 기록 필터는 'all'에서만 적용된다.
+  // 필터 바 왼쪽의 전체/숨김 보기 태그 — 'all'은 숨기지 않은 페이지 목록,
+  // 'hidden'은 숨긴(수동+자동) 페이지 목록(여기서 복원 가능).
   let spViewMode = 'all';
+
+  function isCardHiddenAny(card) {
+    return card.dataset.spHidden === 'true' || card.dataset.autoHidden === 'true';
+  }
 
   // 접힌 월(예: "2026-7") 목록 — rebuildPanel이 다시 그려도 접힘 상태가 유지되도록 여기서 관리한다
   const spCollapsedMonths = new Set();
@@ -3349,6 +3314,12 @@
     const cardByTime = new Map();
     datedCards.forEach(card => cardByTime.set(parseCardDate(card).getTime(), card));
 
+    // 숨김 태그에 숨긴 페이지 개수(수동+자동)를 표시한다 — 0개면 숫자를 감춘다
+    const hiddenCount = datedCards.filter(isCardHiddenAny).length;
+    const hiddenCountEl = document.getElementById('spHiddenCount');
+    hiddenCountEl.textContent = hiddenCount;
+    hiddenCountEl.style.display = hiddenCount > 0 ? '' : 'none';
+
     const items = [];
     const cursor = new Date(startDate);
     const showHiddenOnly = spViewMode === 'hidden';
@@ -3356,11 +3327,8 @@
       const t = cursor.getTime();
       const existingCard = cardByTime.get(t) || null;
       if (existingCard) {
-        const isHidden = existingCard.dataset.spHidden === 'true';
-        // 숨김 탭: 숨긴 페이지만(기록 필터 미적용) / 전체 탭: 숨기지 않은 페이지에 기록 필터 적용
-        const passes = showHiddenOnly
-          ? isHidden
-          : !isHidden && spFilterEnabled[cardHasRecord(existingCard) ? 'hasRecord' : 'noRecord'];
+        // 숨김 탭: 숨긴(수동+자동) 페이지만 / 전체 탭: 숨기지 않은 페이지만
+        const passes = showHiddenOnly ? isCardHiddenAny(existingCard) : !isCardHiddenAny(existingCard);
         if (passes) {
           items.push({ card: existingCard, time: t, isToday: t === today.getTime(), label: `${cursor.getMonth() + 1}/${cursor.getDate()}` });
         }
@@ -3403,7 +3371,9 @@
           spCard.className = 'sp-card' + (item.card === selectedCard ? ' sp-selected' : '');
           spCard.dataset.dateKey = dateKey(parseCardDate(item.card));
           const todayBadge = item.isToday ? '<span class="sp-badge">오늘</span>' : '';
-          spCard.innerHTML = `<div class="sp-thumb">${todayBadge}</div><div class="sp-caption"><span class="sp-date">${item.label}</span><i data-lucide="more-horizontal" class="sp-more-icon"></i></div>`;
+          // 자동 숨김 규칙으로 숨겨진 페이지는 수동 숨김과 구분되도록 날짜 옆에 "자동" 칩을 붙인다
+          const autoChip = item.card.dataset.autoHidden === 'true' ? '<span class="sp-auto-chip">자동</span>' : '';
+          spCard.innerHTML = `<div class="sp-thumb">${todayBadge}</div><div class="sp-caption"><span class="sp-date">${item.label}${autoChip}</span><i data-lucide="more-horizontal" class="sp-more-icon"></i></div>`;
           row.appendChild(spCard);
         }
         body.appendChild(row);
@@ -3420,55 +3390,27 @@
     lucide.createIcons({ nodes: [spContent] });
   }
 
-  // ── 스크롤 목록 최상단 고정 필터 팝오버 + 패널 헤더의 닫기(X) 버튼 ──────────
-  const spFilterToggle = document.getElementById('spFilterToggle');
-  const spFilterPopover = document.getElementById('spFilterPopover');
-  const spFilterCloseBtn = document.getElementById('spFilterCloseBtn');
-  function closeSpFilterPopover() {
-    spFilterPopover.classList.remove('show');
-    spFilterToggle.setAttribute('aria-expanded', 'false');
-  }
-  spFilterToggle.addEventListener('click', (e) => {
-    e.stopPropagation();
-    const willShow = !spFilterPopover.classList.contains('show');
-    spFilterPopover.classList.toggle('show', willShow);
-    spFilterToggle.setAttribute('aria-expanded', String(willShow));
-  });
-  spFilterCloseBtn.addEventListener('click', closeSpFilterPopover);
-  document.addEventListener('click', (e) => {
-    if (!spFilterPopover.classList.contains('show')) return;
-    if (e.target.closest('.sp-sticky-filter-bar') || e.target.closest('.sp-filter-close-btn')) return;
-    closeSpFilterPopover();
-  });
-  spFilterPopover.querySelectorAll('input[data-filter-key]').forEach(input => {
-    input.addEventListener('change', () => {
-      spFilterEnabled[input.dataset.filterKey] = input.checked;
-      const anyOff = Object.values(spFilterEnabled).some(v => !v);
-      spFilterToggle.classList.toggle('active', anyOff);
-      sortPages();
-    });
+  // ── 패널 헤더의 닫기(X) 버튼 — 페이지 패널 자체를 닫는다 ──────────
+  // sidePanel/panelToggleBtn은 아래쪽에서 정의되지만 클릭 시점에는 이미 초기화되어 있다.
+  document.getElementById('spPanelCloseBtn').addEventListener('click', () => {
+    sidePanel.close();
+    panelToggleBtn.classList.remove('panel-open');
   });
 
-  // ── 전체/숨김 보기 태그 — 숨김 탭에서는 기록 필터 버튼을 감추고 팝오버도 닫는다 ──
-  const spStickyFilterBar = document.getElementById('spStickyFilterBar');
-  const spViewTagBtns = spStickyFilterBar.querySelectorAll('.sp-view-tag');
+  // ── 전체/숨김 보기 태그 ──
+  const spViewTagBtns = document.querySelectorAll('.sp-view-tag');
   function setSpViewMode(mode) {
     if (spViewMode === mode) return;
     spViewMode = mode;
     spViewTagBtns.forEach(b => b.classList.toggle('active', b.dataset.viewMode === mode));
-    spStickyFilterBar.classList.toggle('hidden-mode', mode === 'hidden');
-    if (mode === 'hidden') closeSpFilterPopover();
     sortPages();
   }
   spViewTagBtns.forEach(btn => {
     btn.addEventListener('click', () => setSpViewMode(btn.dataset.viewMode));
   });
 
-  // ── 노트 표지·이름·기간 요약 + 우측 "수정" 버튼 → 기간(시작일~종료일) 수정 팝업 ──
-  const spNoteCover = document.getElementById('spNoteCover');
-  const spNoteName = document.getElementById('spNoteName');
+  // ── 노트 정보 줄(플래너 기간 텍스트) + 우측 "설정" → 목록 설정 패널 ──
   const spNotePeriodSub = document.getElementById('spNotePeriodSub');
-  const spPeriodEditBtn = document.getElementById('spPeriodEditBtn');
   const spPeriodEditBackdrop = document.getElementById('spPeriodEditBackdrop');
   const spEditPeriodStartBtn = document.getElementById('spEditPeriodStartBtn');
   const spEditPeriodEndBtn = document.getElementById('spEditPeriodEndBtn');
@@ -3479,12 +3421,10 @@
     const activeTabEl = document.querySelector('.tab.active');
     if (!activeTabEl) return;
     const period = activeTabEl._periodState || defaultNotePeriod();
-    const name = activeTabEl.querySelector('.tab-label')?.textContent || activeTabEl.dataset.tabName || '';
-    spNoteCover.style.background = activeTabEl.dataset.coverPattern
-      ? patternCSS(activeTabEl.dataset.coverPattern, activeTabEl.dataset.coverColor || '#d8dbe2')
-      : (activeTabEl.dataset.coverColor || '#d8dbe2');
-    spNoteName.textContent = name;
-    spNotePeriodSub.textContent = `플래너 기간: ${formatPeriodDate(period.start)} ~ ${formatPeriodDate(period.end)}`;
+    const periodText = `${formatPeriodDate(period.start)} ~ ${formatPeriodDate(period.end)}`;
+    spNotePeriodSub.textContent = `플래너 기간: ${periodText}`;
+    // 목록 설정 패널의 "플래너 기간" 행 값도 같은 데이터로 함께 갱신한다
+    document.getElementById('slsPeriodValue').textContent = periodText;
   }
 
   function updateSpPeriodEditLabels() {
@@ -3531,12 +3471,35 @@
     spEndPicker.year = period.end.year; spEndPicker.month = period.end.month; spEndPicker.selected = period.end.day;
     spEndPicker.open();
   });
-  spPeriodEditBtn.addEventListener('click', () => {
+  spPeriodEditBackdrop.addEventListener('click', () => spPeriodEditBackdrop.classList.remove('show'));
+  document.getElementById('spPeriodEditDoneBtn').addEventListener('click', () => spPeriodEditBackdrop.classList.remove('show'));
+
+  // ── 목록 설정 패널: 노트 정보 줄의 "설정"으로 진입. 플래너 기간 수정 진입점과
+  //    "기록 없는 날 자동 숨기기" 스위치를 담는다(gps-panel과 같은 슬라이드 패턴) ──
+  const slsBackdrop = document.getElementById('slsBackdrop');
+  const listSettingsPanel = document.getElementById('listSettingsPanel');
+  const slsAutoHideSwitch = document.getElementById('slsAutoHideSwitch');
+  function closeListSettings() {
+    slsBackdrop.classList.remove('visible');
+    listSettingsPanel.classList.remove('visible');
+  }
+  document.getElementById('spListSettingsBtn').addEventListener('click', () => {
+    updateSpNoteInfo(); // "플래너 기간" 행 값을 최신으로 맞춘 뒤 연다
+    slsBackdrop.classList.add('visible');
+    listSettingsPanel.classList.add('visible');
+  });
+  document.getElementById('slsCloseBtn').addEventListener('click', closeListSettings);
+  slsBackdrop.addEventListener('click', closeListSettings);
+  document.getElementById('slsPeriodRow').addEventListener('click', () => {
     updateSpPeriodEditLabels();
     spPeriodEditBackdrop.classList.add('show');
   });
-  spPeriodEditBackdrop.addEventListener('click', () => spPeriodEditBackdrop.classList.remove('show'));
-  document.getElementById('spPeriodEditDoneBtn').addEventListener('click', () => spPeriodEditBackdrop.classList.remove('show'));
+  document.getElementById('slsAutoHideRow').addEventListener('click', () => {
+    spAutoHideNoRecord = !spAutoHideNoRecord;
+    slsAutoHideSwitch.classList.toggle('on', spAutoHideNoRecord);
+    slsAutoHideSwitch.setAttribute('aria-checked', String(spAutoHideNoRecord));
+    sortPages();
+  });
 
   const premiumDialog = new Dialog({
     title: '프리미엄으로 광고 없이 사용하기',
@@ -3562,9 +3525,19 @@
     datedCards.sort((a, b) => parseCardDate(a) - parseCardDate(b));
     canvasZoomWrap.querySelectorAll('.canvas-ad-banner').forEach(b => b.remove());
 
+    // "기록 없는 날 자동 숨기기": 오늘 이전 + 기록 없음 + 수동 숨김/복원 예외(data-sp-keep)가
+    // 아닌 카드에 data-auto-hidden을 매긴다. 스위치를 끄면 속성이 걷혀 즉시 다시 보인다.
+    const autoCutoff = new Date(); autoCutoff.setHours(0, 0, 0, 0);
+    datedCards.forEach(c => {
+      const auto = spAutoHideNoRecord
+        && c.dataset.spHidden !== 'true' && c.dataset.spKeep !== 'true'
+        && parseCardDate(c) < autoCutoff && !cardHasRecord(c);
+      if (auto) c.dataset.autoHidden = 'true'; else delete c.dataset.autoHidden;
+    });
+
     const orderedEls = datedCards.slice();
-    // 숨긴 페이지(data-sp-hidden)는 캔버스에서 display:none이므로 배너는 보이는 카드 사이에만 끼운다
-    const visibleEls = orderedEls.filter(el => el.dataset.spHidden !== 'true');
+    // 숨긴 페이지(수동·자동)는 캔버스에서 display:none이므로 배너는 보이는 카드 사이에만 끼운다
+    const visibleEls = orderedEls.filter(el => !isCardHiddenAny(el));
     const lastVisibleEl = visibleEls[visibleEls.length - 1] || null;
 
     // revealBanners가 true면(새 페이지가 막 추가된 경우) 새로 만든 배너를 여기서 즉시
@@ -3707,8 +3680,8 @@
       if (!card) return;
       activePageCard = card;
       const r = moreIcon.getBoundingClientRect();
-      // 숨긴 페이지에는 복원 메뉴를, 일반 페이지에는 숨김/속지 변경 메뉴를 띄운다
-      const menu = card.dataset.spHidden === 'true' ? hiddenPageMenu : pageMenu;
+      // 숨긴 페이지(수동·자동)에는 복원 메뉴를, 일반 페이지에는 숨김/속지 변경 메뉴를 띄운다
+      const menu = isCardHiddenAny(card) ? hiddenPageMenu : pageMenu;
       menu.open(r.left + r.width / 2, r.top, { above: true });
       return;
     }
@@ -3716,8 +3689,8 @@
     const pageCard = e.target.closest('.sp-card[data-date-key]');
     if (pageCard) {
       const card = findCardByDateKey(pageCard.dataset.dateKey);
-      // 숨긴 페이지는 캔버스에 없으므로(display:none) 스크롤 이동하지 않는다
-      if (!card || card.dataset.spHidden === 'true') return;
+      // 숨긴 페이지(수동·자동)는 캔버스에 없으므로(display:none) 스크롤 이동하지 않는다
+      if (!card || isCardHiddenAny(card)) return;
       document.querySelectorAll('.sp-card').forEach(t => t.classList.remove('sp-selected'));
       pageCard.classList.add('sp-selected');
       const idx = Array.from(canvasScroll.querySelectorAll('.card')).indexOf(card);
@@ -3861,6 +3834,10 @@
   function restorePage(card) {
     if (!card) return;
     delete card.dataset.spHidden;
+    // 자동 숨김 규칙에 걸리는 카드는 복원 직후 다시 숨겨지므로, 예외(keep)를 남겨 규칙에서 뺀다
+    const t0 = new Date(); t0.setHours(0, 0, 0, 0);
+    if (spAutoHideNoRecord && parseCardDate(card) < t0 && !cardHasRecord(card)) card.dataset.spKeep = 'true';
+    delete card.dataset.autoHidden;
     sortPages(null);
     if (window.__todayFabReady) window.watchTodayFab();
     pageToast.show('페이지가 복원되었습니다.');
@@ -3868,7 +3845,7 @@
 
   const hideDialog = new Dialog({
     title: '페이지를 숨기시겠습니까?',
-    message: '숨긴 페이지는 목록과 캔버스에 표시되지 않습니다. 필터 바의 "숨김" 탭에서 언제든 복원할 수 있습니다.',
+    message: '숨긴 페이지는 목록과 캔버스에 표시되지 않습니다. 패널의 "숨김" 탭에서 언제든 복원할 수 있습니다.',
     confirmLabel: '숨김',
     cancelLabel: '취소',
     onConfirm: () => {
@@ -5002,9 +4979,9 @@
   const todayFabBtn = document.getElementById('todayFabBtn');
   function getTodayCardEl() {
     const t = new Date();
-    // 숨긴 페이지는 캔버스에 없으므로(display:none) 이동 대상에서 제외한다
+    // 숨긴 페이지(수동·자동)는 캔버스에 없으므로(display:none) 이동 대상에서 제외한다
     return Array.from(canvasZoomWrap.querySelectorAll('.card[data-canvas-state="with-date"]'))
-      .find(c => c.dataset.spHidden !== 'true' && parseCardDate(c).toDateString() === t.toDateString()) || null;
+      .find(c => !isCardHiddenAny(c) && parseCardDate(c).toDateString() === t.toDateString()) || null;
   }
   todayFabBtn.addEventListener('click', () => {
     const el = getTodayCardEl();
