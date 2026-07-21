@@ -850,6 +850,8 @@
        않도록 canvas-zoom-wrap의 직계 자식으로 한정한다 */
     .canvas-zoom-wrap > .card[data-sp-hidden="true"],
     .canvas-zoom-wrap > .card[data-auto-hidden="true"] { display: none; }
+    /* 노트 기간 밖 날짜의 페이지도 캔버스에서 감춤 (sortPages가 매번 다시 판정) */
+    .canvas-zoom-wrap > .card.card-out-of-period { display: none; }
     /* 숨김 탭이 비었을 때 안내 문구 */
     .sp-empty-msg {
       padding: 40px 0; text-align: center;
@@ -3593,9 +3595,25 @@
 
   function sortPages(selectedCard, revealBanners) {
     const allCards = Array.from(canvasScroll.querySelectorAll('.card'));
-    const datedCards = allCards.filter(c => c.dataset.canvasState === 'with-date');
+    let datedCards = allCards.filter(c => c.dataset.canvasState === 'with-date');
     datedCards.sort((a, b) => parseCardDate(a) - parseCardDate(b));
     canvasZoomWrap.querySelectorAll('.canvas-ad-banner, .canvas-end-ui').forEach(b => b.remove());
+
+    // 노트 기간(시작일~종료일) 밖 날짜의 페이지는 캔버스에 표시하지 않는다 — 패널은 기간 안의
+    // 날짜만 그리는데 캔버스에는 전부 남아, 6/1~6/30 노트에서 7월 페이지가 보이는 문제 방지.
+    // DOM에서 지우지 않고 숨기기만 해서 기간을 다시 넓히면 그대로 되살아난다.
+    const canvasPeriod = document.querySelector('.tab.active')?._periodState || defaultNotePeriod();
+    const periodStartTime = new Date(canvasPeriod.start.year, canvasPeriod.start.month - 1, canvasPeriod.start.day).getTime();
+    const periodEndTime = new Date(canvasPeriod.end.year, canvasPeriod.end.month - 1, canvasPeriod.end.day).getTime();
+    const outOfPeriodCards = [];
+    datedCards = datedCards.filter(c => {
+      const t = parseCardDate(c).getTime();
+      const inPeriod = t >= periodStartTime && t <= periodEndTime;
+      c.classList.toggle('card-out-of-period', !inPeriod);
+      if (!inPeriod) outOfPeriodCards.push(c);
+      return inPeriod;
+    });
+    outOfPeriodCards.forEach(c => canvasZoomWrap.appendChild(c));
 
     // "기록 없는 날 자동 숨기기": 오늘 이전 + 기록 없음 + 수동 숨김/복원 예외(data-sp-keep)가
     // 아닌 카드에 data-auto-hidden을 매긴다. 스위치를 끄면 속성이 걷혀 즉시 다시 보인다.
