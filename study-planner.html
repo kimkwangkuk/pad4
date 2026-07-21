@@ -3560,7 +3560,17 @@
 
   function sortPages(selectedCard, revealBanners) {
     const allCards = Array.from(canvasScroll.querySelectorAll('.card'));
-    const datedCards = allCards.filter(c => c.dataset.canvasState === 'with-date');
+    // 노트 기간(시작일~종료일) 밖 날짜의 페이지는 캔버스에 표시하지 않는다 — 기간을 다시
+    // 넓히면 되살아나야 하므로 DOM에서 지우지 않고 숨기기만 하고, 정렬/배너/패널 대상에서 뺀다.
+    const period = document.querySelector('.tab.active')?._periodState || defaultNotePeriod();
+    const periodStartT = new Date(period.start.year, period.start.month - 1, period.start.day).getTime();
+    const periodEndT = new Date(period.end.year, period.end.month - 1, period.end.day).getTime();
+    allCards.forEach(c => {
+      if (c.dataset.canvasState !== 'with-date') return;
+      const t = parseCardDate(c).getTime();
+      c.style.display = (t < periodStartT || t > periodEndT) ? 'none' : '';
+    });
+    const datedCards = allCards.filter(c => c.dataset.canvasState === 'with-date' && c.style.display !== 'none');
     datedCards.sort((a, b) => parseCardDate(a) - parseCardDate(b));
     canvasZoomWrap.querySelectorAll('.canvas-ad-banner').forEach(b => b.remove());
 
@@ -3758,6 +3768,7 @@
     requestAnimationFrame(() => requestAnimationFrame(() => {
       const now = new Date();
       const pastCards = Array.from(canvasZoomWrap.querySelectorAll('.card[data-canvas-state="with-date"]'))
+        .filter(c => c.style.display !== 'none') // 노트 기간 밖이라 숨겨진 페이지는 랜딩 대상에서 제외
         .filter(c => parseCardDate(c) < now)
         .sort((a, b) => parseCardDate(b) - parseCardDate(a)); // 최신순 정렬 → 첫 번째가 가장 가까운 과거
       const nearestPast = pastCards[0];
