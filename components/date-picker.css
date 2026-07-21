@@ -9,6 +9,8 @@
   z-index: 2000;
 }
 .dp-overlay.dp-hidden { display: none; }
+/* 앵커 모드: 시트를 flex 중앙 정렬 대신 좌표 기준 절대배치로 놓는다(딤은 그대로) */
+.dp-overlay.dp-anchored { align-items: flex-start; justify-content: flex-start; }
 
 .dp-sheet {
   background: white;
@@ -131,6 +133,13 @@
 .dp-day-circle.taken { background: rgba(0,0,0,0.08); }
 .dp-day-cell:not(.taken):hover .dp-day-circle:not(.selected) { background: rgba(0,0,0,0.05); }
 .dp-day-cell.taken { cursor: default; }
+/* 선택 가능 범위(노트 기간) 밖 날짜 — 배경 없이 숫자만 흐리게 */
+.dp-day-cell.disabled { cursor: default; }
+.dp-day-circle.disabled .dp-day-num { color: rgba(0,0,0,0.15); }
+.dp-nav-btn:disabled { opacity: 0.25; cursor: default; pointer-events: none; }
+/* 오늘 날짜 — 얇은 링으로 표시. 선택되면 채워진 검정 원이 우선이라 링은 숨긴다 */
+.dp-day-circle.today:not(.selected) { box-shadow: inset 0 0 0 1.5px rgba(0,0,0,0.45); }
+.dp-day-circle.today:not(.selected) .dp-day-num { font-weight: 600; }
 .dp-day-num {
   font-family: 'Pretendard', sans-serif;
   font-weight: 400; font-size: 16px;
