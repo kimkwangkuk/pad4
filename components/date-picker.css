@@ -21,7 +21,7 @@
   box-shadow: 0 8px 40px rgba(0,0,0,0.12);
 }
 /* 헤더는 공용 팝업 네비바(.bsm-header/.bsm-title/.bsm-close-btn — modal-header.css)를 그대로 사용해
-   다른 설정 팝업들과 상단 간격이 동일하다. X(닫기)는 우측, 확정 버튼은 좌측. */
+   다른 설정 팝업들과 상단 간격이 동일하다. X(닫기)는 좌측, 확정(체크) 버튼은 우측. */
 /* 날짜를 고르면 바로 닫히는 게 아니라 선택만 표시되고, 이 버튼을 눌러야 확정+닫힘 */
 .dp-header-confirm-btn {
   width: 38px; height: 38px;

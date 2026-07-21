@@ -17,11 +17,11 @@ class DatePicker {
     sheet.className = 'dp-sheet';
     sheet.innerHTML = `
       <div class="bsm-header">
-        <button class="dp-header-confirm-btn" disabled><i data-lucide="check" style="width:16px;height:16px;color:#fff;"></i></button>
-        <span class="bsm-title">날짜 선택</span>
         <button class="dp-close-btn bsm-close-btn">
           <i data-lucide="x" style="width:20px;height:20px;color:rgba(0,0,0,0.6);"></i>
         </button>
+        <span class="bsm-title">날짜 선택</span>
+        <button class="dp-header-confirm-btn" disabled><i data-lucide="check" style="width:16px;height:16px;color:#fff;"></i></button>
       </div>
       <div class="dp-content">
         <div class="dp-calendar">
