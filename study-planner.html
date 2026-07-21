@@ -266,6 +266,39 @@
       transform-origin: top center;
     }
 
+    /* 캔버스 끝 UI: 마지막 페이지 뒤의 "~까지의 플래너" 마커 + 기간 연장 버튼.
+       카드와 같은 600px 폭이라 줌 배율이 걸려도 카드 열과 정렬이 유지된다 */
+    .canvas-end-ui {
+      width: 600px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      padding: 8px 0 24px;
+    }
+    .canvas-end-marker {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .canvas-end-marker::before,
+    .canvas-end-marker::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: rgba(0, 0, 0, 0.12);
+    }
+    .canvas-end-label {
+      font-family: 'Pretendard', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      color: rgba(0, 0, 0, 0.4);
+      letter-spacing: -0.039px;
+      white-space: nowrap;
+    }
+
     .canvas-ad-banner {
       width: 600px;
       height: 75px;
@@ -3533,11 +3566,36 @@
     return el;
   }
 
+  // 캔버스 끝 UI: "M월 D일까지의 플래너" 마커 + 기간 연장 버튼. sortPages가 매번 새로 만들어
+  // 마지막 카드 뒤에 하나만 붙인다. 버튼을 누르면 설정 팝업을 거치지 않고 종료일 캘린더가 바로
+  // 뜨고, 확정 시 spEndPicker.onConfirm이 페이지 생성·재정렬까지 처리하므로 여기선 열기만 한다.
+  function buildCanvasEndUI() {
+    // 초기 sortPages()는 tabLabels(const) 정의 전에 실행되므로 updateSpNoteInfo처럼 document로 찾는다
+    const period = (document.querySelector('.tab.active') || {})._periodState || defaultNotePeriod();
+    const el = document.createElement('div');
+    el.className = 'canvas-end-ui';
+    el.innerHTML = `
+      <div class="canvas-end-marker">
+        <span class="canvas-end-label">${period.end.month}월 ${period.end.day}일까지의 플래너</span>
+      </div>
+      <button class="glass-pill-btn canvas-extend-btn" type="button">
+        <span class="glass-pill-btn-icon"><i data-lucide="calendar-plus" style="width:18px;height:18px;"></i></span>
+        <span>기간 연장하기</span>
+      </button>
+    `;
+    el.querySelector('.canvas-extend-btn').addEventListener('click', () => {
+      spEndPicker.year = period.end.year; spEndPicker.month = period.end.month; spEndPicker.selected = period.end.day;
+      spEndPicker.open();
+    });
+    lucide.createIcons({ nodes: [el] });
+    return el;
+  }
+
   function sortPages(selectedCard, revealBanners) {
     const allCards = Array.from(canvasScroll.querySelectorAll('.card'));
     const datedCards = allCards.filter(c => c.dataset.canvasState === 'with-date');
     datedCards.sort((a, b) => parseCardDate(a) - parseCardDate(b));
-    canvasZoomWrap.querySelectorAll('.canvas-ad-banner').forEach(b => b.remove());
+    canvasZoomWrap.querySelectorAll('.canvas-ad-banner, .canvas-end-ui').forEach(b => b.remove());
 
     // "기록 없는 날 자동 숨기기": 오늘 이전 + 기록 없음 + 수동 숨김/복원 예외(data-sp-keep)가
     // 아닌 카드에 data-auto-hidden을 매긴다. 스위치를 끄면 속성이 걷혀 즉시 다시 보인다.
@@ -3566,6 +3624,8 @@
         canvasZoomWrap.appendChild(banner);
       }
     });
+    // 마지막 보이는 카드 뒤에는 배너 대신 끝 마커 + 기간 연장 버튼을 붙인다
+    if (lastVisibleEl) canvasZoomWrap.appendChild(buildCanvasEndUI());
 
     const selectedDomIdx = selectedCard ? orderedEls.indexOf(selectedCard) : orderedEls.indexOf(lastVisibleEl);
     rebuildPanel(datedCards, selectedCard);
