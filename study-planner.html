@@ -926,37 +926,6 @@
     }
     .sp-note-period-edit-btn:hover { background: rgba(0,0,0,0.1); }
 
-    /* ─── SIDE PANEL: 오늘로 이동 버튼 ───────────────
-       .sp-panel(position:absolute) 안에 떠서, 오늘자 슬롯이 목록(.sp-content) 자체 스크롤
-       밖으로 나가면 나타난다. 위/아래 중 오늘 슬롯이 있는 쪽에 뜬다. */
-    .sp-today-fab {
-      position: absolute; left: 50%; bottom: 16px; z-index: 20;
-      transform: translateX(-50%) translateY(12px);
-      opacity: 0; pointer-events: none;
-      transition: opacity 0.22s ease, transform 0.22s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    .sp-today-fab.pos-top {
-      /* .sp-header(56px) + .sp-note-info(기간 한 줄) 아래, 목록(.sp-content)이 실제로 시작하는 지점에 맞춘다 */
-      top: 94px; bottom: auto;
-      transform: translateX(-50%) translateY(-12px);
-    }
-    .sp-today-fab.visible {
-      opacity: 1; pointer-events: auto;
-      transform: translateX(-50%) translateY(0);
-    }
-    /* .sp-panel은 캔버스처럼 다채로운 배경이 아니라 흰 배경이라, 반투명 유리 스타일(.glass-pill-btn
-       기본값)은 대비가 거의 없어 눈에 안 띈다 — 흰 배경 위에서 잘 보이는 짙은 필로 덮어쓴다 */
-    .sp-today-fab {
-      background: rgba(0,0,0,0.86);
-      border-color: transparent;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.18);
-      backdrop-filter: none;
-      -webkit-backdrop-filter: none;
-      color: #fff;
-    }
-    .sp-today-fab:hover { background: rgba(0,0,0,0.72); }
-    .sp-today-fab .glass-pill-btn-icon svg path { stroke: #fff; }
-
     /* ─── SHOP / ITEM SCREENS ─────────────────────── */
     .shop-screen, .item-screen {
       position: fixed;
@@ -2710,13 +2679,6 @@
         </div>
         <div id="spDateList"></div>
       </div>
-      <!-- 오늘자 슬롯이 패널 스크롤 밖으로 나가면(목록 자체 스크롤 기준) 뜨는 이동 버튼 -->
-      <button class="glass-pill-btn sp-today-fab" id="spTodayFabBtn" type="button" aria-label="오늘로 이동">
-        <span class="glass-pill-btn-icon">
-          <svg viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M11.25 3L15 6.75L11.25 10.5M15 6.75H7.125C6.03098 6.75 4.98177 7.1846 4.20818 7.95818C3.4346 8.73177 3 9.78098 3 10.875C3 11.4167 3.1067 11.9531 3.314 12.4536C3.5213 12.954 3.82514 13.4088 4.20818 13.7918C4.98177 14.5654 6.03098 15 7.125 15H9.75" stroke="rgba(0,0,0,0.86)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </span>
-        <span>오늘</span>
-      </button>
     </div>
 
     <!-- 오늘자 임시 페이지 "속지 변경" → 페이지 설정 사이드 패널 (Figma 5017:326690 / 5017:326734)
@@ -3407,10 +3369,6 @@
       spContent.appendChild(row);
     }
     lucide.createIcons({ nodes: [spContent] });
-    // 목록을 새로 그렸으니 오늘 슬롯 DOM도 새 노드로 바뀐다 — 관찰 대상을 다시 연결해야 한다.
-    // watchSpTodayFab은 이 함수보다 뒤에서 정의되지만, rebuildPanel의 첫 실행(맨 아래 "Initial
-    // panel build")은 그 정의 블록보다도 더 나중에 일어나므로 호이스팅 문제 없이 안전하다.
-    watchSpTodayFab();
   }
 
   // ── 스크롤 목록 최상단 고정 필터 바 — 팝오버 없이 나열된 알약 토글들 ──────────
@@ -3496,33 +3454,6 @@
     updateSpPeriodEditLabels();
     spPeriodEditDialog.open();
   });
-
-  // ── 사이드 패널의 "오늘로 이동" 버튼: 오늘자 슬롯(빈 칸 또는 실제 카드)이 .sp-content 자체
-  //    스크롤 밖으로 나가면 뜬다. rebuildPanel이 매번 슬롯 DOM을 새로 그리므로, 다시 그릴 때마다
-  //    관찰 대상도 새로 연결한다.
-  const spTodayFabBtn = document.getElementById('spTodayFabBtn');
-  const spContentEl = document.querySelector('.sp-content');
-  function getTodaySpCardEl() {
-    return document.querySelector('.sp-blank[data-today="1"]') ||
-      document.querySelector(`.sp-card[data-date-key="${dateKey(new Date())}"]`);
-  }
-  spTodayFabBtn.addEventListener('click', () => {
-    const el = getTodaySpCardEl();
-    if (!el) return;
-    const target = el.offsetTop - (spContentEl.clientHeight - el.offsetHeight) / 2;
-    spContentEl.scrollTo({ top: Math.max(0, target), behavior: 'smooth' });
-  });
-  let spTodayFabObserver = null;
-  function watchSpTodayFab() {
-    const el = getTodaySpCardEl();
-    if (!el) { spTodayFabBtn.classList.remove('visible'); return; }
-    if (spTodayFabObserver) spTodayFabObserver.disconnect();
-    spTodayFabObserver = new IntersectionObserver(([entry]) => {
-      spTodayFabBtn.classList.toggle('visible', !entry.isIntersecting);
-      spTodayFabBtn.classList.toggle('pos-top', entry.boundingClientRect.top < entry.rootBounds.top);
-    }, { root: spContentEl, threshold: 0 });
-    spTodayFabObserver.observe(el);
-  }
 
   const premiumDialog = new Dialog({
     title: '프리미엄으로 광고 없이 사용하기',
