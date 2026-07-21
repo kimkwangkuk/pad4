@@ -796,6 +796,23 @@
     .sp-view-tag.active {
       background: rgba(0,0,0,0.86); color: white; font-weight: 600;
     }
+    /* 숨김 탭에서만 바 우측에 보이는 "자동 숨김" 진입점 — 미니 스위치는 상태 표시용이고
+       실제 적용은 눌렀을 때 뜨는 자동 숨김 팝업의 토글에서 한다 */
+    .sp-autohide-entry {
+      margin-left: auto;
+      display: flex; align-items: center; gap: 6px;
+      background: none; border: none; padding: 2px;
+      font-family: 'Pretendard', sans-serif; font-size: 12px; font-weight: 500;
+      color: rgba(0,0,0,0.55); letter-spacing: -0.036px;
+      cursor: pointer; white-space: nowrap;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .sp-autohide-entry .sls-switch {
+      margin-left: 0; width: 32px; height: 20px;
+      pointer-events: none; /* 버튼 전체가 팝업 진입점이므로 스위치 자체는 클릭을 먹지 않는다 */
+    }
+    .sp-autohide-entry .sls-switch::after { width: 16px; height: 16px; }
+    .sp-autohide-entry .sls-switch.on::after { left: 14px; }
     /* 숨긴 페이지(수동·자동 모두) 캔버스에서 감춤 — .sp-thumb 안의 썸네일 클론에는 적용되지
        않도록 canvas-zoom-wrap의 직계 자식으로 한정한다 */
     .canvas-zoom-wrap > .card[data-sp-hidden="true"],
@@ -824,8 +841,8 @@
     /* ─── 목록 설정 팝업 — 속지 변경(#changeTypePopup)과 같은 중앙 팝업 패턴(bsm 네비바+그래버).
        기간 수정 팝업(nc-format, z960)과 날짜 선택(z2000)이 이 위로 떠야 하므로
        z-index를 그보다 낮게 둔다 ─── */
-    #listSettingsBackdrop { z-index: 940; }
-    #listSettingsPopup {
+    #listSettingsBackdrop, #autoHideBackdrop { z-index: 940; }
+    #listSettingsPopup, #autoHidePopup {
       position: fixed; z-index: 941;
       left: 50%; top: 50%;
       transform: translateX(-50%) translateY(calc(-50% + 20px));
@@ -839,7 +856,7 @@
       transition: opacity 0.22s ease, transform 0.22s cubic-bezier(0.34,1.1,0.64,1);
       padding-bottom: 24px;
     }
-    #listSettingsPopup.visible {
+    #listSettingsPopup.visible, #autoHidePopup.visible {
       opacity: 1; pointer-events: auto;
       transform: translateX(-50%) translateY(-50%);
     }
@@ -2648,14 +2665,19 @@
             <button class="sp-view-tag active" data-view-mode="all" type="button">페이지</button>
             <button class="sp-view-tag" data-view-mode="hidden" type="button">숨김</button>
           </div>
+          <!-- 숨김 탭에서만 표시 — 누르면 자동 숨김 팝업이 뜬다(스위치는 상태 표시용 진입점) -->
+          <button class="sp-autohide-entry" id="spAutoHideEntryBtn" type="button" style="display:none;">
+            <span>자동 숨김</span>
+            <span class="sls-switch" id="spAutoHideEntrySwitch"></span>
+          </button>
         </div>
         <div id="spDateList"></div>
       </div>
     </div>
 
     <!-- 페이지 패널의 "설정" → 속지 변경 팝업과 같은 중앙 팝업(bsm 그래버·중앙 타이틀 네비바·✕)
-         설정은 실시간 적용이라 완료 버튼은 없다. "플래너 기간"을 누르면 기간 수정(z960)·날짜 선택(z2000)이
-         이 팝업(z941) 위로 뜬다 -->
+         설정은 실시간 적용이라 완료 버튼은 없다. "플래너 기간"의 시작일/종료일을 누르면
+         날짜 선택(z2000)이 이 팝업(z941) 위로 뜬다 -->
     <div id="listSettingsBackdrop" class="bsm-backdrop"></div>
     <div id="listSettingsPopup">
       <div class="bsm-grabber-row"></div>
@@ -2672,7 +2694,20 @@
           <span class="nc-period-sep">~</span>
           <button class="nc-period-field" id="spEditPeriodEndBtn" type="button"></button>
         </div>
-        <div class="nc-format-label">페이지 목록</div>
+      </div>
+    </div>
+
+    <!-- 숨김 탭의 "자동 숨김" 진입점 → 같은 bsm 중앙 팝업. 설명을 읽고 여기의 토글로
+         실제 적용한다(실시간 적용, 완료 버튼 없음) -->
+    <div id="autoHideBackdrop" class="bsm-backdrop"></div>
+    <div id="autoHidePopup">
+      <div class="bsm-grabber-row"></div>
+      <div class="bsm-header">
+        <div class="bsm-spacer"></div>
+        <span class="bsm-title">자동 숨김</span>
+        <button class="bsm-close-btn" id="autoHideCloseBtn">✕</button>
+      </div>
+      <div class="sls-body">
         <div class="sls-pop-row sls-toggle-row" id="slsAutoHideRow">
           <span class="sls-pop-row-label">기록 없는 날 자동 숨기기</span>
           <button class="sls-switch" id="slsAutoHideSwitch" type="button" role="switch" aria-checked="false"></button>
@@ -3381,6 +3416,8 @@
   const spViewTagBtns = document.querySelectorAll('.sp-view-tag');
   function applySpViewMode() {
     spViewTagBtns.forEach(b => b.classList.toggle('active', b.dataset.viewMode === spViewMode));
+    // 숨김 탭에서만 바 우측에 "자동 숨김" 진입점을 보여준다
+    document.getElementById('spAutoHideEntryBtn').style.display = spViewMode === 'hidden' ? '' : 'none';
   }
   function setSpViewMode(mode) {
     if (spViewMode === mode) return;
@@ -3463,10 +3500,27 @@
   });
   listSettingsBackdrop.addEventListener('click', closeListSettings);
   document.getElementById('slsCloseBtn').addEventListener('click', closeListSettings);
+
+  // ── 자동 숨김 팝업: 숨김 탭 바 우측의 "자동 숨김" 진입점으로 연다. 바의 미니 스위치는
+  //    상태 표시용이고, 실제 적용은 이 팝업의 토글에서 실시간으로 한다 ──
+  const autoHideBackdrop = document.getElementById('autoHideBackdrop');
+  const autoHidePopup = document.getElementById('autoHidePopup');
+  const spAutoHideEntrySwitch = document.getElementById('spAutoHideEntrySwitch');
+  function closeAutoHidePopup() {
+    autoHideBackdrop.classList.remove('visible');
+    autoHidePopup.classList.remove('visible');
+  }
+  document.getElementById('spAutoHideEntryBtn').addEventListener('click', () => {
+    autoHideBackdrop.classList.add('visible');
+    autoHidePopup.classList.add('visible');
+  });
+  autoHideBackdrop.addEventListener('click', closeAutoHidePopup);
+  document.getElementById('autoHideCloseBtn').addEventListener('click', closeAutoHidePopup);
   document.getElementById('slsAutoHideRow').addEventListener('click', () => {
     spAutoHideNoRecord = !spAutoHideNoRecord;
     slsAutoHideSwitch.classList.toggle('on', spAutoHideNoRecord);
     slsAutoHideSwitch.setAttribute('aria-checked', String(spAutoHideNoRecord));
+    spAutoHideEntrySwitch.classList.toggle('on', spAutoHideNoRecord); // 진입점 미니 스위치도 동기화
     sortPages();
   });
 
