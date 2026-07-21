@@ -289,23 +289,25 @@
       -webkit-tap-highlight-color: transparent;
     }
 
-    /* ─── ADD PAGE BUTTON (always trailing element in canvas) ── */
-    .add-page-btn {
-      flex-shrink: 0;
-      display: inline-flex; align-items: center; justify-content: center; gap: 4px;
-      padding: 10px 14px;
-      border: 1px dashed #acacac;
-      border-radius: 14px;
-      background: transparent;
-      cursor: pointer;
-      -webkit-tap-highlight-color: transparent;
-      font-family: 'Pretendard', sans-serif;
-      font-size: 15px; font-weight: 500;
-      color: black; letter-spacing: -0.045px; line-height: 1.4;
-      transition: background 0.12s;
+    /* ─── 기간 끝 마커 (B안, 캔버스 맨 끝 고정 요소) ───────────
+       마지막 페이지 아래: "M월 D일까지의 플래너" 구분선 + 기간 설정 유리 필 버튼 */
+    .canvas-end-ui {
+      width: 600px; flex-shrink: 0;
+      display: flex; flex-direction: column; align-items: center;
+      gap: 20px;
+      padding: 8px 0 24px;
     }
-    .add-page-btn:hover { background: rgba(0,0,0,0.03); }
-    .add-page-btn:active { background: rgba(0,0,0,0.07); }
+    .canvas-end-marker {
+      width: 100%;
+      display: flex; align-items: center; gap: 14px;
+    }
+    .canvas-end-marker::before, .canvas-end-marker::after {
+      content: ''; flex: 1; height: 1px; background: rgba(0,0,0,0.18);
+    }
+    .canvas-end-label {
+      font-family: 'Pretendard', sans-serif; font-size: 15px; font-weight: 500;
+      color: rgba(0,0,0,0.5); letter-spacing: -0.045px; white-space: nowrap;
+    }
 
     /* ─── 오늘자 속지 미리보기(고스트) 카드 (Figma 4981:262394) ───────── */
     /* 점선 프레임이 일반 카드 슬롯과 같은 600×800을 차지하고, 그 안에 오늘자 카드를
@@ -930,7 +932,7 @@
     .sp-hide-blank-toggle input:checked ~ .sp-hide-blank-check::after { opacity: 1; }
 
     /* ─── SIDE PANEL: 하단 푸터의 페이지 추가 버튼 ──────────────
-       "빈 날짜 안보기"가 켜진 동안만 표시. 캔버스 하단 .add-page-btn과 같은 점선 스타일 */
+       "빈 날짜 안보기"가 켜진 동안만 표시. 점선 스타일의 추가 버튼 */
     .sp-footer {
       flex-shrink: 0;
       padding: 10px 16px 14px;
@@ -3294,12 +3296,6 @@
   const canvasZoomWrap = document.getElementById('canvasZoomWrap');
   let pageCount = PAGES.length;
 
-  // 항상 마지막 페이지 아래에 표시되는 "페이지 추가" 버튼 (sortPages에서 매번 맨 뒤로 재배치)
-  const addPageBtn = document.createElement('button');
-  addPageBtn.className = 'add-page-btn';
-  addPageBtn.id = 'addPageBtn';
-  addPageBtn.innerHTML = '<i data-lucide="plus" style="width:18px;height:18px;"></i><span>페이지 추가</span>';
-
   PAGES.forEach((page) => {
     canvasZoomWrap.insertAdjacentHTML('beforeend', buildCardHTML(page));
     const card = canvasZoomWrap.lastElementChild;
@@ -3527,6 +3523,28 @@
     return el;
   }
 
+  // 기간 끝 마커(B안): "M월 D일까지의 플래너" 구분선 + UI 키트 유리 필 버튼(기간 설정).
+  // 마지막 페이지 아래에서 기간이 끝났음을 알리고, 버튼을 누르면 종료일 캘린더가 바로 열린다.
+  function buildCanvasEndUI(period) {
+    const el = document.createElement('div');
+    el.className = 'canvas-end-ui';
+    el.innerHTML = `
+      <div class="canvas-end-marker"><span class="canvas-end-label">${period.end.month}월 ${period.end.day}일까지의 플래너</span></div>
+      <button class="glass-pill-btn canvas-end-btn" type="button">
+        <span class="glass-pill-btn-icon"><i data-lucide="calendar-plus" style="width:18px;height:18px;color:rgba(0,0,0,0.86);"></i></span>
+        <span>기간 설정</span>
+      </button>`;
+    el.querySelector('.canvas-end-btn').addEventListener('click', () => {
+      // 종료일 수정용 캘린더(spEndPicker)를 현재 종료일로 맞춰 바로 연다 — 고르면 즉시 반영.
+      // spEndPicker는 범위 제한이 없어 기간 밖 미래 날짜로 연장할 수 있다.
+      const p = (document.querySelector('.tab.active') || {})._periodState || defaultNotePeriod();
+      spEndPicker.year = p.end.year; spEndPicker.month = p.end.month; spEndPicker.selected = p.end.day;
+      spEndPicker.open();
+    });
+    lucide.createIcons({ nodes: [el] });
+    return el;
+  }
+
   function sortPages(selectedCard, revealBanners) {
     const allCards = Array.from(canvasScroll.querySelectorAll('.card'));
     const datedCards = allCards.filter(c => c.dataset.canvasState === 'with-date');
@@ -3551,7 +3569,6 @@
 
     const ghostCard = canvasZoomWrap.querySelector('.card.card-ghost');
     const ghostEl = ghostCard ? (ghostCard.closest('.ghost-frame') || ghostCard) : null;
-    addPageBtn.style.display = ghostCard ? 'none' : ''; // 오늘자 미리보기 카드가 있으면 페이지 추가 버튼은 숨김
 
     // 오늘자 미리보기는 항상 맨 끝이 아니라, 실제 페이지들 사이에서 날짜순 제자리에 끼워 넣는다
     // (예: 미래 날짜 페이지가 이미 있으면 그보다 앞쪽에 와야 함)
@@ -3575,7 +3592,10 @@
         canvasZoomWrap.appendChild(banner);
       }
     });
-    canvasZoomWrap.appendChild(addPageBtn); // 항상 마지막 페이지 아래에 위치
+    // 마지막 페이지 아래에는 페이지 추가 버튼 대신 기간 끝 마커(B안)를 붙인다 —
+    // 설정한 기간이 여기서 끝났다는 표시이고, "기간 설정" 버튼으로 기간을 늘릴 수 있다
+    canvasZoomWrap.querySelector('.canvas-end-ui')?.remove();
+    canvasZoomWrap.appendChild(buildCanvasEndUI(period));
 
     rebuildPanel(datedCards, selectedCard);
     // 새로 추가/선택된 페이지 엘리먼트로 직접 스크롤 — 인덱스 계산은 숨김 카드가 끼면 어긋난다
@@ -3709,7 +3729,6 @@
     if (timeVal) timeVal.textContent = '0:00:00';
     ghostCard.querySelectorAll('.subj-time').forEach(el => { el.textContent = '0:00:00'; });
 
-    addPageBtn.style.display = 'none'; // 오늘자 미리보기 카드가 있는 동안 페이지 추가 버튼은 숨김
     lucide.createIcons({ nodes: [ghostCard] });
 
     // 축소된 카드 하단을 캔버스 배경색으로 흐리는 그라데이션 + 흰 배경 CTA 버튼 + 더보기(점 3개)를
@@ -4005,11 +4024,6 @@
       }, 400);
     }
   };
-
-  addPageBtn.addEventListener('click', () => {
-    const rect = addPageBtn.getBoundingClientRect();
-    openAddPageMenu(rect.left + rect.width / 2, rect.top, { above: true });
-  });
 
   // 패널 하단 푸터의 "페이지 추가" 버튼("빈 날짜 안보기"가 켜진 동안만 표시) — 캘린더를
   // 화면 중앙이 아니라 버튼 바로 위에 띄운다. 노트 기간 안의 날짜만 선택할 수 있고,
