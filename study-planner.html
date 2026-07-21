@@ -249,21 +249,31 @@
       overflow-y: auto;
       overflow-x: hidden;
       scrollbar-width: none;
-      /* 캔버스는 전체 스크롤이 아니라 한 장씩 넘겨보는 페이지네이션 —
-         카드마다 스냅이 걸리고, stop: always로 한 번에 한 장만 넘어간다 */
+      /* 캔버스는 전체 스크롤이 아니라 "장면" 단위 페이지네이션 — 화면에는 항상 한 장면
+         (페이지 + 아래 광고)만 보이고, 스크롤하면 다음 장면으로 통째로 넘어간다 */
       scroll-snap-type: y mandatory;
     }
     .main-area::-webkit-scrollbar { display: none; }
     /* 핀치/트랙패드 줌 중에는 스냅을 끈다 — transform scale과 스냅 좌표가 어긋나서
        확대 상태에서 자유롭게 훑어볼 수 없게 되는 문제 방지 (zoom이 1.0으로 돌아오면 복원) */
     .main-area.zoom-active { scroll-snap-type: none; }
-    /* 페이지 단위 스냅 지점: 실제 카드 + 오늘 미리보기 프레임.
-       마지막 카드 뒤의 끝 마커(기간 설정 UI)도 스냅 대상이어야 페이지처럼 도달할 수 있다 */
-    .canvas-zoom-wrap > .card,
-    .canvas-zoom-wrap > .ghost-frame,
-    .canvas-zoom-wrap > .canvas-end-ui {
-      scroll-snap-align: center;
+    /* 한 장면 = 스크롤 영역 한 화면 높이. 카드(+광고 배너)가 그 안에 통째로 들어가고,
+       넘치면 --scene-scale로 축소해서 항상 한 화면에 한 장면만 온전히 보이게 한다 */
+    .canvas-scene {
+      height: calc(100vh - 86px); /* .workspace/.main-area와 동일한 한 화면 높이 */
+      width: 100%;
+      flex-shrink: 0;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      overflow: hidden; /* 축소 전 원본 크기가 이웃 장면 영역으로 비어져 나가지 않게 */
+      scroll-snap-align: start;
       scroll-snap-stop: always;
+    }
+    .scene-fit {
+      display: flex; flex-direction: column; align-items: center;
+      gap: 14px;
+      transform: scale(var(--scene-scale, 1));
+      transform-origin: center center;
     }
 
     /* ─── CANVAS SCROLL CONTAINER ─────────────────── */
@@ -272,11 +282,13 @@
       touch-action: pan-y;
     }
     .canvas-zoom-wrap {
-      padding: 49px 0;
+      /* 장면(.canvas-scene) 단위 페이지네이션 — 장면이 정확히 한 화면 높이씩 차지하도록
+         패딩·간격 없이 이어 붙인다 (숨김 카드 등 비장면 자식은 display:none이라 무관) */
+      padding: 0;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 16px;
+      gap: 0;
       transform-origin: top center;
     }
 
@@ -3622,6 +3634,13 @@
     let datedCards = allCards.filter(c => c.dataset.canvasState === 'with-date');
     datedCards.sort((a, b) => parseCardDate(a) - parseCardDate(b));
     canvasZoomWrap.querySelectorAll('.canvas-ad-banner, .canvas-end-ui').forEach(b => b.remove());
+    // 이전 장면(.canvas-scene) 래퍼 해체 — 카드를 다시 직계 자식으로 꺼내고 래퍼는 버린다.
+    // 아래에서 보이는 카드들만 새 장면으로 다시 감싼다.
+    canvasZoomWrap.querySelectorAll('.canvas-scene').forEach(scene => {
+      const inner = scene.querySelectorAll('.card');
+      inner.forEach(el => canvasZoomWrap.insertBefore(el, scene));
+      scene.remove();
+    });
 
     // 노트 기간(시작일~종료일) 밖 날짜의 페이지는 캔버스에 표시하지 않는다 — 패널은 기간 안의
     // 날짜만 그리는데 캔버스에는 전부 남아, 6/1~6/30 노트에서 7월 페이지가 보이는 문제 방지.
@@ -3658,16 +3677,34 @@
     // card-creating으로 태어나게 한다 — scrollToCard의 offsetTop 리플로우가 일어나기 전에
     // 이미 숨겨진 상태로 스타일이 확정되어야 "1→0" 깜빡임 없이 깔끔하게 시작한다
     const newBanners = [];
+    // 보이는 카드는 "장면" 하나로 감싼다 — 카드 + (마지막이 아니면) 아래 광고 배너가 한 장면.
+    // 숨긴 카드는 장면 없이 직계 자식으로 붙인다(display:none이라 레이아웃에 안 낀다).
     orderedEls.forEach(el => {
-      canvasZoomWrap.appendChild(el);
-      if (el.dataset.spHidden !== 'true' && el !== lastVisibleEl) {
+      if (isCardHiddenAny(el)) { canvasZoomWrap.appendChild(el); return; }
+      const scene = document.createElement('div');
+      scene.className = 'canvas-scene';
+      const fit = document.createElement('div');
+      fit.className = 'scene-fit';
+      fit.appendChild(el);
+      if (el !== lastVisibleEl) {
         const banner = buildAdBanner();
         if (revealBanners) { banner.classList.add('card-creating'); newBanners.push(banner); }
-        canvasZoomWrap.appendChild(banner);
+        fit.appendChild(banner);
       }
+      scene.appendChild(fit);
+      canvasZoomWrap.appendChild(scene);
     });
-    // 마지막 보이는 카드 뒤에는 배너 대신 끝 마커 + 기간 연장 버튼을 붙인다
-    if (lastVisibleEl) canvasZoomWrap.appendChild(buildCanvasEndUI());
+    // 마지막 보이는 카드 뒤에는 배너 대신 끝 마커 + 기간 연장 버튼을 별도 장면으로 붙인다
+    if (lastVisibleEl) {
+      const endScene = document.createElement('div');
+      endScene.className = 'canvas-scene';
+      const endFit = document.createElement('div');
+      endFit.className = 'scene-fit';
+      endFit.appendChild(buildCanvasEndUI());
+      endScene.appendChild(endFit);
+      canvasZoomWrap.appendChild(endScene);
+    }
+    updateSceneScale();
 
     const selectedDomIdx = selectedCard ? orderedEls.indexOf(selectedCard) : orderedEls.indexOf(lastVisibleEl);
     rebuildPanel(datedCards, selectedCard);
@@ -3675,6 +3712,17 @@
     setTimeout(updateAllThumbs, 50);
     return newBanners;
   }
+
+  // 장면 축소 배율: 카드(800px)+간격+광고 배너(75px)가 한 화면 높이 안에 통째로 들어가도록
+  // --scene-scale을 계산한다. 화면이 충분히 크면 1(원본 크기) 그대로.
+  function updateSceneScale() {
+    const areaH = document.querySelector('.main-area')?.clientHeight || 0;
+    if (!areaH) return;
+    const contentH = 800 + 14 + 75; // 가장 큰 장면(카드 + gap + 배너) 기준
+    const scale = Math.min(1, (areaH - 24) / contentH);
+    canvasZoomWrap.style.setProperty('--scene-scale', scale);
+  }
+  window.addEventListener('resize', updateSceneScale);
 
   // ── Thumbnail renderer ────────────────────────────────────
   function renderThumb(card, thumbEl) {
@@ -3759,7 +3807,10 @@
   function scrollToCard(idx, smooth) {
     const cards = canvasScroll.querySelectorAll('.card');
     if (!cards[idx]) return;
-    const target = cards[idx].offsetTop - CENTER_OFFSET();
+    // 장면 페이지네이션: 카드가 속한 장면(.canvas-scene)의 시작 위치로 이동해야
+    // 스냅 지점과 일치한다 (장면 밖 카드는 예전 방식대로 중앙 정렬 위치 계산)
+    const scene = cards[idx].closest('.canvas-scene');
+    const target = scene ? scene.offsetTop : cards[idx].offsetTop - CENTER_OFFSET();
     if (smooth) {
       mainArea.scrollTo({ top: Math.max(0, target), behavior: 'smooth' });
       // fallback: ensure arrival after animation time
@@ -5093,7 +5144,8 @@
   todayFabBtn.addEventListener('click', () => {
     const el = getTodayCardEl();
     if (!el) return;
-    const target = el.offsetTop - CENTER_OFFSET();
+    const scene = el.closest('.canvas-scene');
+    const target = scene ? scene.offsetTop : el.offsetTop - CENTER_OFFSET();
     mainArea.scrollTo({ top: Math.max(0, target), behavior: 'smooth' });
   });
   let todayFabObserver = null;
