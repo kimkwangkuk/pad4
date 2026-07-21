@@ -3323,14 +3323,17 @@
         const item = items[j];
         const spCard = document.createElement('div');
         spCard.className = 'sp-card' + (item.card && item.card === selectedCard ? ' sp-selected' : '');
+        // "오늘" 뱃지 — renderThumb가 .sp-thumb 내부를 통째로 다시 그리므로, 뱃지는 썸네일
+        // 안이 아니라 카드의 형제 요소로 두고 카드 우측 상단에 절대배치한다
+        const todayBadge = item.time === today.getTime() ? '<span class="sp-badge">오늘</span>' : '';
         if (item.isBlank) {
           spCard.classList.add('sp-blank');
           spCard.dataset.y = item.y; spCard.dataset.m = item.m; spCard.dataset.d = item.d;
           if (item.isToday) spCard.dataset.today = '1';
-          spCard.innerHTML = `<div class="sp-thumb sp-thumb-add"><span class="sp-add-icon">+</span></div><div class="sp-caption"><span class="sp-date">${item.label}</span></div>`;
+          spCard.innerHTML = `<div class="sp-thumb sp-thumb-add"><span class="sp-add-icon">+</span></div>${todayBadge}<div class="sp-caption"><span class="sp-date">${item.label}</span></div>`;
         } else {
           spCard.dataset.dateKey = dateKey(parseCardDate(item.card));
-          spCard.innerHTML = `<div class="sp-thumb"></div><div class="sp-caption"><span class="sp-date">${item.label}</span><i data-lucide="more-horizontal" class="sp-more-icon"></i></div>`;
+          spCard.innerHTML = `<div class="sp-thumb"></div>${todayBadge}<div class="sp-caption"><span class="sp-date">${item.label}</span><i data-lucide="more-horizontal" class="sp-more-icon"></i></div>`;
         }
         row.appendChild(spCard);
       }

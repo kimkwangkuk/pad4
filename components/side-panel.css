@@ -47,6 +47,7 @@
   min-width: 0;
   display: flex; flex-direction: column; gap: 4px;
   align-items: center;
+  position: relative; /* "오늘" 뱃지(.sp-badge)의 절대배치 기준 */
 }
 
 /* Thumbnail */
