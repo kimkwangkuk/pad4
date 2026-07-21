@@ -769,11 +769,11 @@
 
     /* ─── SIDE PANEL THUMBNAIL CLICK ─────────────── */
     .sp-card[data-date-key] { cursor: pointer; }
-    /* ─── SIDE PANEL: 전체/숨김 보기 태그 바 ───────────
+    /* ─── SIDE PANEL: 페이지/숨김 보기 태그 바 ───────────
        바는 스크롤 목록(.sp-content) 맨 위에 고정(position:sticky)되어, 날짜 카드들이
-       그 아래로 스크롤되어도 항상 최상단에 붙어있다. "전체/숨김" 태그로 숨긴 페이지 목록을
+       그 아래로 스크롤되어도 항상 최상단에 붙어있다. "페이지/숨김" 태그로 숨긴 페이지 목록을
        오가며(숨긴 페이지는 숨김 탭에서 복원), 개수 숫자는 표시하지 않는다.
-       숨긴 페이지 보기에서는 노트 정보 줄(플래너 기간·설정)이 감춰진다.
+       노트 정보 줄(플래너 기간·설정)은 어느 보기에서든 항상 표시된다.
        .sp-content의 위쪽 padding을 없애고 그만큼을 이 바 자체의 padding-top으로 옮겨서,
        바의 불투명한 배경이 상단 여백까지 완전히 덮도록 한다(그 틈으로 목록이 비쳐 보이는 문제 방지). */
     .sp-sticky-filter-bar {
@@ -881,7 +881,7 @@
        기간 수정은 이 줄에서 직접 하지 않고 "설정" → 목록 설정 패널의 "플래너 기간" 행으로 들어간다. */
     .sp-note-info {
       display: flex; align-items: center; justify-content: space-between; gap: 8px;
-      padding: 8px 16px 14px; flex-shrink: 0;
+      padding: 8px 16px; flex-shrink: 0;
       border-bottom: 1px solid rgba(0,0,0,0.08);
     }
     .sp-note-period-sub {
@@ -2641,11 +2641,11 @@
         <button class="sp-note-settings-btn" id="spListSettingsBtn" type="button">설정</button>
       </div>
       <div class="sp-content">
-        <!-- 스크롤 영역 최상단에 붙어있는 전체/숨김 보기 태그 바 — 날짜 목록 위에 항상 고정된다.
+        <!-- 스크롤 영역 최상단에 붙어있는 페이지/숨김 보기 태그 바 — 날짜 목록 위에 항상 고정된다.
              숨긴 페이지(수동·자동)는 숨김 탭에서 확인·복원하며, 태그에 개수는 표시하지 않는다. -->
         <div class="sp-sticky-filter-bar">
           <div class="sp-view-tags">
-            <button class="sp-view-tag active" data-view-mode="all" type="button">전체</button>
+            <button class="sp-view-tag active" data-view-mode="all" type="button">페이지</button>
             <button class="sp-view-tag" data-view-mode="hidden" type="button">숨김</button>
           </div>
         </div>
@@ -3301,7 +3301,7 @@
   // 숨김 탭에 나타나며, 거기서 복원하면 data-sp-keep 예외가 붙어 규칙이 다시 숨기지 않는다.
   let spAutoHideNoRecord = false;
 
-  // 필터 바 왼쪽의 전체/숨김 보기 태그 — 'all'은 숨기지 않은 페이지 목록,
+  // 목록 상단 바의 페이지/숨김 보기 태그 — 'all'은 숨기지 않은 페이지 목록,
   // 'hidden'은 숨긴(수동+자동) 페이지 목록(여기서 복원 가능).
   let spViewMode = 'all';
 
@@ -3376,12 +3376,11 @@
     panelToggleBtn.classList.remove('panel-open');
   });
 
-  // ── 보기 전환: 목록 상단 고정 바의 전체/숨김 태그 ──
-  // 숨긴 페이지 보기에선 노트 정보 줄(플래너 기간·설정)을 감춘다. 태그에 개수는 표시하지 않는다.
+  // ── 보기 전환: 목록 상단 고정 바의 페이지/숨김 태그 ──
+  // 노트 정보 줄(플래너 기간·설정)은 어느 보기에서든 항상 표시한다. 태그에 개수는 표시하지 않는다.
   const spViewTagBtns = document.querySelectorAll('.sp-view-tag');
   function applySpViewMode() {
     spViewTagBtns.forEach(b => b.classList.toggle('active', b.dataset.viewMode === spViewMode));
-    document.querySelector('.sp-note-info').style.display = spViewMode === 'hidden' ? 'none' : '';
   }
   function setSpViewMode(mode) {
     if (spViewMode === mode) return;
