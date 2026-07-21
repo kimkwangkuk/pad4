@@ -94,6 +94,7 @@ class DatePicker {
     sheet.querySelector('.dp-month-title').textContent = `${this.year}년 ${this.month}월`;
     const grid = sheet.querySelector('.dp-dates');
     grid.innerHTML = '';
+    const _now = new Date(); // 오늘 날짜 셀 표시용
     const firstDay = new Date(this.year, this.month - 1, 1).getDay();
     const startOffset = (firstDay + 6) % 7;
     const daysInMonth = new Date(this.year, this.month, 0).getDate();
@@ -107,10 +108,12 @@ class DatePicker {
         const valid = day >= 1 && day <= daysInMonth;
         const taken = valid && this.takenDates.has(`${this.year}-${this.month}-${day}`);
         const disabled = valid && !this._inRange(day); // 선택 가능 범위(노트 기간) 밖
+        const isToday = valid && this.year === _now.getFullYear()
+          && this.month === _now.getMonth() + 1 && day === _now.getDate();
         const cell = document.createElement('div');
         cell.className = 'dp-day-cell' + (valid ? '' : ' empty') + (taken ? ' taken' : '') + (disabled ? ' disabled' : '');
         const sel = (day === this.selected && !taken && !disabled) ? ' selected' : '';
-        const circleCls = `dp-day-circle${sel}${taken ? ' taken' : ''}${disabled ? ' disabled' : ''}`;
+        const circleCls = `dp-day-circle${sel}${taken ? ' taken' : ''}${disabled ? ' disabled' : ''}${isToday ? ' today' : ''}`;
         cell.innerHTML = `<div class="${circleCls}"><span class="dp-day-num">${valid ? day : ''}</span></div>`;
         if (valid && !taken && !disabled) {
           cell.addEventListener('click', () => {
