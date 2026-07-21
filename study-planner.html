@@ -3846,15 +3846,12 @@
     const newCard = canvasZoomWrap.lastElementChild;
     newCard.classList.add('card-creating'); // 스크롤이 도착하기 전까지는 보이지 않게 숨겨둔다
 
-    const oldInner = newCard.querySelector('.card-inner');
-    if (oldInner) oldInner.remove();
-    const studyInner = buildStudyCardEl(false, `| ${dateText}`);
-    studyInner.className = 'study-card-inner';
-    studyInner.style.cssText = 'flex:1;min-height:0;display:flex;flex-direction:column;padding:22px;box-sizing:border-box;overflow:hidden;';
-    newCard.appendChild(studyInner);
-    newCard.dataset.pageType = 'study';
+    // 새 페이지는 기본형(데일리) 카드 그대로 두고, 페이지 설정에서 마지막으로 설정한
+    // 속지(=기본값)를 스킨+컬러로 입힌다 — 스터디 플래너로 강제 변환하지 않는다
+    newCard.dataset.pageType = 'daily';
     newCard.dataset.dateText = dateText;
-    if (window.ipApplyTint) window.ipApplyTint(newCard);
+    buildGrid(newCard, null);
+    if (window.applyInsertToCard) window.applyInsertToCard(newCard);
 
     initEmojiPicker(newCard);
     lucide.createIcons({ nodes: [newCard] });

@@ -20,31 +20,8 @@
   overflow: hidden;
   box-shadow: 0 8px 40px rgba(0,0,0,0.12);
 }
-.dp-topbar {
-  height: 64px;
-  flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
-}
-.dp-grabber { height: 16px; width: 100%; }
-.dp-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  padding: 0 16px 10px;
-  width: 100%;
-  position: relative;
-  box-sizing: border-box;
-}
-.dp-close-btn {
-  width: 38px; height: 38px;
-  background: rgba(0,0,0,0.05);
-  border-radius: 100px;
-  border: none;
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer;
-  flex-shrink: 0;
-}
+/* 헤더는 공용 팝업 네비바(.bsm-header/.bsm-title/.bsm-close-btn — modal-header.css)를 그대로 사용해
+   다른 설정 팝업들과 상단 간격이 동일하다. X(닫기)는 우측, 확정 버튼은 좌측. */
 /* 날짜를 고르면 바로 닫히는 게 아니라 선택만 표시되고, 이 버튼을 눌러야 확정+닫힘 */
 .dp-header-confirm-btn {
   width: 38px; height: 38px;
@@ -58,16 +35,6 @@
 }
 .dp-header-confirm-btn:hover { background: rgba(0,0,0,0.7); }
 .dp-header-confirm-btn:disabled { opacity: 0.35; cursor: default; pointer-events: none; }
-.dp-title {
-  position: absolute;
-  left: 50%; top: 19px;
-  transform: translate(-50%, -50%);
-  font-family: 'Pretendard', sans-serif;
-  font-weight: 600; font-size: 17px;
-  color: rgba(0,0,0,0.86);
-  letter-spacing: -0.3px;
-  white-space: nowrap;
-}
 .dp-content {
   display: flex; flex-direction: column;
   gap: 16px;

@@ -16,15 +16,12 @@ class DatePicker {
     const sheet = document.createElement('div');
     sheet.className = 'dp-sheet';
     sheet.innerHTML = `
-      <div class="dp-topbar">
-        <div class="dp-grabber"></div>
-        <div class="dp-header">
-          <button class="dp-close-btn">
-            <i data-lucide="x" style="width:14px;height:14px;color:rgba(0,0,0,0.5);"></i>
-          </button>
-          <button class="dp-header-confirm-btn" disabled><i data-lucide="check" style="width:16px;height:16px;color:#fff;"></i></button>
-          <span class="dp-title">날짜 선택</span>
-        </div>
+      <div class="bsm-header">
+        <button class="dp-header-confirm-btn" disabled><i data-lucide="check" style="width:16px;height:16px;color:#fff;"></i></button>
+        <span class="bsm-title">날짜 선택</span>
+        <button class="dp-close-btn bsm-close-btn">
+          <i data-lucide="x" style="width:20px;height:20px;color:rgba(0,0,0,0.6);"></i>
+        </button>
       </div>
       <div class="dp-content">
         <div class="dp-calendar">
