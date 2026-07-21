@@ -3191,17 +3191,27 @@
   };
   const NO_RECORD_TIMES = ['0:00:00', '0:00:00'];
 
+  // 과거(-7~-1일)는 기록 있는 날/없는 날을 섞고, 오늘 이후(+1~+7일)는 전부 기록 없는 날이다
+  // (아직 오지 않은 날짜에 공부 기록이 있을 수 없으므로).
   const PAGES = [
-    { id: 'p0', ..._relDate(-5), today: false,
+    { id: 'p0', ..._relDate(-7), today: false,
+      hasRecord: true, times: ['3:05:45', '1:12:20'], totalTime: '4:18:05', fills: TODAY_FILLS },
+    { id: 'p1', ..._relDate(-6), today: false,
       hasRecord: false, times: NO_RECORD_TIMES, totalTime: null, fills: null },
-    { id: 'p1', ..._relDate(-4), today: false,
+    { id: 'p2', ..._relDate(-5), today: false,
+      hasRecord: false, times: NO_RECORD_TIMES, totalTime: null, fills: null },
+    { id: 'p3', ..._relDate(-4), today: false,
       hasRecord: true, times: ['1:45:10', '0:52:40'], totalTime: '2:37:50', fills: FILLS_A },
-    { id: 'p2', ..._relDate(-3), today: false,
+    { id: 'p4', ..._relDate(-3), today: false,
       hasRecord: false, times: NO_RECORD_TIMES, totalTime: null, fills: null },
-    { id: 'p3', ..._relDate(-2), today: false,
+    { id: 'p5', ..._relDate(-2), today: false,
       hasRecord: true, times: ['2:10:05', '1:05:30'], totalTime: '3:15:35', fills: FILLS_B },
-    { id: 'p4', ..._relDate(-1), today: false,
+    { id: 'p6', ..._relDate(-1), today: false,
       hasRecord: true, times: ['2:30:25', '1:20:15'], totalTime: '3:50:40', fills: TODAY_FILLS },
+    ...Array.from({ length: 7 }, (_, i) => ({
+      id: 'p' + (7 + i), ..._relDate(i + 1), today: false,
+      hasRecord: false, times: NO_RECORD_TIMES, totalTime: null, fills: null,
+    })),
   ];
 
   const GRID_LABELS = [
