@@ -830,7 +830,6 @@
       transform: translateX(-50%) translateY(-50%);
     }
     .sls-body { padding: 0 24px; display: flex; flex-direction: column; gap: 12px; }
-    .sls-body .nc-format-create-btn { margin-top: 8px; }
     .sls-pop-row {
       width: 100%; display: flex; align-items: center; gap: 6px;
       height: 44px; padding: 0 12px;
@@ -2643,7 +2642,7 @@
     </div>
 
     <!-- 페이지 패널의 "설정" → 속지 변경 팝업과 같은 중앙 팝업(bsm 그래버·중앙 타이틀 네비바·✕)
-         + 하단 완료 버튼. "플래너 기간"을 누르면 기간 수정(z960)·날짜 선택(z2000)이
+         설정은 실시간 적용이라 완료 버튼은 없다. "플래너 기간"을 누르면 기간 수정(z960)·날짜 선택(z2000)이
          이 팝업(z941) 위로 뜬다 -->
     <div id="listSettingsBackdrop" class="bsm-backdrop"></div>
     <div id="listSettingsPopup">
@@ -2666,7 +2665,6 @@
           <button class="sls-switch" id="slsAutoHideSwitch" type="button" role="switch" aria-checked="false"></button>
         </div>
         <div class="sls-desc">오늘 이전 날짜 중 기록이 없는 페이지를 자동으로 숨깁니다. 숨긴 페이지는 "숨김" 탭에서 확인하고 복원할 수 있습니다.</div>
-        <button class="nc-format-create-btn" id="slsDoneBtn" type="button">완료</button>
       </div>
     </div>
 
@@ -3471,7 +3469,7 @@
   document.getElementById('spPeriodEditDoneBtn').addEventListener('click', () => spPeriodEditBackdrop.classList.remove('show'));
 
   // ── 목록 설정 팝업: 노트 정보 줄의 "설정"으로 진입. 속지 변경 팝업과 같은 중앙 팝업으로
-  //    뜨며(중앙 타이틀 네비바 + ✕), 하단 완료 버튼·딤 클릭으로 닫는다 ──
+  //    뜨며(중앙 타이틀 네비바 + ✕), 설정은 실시간 적용이라 완료 버튼 없이 ✕·딤 클릭으로 닫는다 ──
   const listSettingsBackdrop = document.getElementById('listSettingsBackdrop');
   const listSettingsPopup = document.getElementById('listSettingsPopup');
   const slsAutoHideSwitch = document.getElementById('slsAutoHideSwitch');
@@ -3486,7 +3484,6 @@
   });
   listSettingsBackdrop.addEventListener('click', closeListSettings);
   document.getElementById('slsCloseBtn').addEventListener('click', closeListSettings);
-  document.getElementById('slsDoneBtn').addEventListener('click', closeListSettings);
   document.getElementById('slsPeriodRow').addEventListener('click', () => {
     updateSpPeriodEditLabels();
     spPeriodEditBackdrop.classList.add('show');
