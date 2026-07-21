@@ -769,20 +769,47 @@
 
     /* ─── SIDE PANEL THUMBNAIL CLICK ─────────────── */
     .sp-card[data-date-key] { cursor: pointer; }
-    /* ─── SIDE PANEL: 다중 선택 필터 ───────────
-       "필터" 버튼은 스크롤 목록(.sp-content) 맨 위에 고정(position:sticky)되어, 월 타이틀들이
-       그 아래로 스크롤되어도 항상 최상단에 붙어있다. 우측 정렬된 고스트(배경 없는) 버튼이며,
-       누르면 바로 아래에 체크박스 팝오버가 뜨고 "기록 있는 날/기록 없는 날"을 각각
-       켜고 끌 수 있다(단일 토글이 아니라 다중 선택). 패널 고정 헤더 우측 상단의 X 버튼은
-       필터 상태와 무관하게 항상 표시되며, 눌렀을 때 필터가 열려 있으면 닫는다.
+    /* ─── SIDE PANEL: 다중 선택 필터 + 전체/숨김 보기 태그 ───────────
+       바는 스크롤 목록(.sp-content) 맨 위에 고정(position:sticky)되어, 월 타이틀들이
+       그 아래로 스크롤되어도 항상 최상단에 붙어있다. 왼쪽에는 "전체/숨김" 보기 태그가 있어
+       숨긴 페이지 목록으로 전환할 수 있고(숨긴 페이지는 여기서 복원), 오른쪽의 "필터" 버튼은
+       고스트(배경 없는) 버튼으로 누르면 바로 아래에 체크박스 팝오버가 뜨고
+       "기록 있는 날/기록 없는 날"을 각각 켜고 끌 수 있다(단일 토글이 아니라 다중 선택).
+       필터는 전체 보기에만 적용되므로 숨김 탭에서는 필터 버튼을 감춘다.
+       패널 고정 헤더 우측 상단의 X 버튼은 필터 상태와 무관하게 항상 표시되며,
+       눌렀을 때 필터가 열려 있으면 닫는다.
        .sp-content의 위쪽 padding을 없애고 그만큼을 이 바 자체의 padding-top으로 옮겨서,
        바의 불투명한 배경이 상단 여백까지 완전히 덮도록 한다(그 틈으로 목록이 비쳐 보이는 문제 방지). */
     .sp-sticky-filter-bar {
       position: sticky; top: 0; z-index: 25;
       background: white;
-      display: flex; justify-content: flex-end;
+      display: flex; justify-content: space-between; align-items: center;
       padding: 12px 0 8px;
       flex-shrink: 0;
+    }
+    .sp-view-tags { display: flex; gap: 6px; }
+    .sp-view-tag {
+      padding: 5px 12px; border-radius: 999px;
+      background: rgba(0,0,0,0.05); border: none;
+      font-family: 'Pretendard', sans-serif; font-size: 12px; font-weight: 500;
+      color: rgba(0,0,0,0.45); letter-spacing: -0.036px;
+      cursor: pointer; white-space: nowrap;
+      transition: background 0.12s, color 0.12s;
+    }
+    .sp-view-tag:hover { background: rgba(0,0,0,0.09); }
+    .sp-view-tag.active {
+      background: rgba(0,0,0,0.86); color: white; font-weight: 600;
+    }
+    /* 숨김 보기에서는 기록 필터가 적용되지 않으므로 필터 버튼을 감춘다 */
+    .sp-sticky-filter-bar.hidden-mode .sp-filter-toggle { display: none; }
+    /* 숨긴 페이지 캔버스에서 감춤 — .sp-thumb 안의 썸네일 클론에는 적용되지 않도록
+       canvas-zoom-wrap의 직계 자식으로 한정한다 */
+    .canvas-zoom-wrap > .card[data-sp-hidden="true"] { display: none; }
+    /* 숨김 탭이 비었을 때 안내 문구 */
+    .sp-empty-msg {
+      padding: 40px 0; text-align: center;
+      font-family: 'Pretendard', sans-serif; font-size: 12px; font-weight: 500;
+      color: rgba(0,0,0,0.35); letter-spacing: -0.036px;
     }
     .sp-filter-toggle {
       display: flex; align-items: center; gap: 4px;
@@ -2638,8 +2665,13 @@
       </div>
       <div class="sp-content">
         <!-- 스크롤 영역 최상단에 붙어있는 필터 바 — 월 타이틀들 위에 항상 고정된다.
-             다중 선택 필터: 누르면 바로 아래에 체크박스 팝오버가 뜬다. -->
-        <div class="sp-sticky-filter-bar">
+             왼쪽: 전체/숨김 보기 태그(숨긴 페이지는 숨김 탭에서 복원 가능).
+             오른쪽: 다중 선택 필터 — 누르면 바로 아래에 체크박스 팝오버가 뜬다. -->
+        <div class="sp-sticky-filter-bar" id="spStickyFilterBar">
+          <div class="sp-view-tags">
+            <button class="sp-view-tag active" data-view-mode="all" type="button">전체</button>
+            <button class="sp-view-tag" data-view-mode="hidden" type="button">숨김</button>
+          </div>
           <button class="sp-filter-toggle" id="spFilterToggle" type="button" aria-expanded="false">
             <span>필터</span>
             <i data-lucide="chevron-down" class="sp-filter-toggle-chevron"></i>
@@ -3292,6 +3324,10 @@
   // 기본은 전부 켜짐(과거의 "기록만" 토글이 꺼진 상태와 동일하게 전부 표시).
   const spFilterEnabled = { hasRecord: true, noRecord: true };
 
+  // 필터 바 왼쪽의 전체/숨김 보기 태그 — 'all'은 숨기지 않은 페이지 목록(기록 필터 적용),
+  // 'hidden'은 숨긴 페이지 목록(여기서 복원 가능). 기록 필터는 'all'에서만 적용된다.
+  let spViewMode = 'all';
+
   // 접힌 월(예: "2026-7") 목록 — rebuildPanel이 다시 그려도 접힘 상태가 유지되도록 여기서 관리한다
   const spCollapsedMonths = new Set();
 
@@ -3315,12 +3351,19 @@
 
     const items = [];
     const cursor = new Date(startDate);
+    const showHiddenOnly = spViewMode === 'hidden';
     while (cursor <= endDate) {
       const t = cursor.getTime();
       const existingCard = cardByTime.get(t) || null;
-      const hasRecord = existingCard ? cardHasRecord(existingCard) : false;
-      if (existingCard && spFilterEnabled[hasRecord ? 'hasRecord' : 'noRecord']) {
-        items.push({ card: existingCard, time: t, isToday: t === today.getTime(), label: `${cursor.getMonth() + 1}/${cursor.getDate()}` });
+      if (existingCard) {
+        const isHidden = existingCard.dataset.spHidden === 'true';
+        // 숨김 탭: 숨긴 페이지만(기록 필터 미적용) / 전체 탭: 숨기지 않은 페이지에 기록 필터 적용
+        const passes = showHiddenOnly
+          ? isHidden
+          : !isHidden && spFilterEnabled[cardHasRecord(existingCard) ? 'hasRecord' : 'noRecord'];
+        if (passes) {
+          items.push({ card: existingCard, time: t, isToday: t === today.getTime(), label: `${cursor.getMonth() + 1}/${cursor.getDate()}` });
+        }
       }
       cursor.setDate(cursor.getDate() + 1);
     }
@@ -3367,6 +3410,13 @@
       }
       spContent.appendChild(body);
     });
+
+    if (showHiddenOnly && items.length === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'sp-empty-msg';
+      empty.textContent = '숨긴 페이지가 없습니다';
+      spContent.appendChild(empty);
+    }
     lucide.createIcons({ nodes: [spContent] });
   }
 
@@ -3397,6 +3447,21 @@
       spFilterToggle.classList.toggle('active', anyOff);
       sortPages();
     });
+  });
+
+  // ── 전체/숨김 보기 태그 — 숨김 탭에서는 기록 필터 버튼을 감추고 팝오버도 닫는다 ──
+  const spStickyFilterBar = document.getElementById('spStickyFilterBar');
+  const spViewTagBtns = spStickyFilterBar.querySelectorAll('.sp-view-tag');
+  function setSpViewMode(mode) {
+    if (spViewMode === mode) return;
+    spViewMode = mode;
+    spViewTagBtns.forEach(b => b.classList.toggle('active', b.dataset.viewMode === mode));
+    spStickyFilterBar.classList.toggle('hidden-mode', mode === 'hidden');
+    if (mode === 'hidden') closeSpFilterPopover();
+    sortPages();
+  }
+  spViewTagBtns.forEach(btn => {
+    btn.addEventListener('click', () => setSpViewMode(btn.dataset.viewMode));
   });
 
   // ── 노트 표지·이름·기간 요약 + 우측 "수정" 버튼 → 기간(시작일~종료일) 수정 팝업 ──
@@ -3498,21 +3563,24 @@
     canvasZoomWrap.querySelectorAll('.canvas-ad-banner').forEach(b => b.remove());
 
     const orderedEls = datedCards.slice();
+    // 숨긴 페이지(data-sp-hidden)는 캔버스에서 display:none이므로 배너는 보이는 카드 사이에만 끼운다
+    const visibleEls = orderedEls.filter(el => el.dataset.spHidden !== 'true');
+    const lastVisibleEl = visibleEls[visibleEls.length - 1] || null;
 
     // revealBanners가 true면(새 페이지가 막 추가된 경우) 새로 만든 배너를 여기서 즉시
     // card-creating으로 태어나게 한다 — scrollToCard의 offsetTop 리플로우가 일어나기 전에
     // 이미 숨겨진 상태로 스타일이 확정되어야 "1→0" 깜빡임 없이 깔끔하게 시작한다
     const newBanners = [];
-    orderedEls.forEach((el, i) => {
+    orderedEls.forEach(el => {
       canvasZoomWrap.appendChild(el);
-      if (i < orderedEls.length - 1) {
+      if (el.dataset.spHidden !== 'true' && el !== lastVisibleEl) {
         const banner = buildAdBanner();
         if (revealBanners) { banner.classList.add('card-creating'); newBanners.push(banner); }
         canvasZoomWrap.appendChild(banner);
       }
     });
 
-    const selectedDomIdx = selectedCard ? orderedEls.indexOf(selectedCard) : orderedEls.length - 1;
+    const selectedDomIdx = selectedCard ? orderedEls.indexOf(selectedCard) : orderedEls.indexOf(lastVisibleEl);
     rebuildPanel(datedCards, selectedCard);
     if (selectedCard) scrollToCard(selectedDomIdx, true);
     setTimeout(updateAllThumbs, 50);
@@ -3639,14 +3707,17 @@
       if (!card) return;
       activePageCard = card;
       const r = moreIcon.getBoundingClientRect();
-      pageMenu.open(r.left + r.width / 2, r.top, { above: true });
+      // 숨긴 페이지에는 복원 메뉴를, 일반 페이지에는 숨김/속지 변경 메뉴를 띄운다
+      const menu = card.dataset.spHidden === 'true' ? hiddenPageMenu : pageMenu;
+      menu.open(r.left + r.width / 2, r.top, { above: true });
       return;
     }
 
     const pageCard = e.target.closest('.sp-card[data-date-key]');
     if (pageCard) {
       const card = findCardByDateKey(pageCard.dataset.dateKey);
-      if (!card) return;
+      // 숨긴 페이지는 캔버스에 없으므로(display:none) 스크롤 이동하지 않는다
+      if (!card || card.dataset.spHidden === 'true') return;
       document.querySelectorAll('.sp-card').forEach(t => t.classList.remove('sp-selected'));
       pageCard.classList.add('sp-selected');
       const idx = Array.from(canvasScroll.querySelectorAll('.card')).indexOf(card);
@@ -3749,9 +3820,9 @@
   const pageMenu = new OverlayMenu({
     items: [
       {
-        lucideIcon: 'trash-2',
-        label: '페이지 삭제',
-        onClick() { openDeleteConfirm(); }
+        lucideIcon: 'eye-off',
+        label: '페이지 숨김',
+        onClick() { openHideConfirm(); }
       },
       {
         lucideIcon: 'file-stack',
@@ -3761,33 +3832,53 @@
     ]
   });
 
-  function deletePage(card) {
+  // 숨김 탭의 sp-card 더보기(…)에서 열리는 메뉴 — 복원만 제공한다
+  const hiddenPageMenu = new OverlayMenu({
+    items: [
+      {
+        lucideIcon: 'eye',
+        label: '페이지 복원',
+        onClick() {
+          const card = activePageCard;
+          activePageCard = null;
+          restorePage(card);
+        }
+      }
+    ]
+  });
+
+  // 삭제 대신 숨김 — 카드를 DOM에서 지우지 않고 data-sp-hidden으로 표시만 해서
+  // 캔버스·전체 목록에서 감추고, 필터 바의 "숨김" 탭에서 언제든 복원할 수 있게 한다.
+  // 날짜는 계속 사용 중(takenDates 유지) — 페이지가 사라진 게 아니라 감춰진 것이기 때문.
+  function hidePage(card) {
     if (!card) return;
-    const txt = card.dataset.dateText || card.querySelector('.hd-date-val')?.textContent;
-    if (txt) {
-      const parts = txt.split('.');
-      const y = 2000 + parseInt(parts[0], 10);
-      const m = parseInt(parts[1], 10);
-      const d = parseInt(parts[2], 10);
-      datePicker.takenDates.delete(`${y}-${m}-${d}`);
-    }
-    card.remove();
+    card.dataset.spHidden = 'true';
     sortPages(null);
+    if (window.__todayFabReady) window.watchTodayFab();
+    pageToast.show('페이지를 숨겼습니다. "숨김" 탭에서 복원할 수 있습니다.');
   }
 
-  const deleteDialog = new Dialog({
-    title: '페이지를 삭제하시겠습니까?',
-    message: '해당 일자에 저장된 공부, 할일 등 기록은 삭제되지않으며 페이지만 삭제됩니다.',
-    confirmLabel: '삭제',
+  function restorePage(card) {
+    if (!card) return;
+    delete card.dataset.spHidden;
+    sortPages(null);
+    if (window.__todayFabReady) window.watchTodayFab();
+    pageToast.show('페이지가 복원되었습니다.');
+  }
+
+  const hideDialog = new Dialog({
+    title: '페이지를 숨기시겠습니까?',
+    message: '숨긴 페이지는 목록과 캔버스에 표시되지 않습니다. 필터 바의 "숨김" 탭에서 언제든 복원할 수 있습니다.',
+    confirmLabel: '숨김',
     cancelLabel: '취소',
     onConfirm: () => {
       const card = activePageCard;
       activePageCard = null;
-      deletePage(card);
+      hidePage(card);
     }
   });
 
-  function openDeleteConfirm() { deleteDialog.open(); }
+  function openHideConfirm() { hideDialog.open(); }
 
   canvasScroll.addEventListener('click', e => {
     // ── + 버튼: 빈 행 없으면 추가 ─────────────────────
@@ -4911,8 +5002,9 @@
   const todayFabBtn = document.getElementById('todayFabBtn');
   function getTodayCardEl() {
     const t = new Date();
+    // 숨긴 페이지는 캔버스에 없으므로(display:none) 이동 대상에서 제외한다
     return Array.from(canvasZoomWrap.querySelectorAll('.card[data-canvas-state="with-date"]'))
-      .find(c => parseCardDate(c).toDateString() === t.toDateString()) || null;
+      .find(c => c.dataset.spHidden !== 'true' && parseCardDate(c).toDateString() === t.toDateString()) || null;
   }
   todayFabBtn.addEventListener('click', () => {
     const el = getTodayCardEl();
