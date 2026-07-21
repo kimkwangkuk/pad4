@@ -16,7 +16,6 @@
   <link rel="stylesheet" href="components/sticker-picker.css">
   <link rel="stylesheet" href="components/panel-slider.css">
   <link rel="stylesheet" href="components/modal-header.css">
-  <link rel="stylesheet" href="components/glass-pill-button.css">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -398,29 +397,6 @@
       opacity: 1;
       transform: scale(1);
     }
-
-    /* ─── 오늘로 이동 플로팅 버튼 (Figma 5041:108523) ───────────
-       캔버스 스크롤 영역에 오늘자 페이지(고스트/실제 카드)가 보이지 않을 때만 뜬다. 오늘 페이지가
-       현재 화면보다 아래에 있으면 하단 중앙에, 위에 있으면 상단 중앙에 뜬다(스크롤할 방향을 암시).
-       .workspace의 형제로 두어(.sp-panel/.gps-panel과 동일한 패턴) 캔버스와 별개로 항상 같은
-       위치에 고정되고, 툴바는 덮지 않는다. */
-    #todayFabBtn {
-      position: absolute; left: 50%; bottom: 28px; z-index: 140;
-      transform: translateX(-50%) translateY(12px);
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.22s ease, transform 0.22s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    #todayFabBtn.pos-top {
-      top: 28px; bottom: auto;
-      transform: translateX(-50%) translateY(-12px);
-    }
-    #todayFabBtn.visible {
-      opacity: 1;
-      pointer-events: auto;
-      transform: translateX(-50%) translateY(0);
-    }
-
 
     /* ─── DRAW CANVAS ────────────────────────────── */
     .card-draw-canvas {
@@ -2643,14 +2619,6 @@
       </div>
     </div>
 
-    <!-- 오늘로 이동 플로팅 버튼: 오늘자 페이지가 화면 밖일 때만 표시 -->
-    <button class="glass-pill-btn" id="todayFabBtn" type="button" aria-label="오늘로 이동">
-      <span class="glass-pill-btn-icon">
-        <svg viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M11.25 3L15 6.75L11.25 10.5M15 6.75H7.125C6.03098 6.75 4.98177 7.1846 4.20818 7.95818C3.4346 8.73177 3 9.78098 3 10.875C3 11.4167 3.1067 11.9531 3.314 12.4536C3.5213 12.954 3.82514 13.4088 4.20818 13.7918C4.98177 14.5654 6.03098 15 7.125 15H9.75" stroke="rgba(0,0,0,0.86)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </span>
-      <span>오늘</span>
-    </button>
-
     <!-- SIDE PANEL (sibling of main-area, so it doesn't scroll with canvas) -->
     <div class="sp-panel" id="sidePanel">
       <div class="sp-header">
@@ -3567,11 +3535,6 @@
   function setCanvasMode() {
     document.getElementById('spHeaderTitle').textContent = '페이지';
     sortPages();
-    // 노트 전환 시 "오늘로 이동" 플로팅 버튼이 감시하는 대상도 새로 고른다. 전역 함수 선언은
-    // 호이스팅으로 인해 정의 이전에도 window.watchTodayFab이 이미 존재하는 것처럼 보이므로
-    // (TDZ 오류 유발), 별도의 준비완료 플래그로 안전하게 가드한다 — 최초 페이지 로드 시점엔
-    // 아직 준비 전이라 조용히 무시된다.
-    if (window.__todayFabReady) window.watchTodayFab();
   }
 
   // Initial panel build
@@ -5156,42 +5119,6 @@
   refreshTabLayout();
   updateView();
   insertGhostTodayCard(); // updateView()의 sortPages() 재정렬이 모두 끝난 뒤에 삽입해야 배너 위치·피크 스크롤이 흔들리지 않음
-
-  // ── 오늘로 이동 플로팅 버튼: 오늘자 페이지(고스트 또는 활성화된 실카드)가
-  //    캔버스 스크롤 영역 밖으로 나가면 나타나고, 누르면 그 위치로 스크롤한다 ──
-  const todayFabBtn = document.getElementById('todayFabBtn');
-  function getTodayCardEl() {
-    const ghost = canvasZoomWrap.querySelector('[data-page-id="ghost-today"]');
-    if (ghost) return ghost;
-    const t = new Date();
-    return Array.from(canvasZoomWrap.querySelectorAll('.card[data-canvas-state="with-date"]'))
-      .find(c => parseCardDate(c).toDateString() === t.toDateString()) || null;
-  }
-  todayFabBtn.addEventListener('click', () => {
-    const el = getTodayCardEl();
-    if (!el) return;
-    const frame = el.closest('.ghost-frame') || el;
-    const target = frame.offsetTop - CENTER_OFFSET();
-    mainArea.scrollTo({ top: Math.max(0, target), behavior: 'smooth' });
-  });
-  let todayFabObserver = null;
-  function watchTodayFab() {
-    const el = getTodayCardEl();
-    if (!el) { todayFabBtn.classList.remove('visible'); return; }
-    if (todayFabObserver) todayFabObserver.disconnect();
-    todayFabObserver = new IntersectionObserver(([entry]) => {
-      todayFabBtn.classList.toggle('visible', !entry.isIntersecting);
-      // 오늘 페이지가 현재 화면보다 위에 있으면 버튼도 위쪽에, 아래에 있으면 아래쪽에 뜬다
-      const isAbove = entry.boundingClientRect.top < entry.rootBounds.top;
-      todayFabBtn.classList.toggle('pos-top', isAbove);
-    }, { root: mainArea, threshold: 0 });
-    todayFabObserver.observe(el);
-  }
-  window.watchTodayFab = watchTodayFab; // setCanvasMode(탭 전환)에서 재호출할 수 있도록 노출
-  window.__todayFabReady = true; // 함수 선언은 호이스팅되어 이 지점 이전에도 typeof가 'function'이므로, 준비 여부는 별도 플래그로 판단한다
-  // insertGhostTodayCard()의 스크롤 이동(더블 rAF로 지연)이 끝난 뒤에 연결해야
-  // 최초 관찰 시점에 아직 이동 전인 스크롤 위치를 기준으로 잘못 판정하지 않는다
-  requestAnimationFrame(() => requestAnimationFrame(watchTodayFab));
 
   // ── Drawing system ────────────────────────────────────────────
   const DRAW_COLOR  = 'rgba(0,0,0,0.78)';
