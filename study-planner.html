@@ -871,7 +871,7 @@
     .sp-thumb-add { cursor: pointer; }
 
     /* ─── SIDE PANEL: 페이지 추가 모드 ───────────
-       하단 "페이지 추가" 버튼을 누르면 패널 전체가 "어디에 추가할지 고르는" 모드로 전환된다:
+       날짜 선택 팝업에서 "직접 선택"을 고르면 패널 전체가 "어디에 추가할지 고르는" 모드로 전환된다:
        노트 정보 요약(.sp-note-info)이 숨겨져 목록(.sp-content)이 패널 전체를 채우고, 헤더
        우측에 체크(완료) 버튼이 나타난다 — 누르면 모드를 빠져나와 원래 화면으로 돌아간다. */
     .sp-panel.sp-add-mode .sp-note-info { display: none; }
@@ -908,21 +908,12 @@
     }
     .sp-note-period-edit-btn:hover { background: rgba(0,0,0,0.1); }
 
-    /* ─── SIDE PANEL: 하단 고정 페이지 추가 버튼 ───────────
-       평소엔 빈 날짜를 목록에 표시하지 않는다. 이 버튼을 누르면 그때만 기간 안의 빈 날짜들이
-       "+" 칸으로 나타나 어디에 추가할지 고를 수 있고, 하나를 고르면 다시 평소 상태로 돌아간다. */
-    .sp-add-page-btn {
-      position: absolute; left: 16px; right: 16px; bottom: 16px; z-index: 22;
-      height: 48px;
-      display: flex; align-items: center; justify-content: center; gap: 6px;
-      background: rgba(0,0,0,0.86); color: #fff; border: none; border-radius: 100px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.18);
-      font-family: 'Pretendard', sans-serif; font-size: 15px; font-weight: 600;
-      letter-spacing: -0.045px; cursor: pointer;
-      transition: background 0.12s;
-    }
-    .sp-add-page-btn:hover { background: rgba(0,0,0,0.72); }
-    .sp-panel.sp-add-mode .sp-add-page-btn { display: none; }
+    /* ─── SIDE PANEL: 목록 끝 페이지 추가 타일 ───────────
+       마지막 페이지 썸네일 바로 다음 칸에 점선 테두리 + 가운데 "+" 타일로 표시된다.
+       누르면 캔버스의 "페이지 추가" 버튼과 동일한 날짜 선택 오버레이 팝업이 뜬다.
+       페이지 추가 모드에서는 빈 날짜 "+" 칸들이 이 역할을 대신하므로 표시하지 않는다. */
+    .sp-add-tile { cursor: pointer; }
+    .sp-add-tile .sp-thumb-add:hover { background: rgba(0,0,0,0.03); }
 
     /* ─── SHOP / ITEM SCREENS ─────────────────────── */
     .shop-screen, .item-screen {
@@ -2667,12 +2658,6 @@
       <div class="sp-content">
         <div id="spDateList"></div>
       </div>
-      <!-- 패널 하단 고정 페이지 추가 버튼 — 누르면 그때만 빈 날짜("+")들이 목록에 나타나
-           어디에 추가할지 고를 수 있다. 평소엔 빈 날짜를 아예 표시하지 않는다. -->
-      <button class="sp-add-page-btn" id="spAddPageBtn" type="button">
-        <i data-lucide="plus" style="width:16px;height:16px;"></i>
-        <span>페이지 추가</span>
-      </button>
     </div>
 
     <!-- 오늘자 임시 페이지 "속지 변경" → 페이지 설정 사이드 패널 (Figma 5017:326690 / 5017:326734)
@@ -3295,8 +3280,8 @@
 
   function dateKey(date) { return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`; }
 
-  // 빈 날짜("+")는 평소엔 아예 표시하지 않는다 — 패널 하단의 "페이지 추가" 버튼을 눌렀을 때만
-  // 켜지는 "어디에 추가할지 고르는" 모드. 빈 칸을 누르면 그 자리에서 실제 카드(썸네일)를 만들어
+  // 빈 날짜("+")는 평소엔 아예 표시하지 않는다 — 날짜 선택 팝업의 "직접 선택"으로만 켜지는
+  // "어디에 추가할지 고르는" 모드. 빈 칸을 누르면 그 자리에서 실제 카드(썸네일)를 만들어
   // 미리 보여주지만 캔버스에는 아직 붙이지 않는다 — 여러 날짜를 이어서 고를 수 있고, 헤더의
   // 완료(체크) 버튼을 눌러야 골라둔 페이지들이 한 번에 캔버스에 반영되고 모드가 끝난다.
   let spAddModeActive = false;
@@ -3309,8 +3294,9 @@
   // 무관하게 기간 밖의 날짜는 절대 표시되지 않는다.
   // - 페이지가 이미 있는 날짜는(기록 유무와 무관하게) 그 페이지의 썸네일로 표시된다 — 방금 빈 칸을
   //   눌러 새로 만든 페이지도 여기 포함되어 바로 보인다.
-  // - 페이지가 없는 날짜는 spAddModeActive일 때만(하단 "페이지 추가" 버튼을 누른 동안) 오늘·미래에
-  //   한해 빈 칸("+")으로 표시된다 — 평소에는 아예 목록에 나타나지 않는다.
+  // - 페이지가 없는 날짜는 spAddModeActive일 때만(페이지 추가 모드 동안) 오늘·미래에
+  //   한해 빈 칸("+")으로 표시된다 — 평소에는 아예 목록에 나타나지 않고, 대신 마지막 페이지
+  //   바로 다음 칸의 "+" 타일이 페이지 추가 진입점이 된다.
   function rebuildPanel(datedCards, selectedCard) {
     const spContent = document.getElementById('spDateList');
     spContent.innerHTML = '';
@@ -3399,6 +3385,27 @@
       }
       spContent.appendChild(body);
     });
+
+    // 마지막 페이지 바로 다음 칸에 붙는 "페이지 추가" 타일 — 점선 테두리 + 가운데 "+".
+    // 누르면 캔버스의 "페이지 추가" 버튼과 동일한 날짜 선택 팝업이 뜬다.
+    // 페이지 추가 모드에서는 빈 날짜 "+" 칸들이 이 역할을 대신하므로 표시하지 않는다.
+    if (!spAddModeActive) {
+      const addTile = document.createElement('div');
+      addTile.className = 'sp-card sp-add-tile';
+      addTile.innerHTML = '<div class="sp-thumb sp-thumb-add"><span class="sp-add-icon">+</span></div><div class="sp-caption"></div>';
+      const lastBody = spContent.lastElementChild;
+      const lastRow = lastBody && lastBody.classList.contains('sp-month-body') ? lastBody.lastElementChild : null;
+      if (lastRow && lastRow.classList.contains('sp-row') && lastRow.children.length < 2) {
+        lastRow.appendChild(addTile);
+      } else {
+        const row = document.createElement('div');
+        row.className = 'sp-row';
+        row.appendChild(addTile);
+        // 기간 안에 페이지가 하나도 없으면(월 그룹 자체가 없음) 목록 맨 위에 타일만 놓인다
+        if (lastRow) lastBody.appendChild(row); else spContent.appendChild(row);
+      }
+    }
+
     // 대기 중인(캔버스에는 아직 안 붙은) 선택 페이지는 빈 칸 "+" 대신 실제 미리보기 썸네일을 그린다.
     // 오늘은 아직 별도 카드를 안 만들고 이미 떠 있는 고스트 카드를 그대로 미리보기 소스로 쓴다.
     spContent.querySelectorAll('.sp-blank.sp-pending').forEach(el => {
@@ -3412,11 +3419,11 @@
   }
 
   // ── 페이지 추가 모드 진입/이탈 — 패널 전체가 "어디에 추가할지 고르는" 화면으로 바뀐다:
-  // 노트 정보와 하단 "페이지 추가" 버튼이 숨겨지고 헤더 우측에 완료(체크) 버튼이 나타난다.
+  // 날짜 선택 팝업(목록 끝 "+" 타일 · 캔버스 버튼 공용)에서 "직접 선택"을 고르면 켜진다.
+  // 노트 정보가 숨겨지고 헤더 우측에 완료(체크) 버튼이 나타난다.
   // 빈 칸을 누르면 그 자리에서 실제 카드(썸네일)를 만들어 미리 보여주되 캔버스에는 붙이지
   // 않는다 — 여러 날짜를 이어서 고를 수 있고, 완료 버튼을 눌러야 골라둔 페이지들이 한 번에
   // 캔버스에 반영되고 모드가 끝난다.
-  const spAddPageBtn = document.getElementById('spAddPageBtn');
   const spAddDoneBtn = document.getElementById('spAddDoneBtn');
   function setAddMode(active) {
     spAddModeActive = active;
@@ -3425,7 +3432,6 @@
     document.getElementById('spHeaderTitle').textContent = active ? '페이지 추가' : '페이지';
     sortPages();
   }
-  spAddPageBtn.addEventListener('click', () => setAddMode(true));
   spAddDoneBtn.addEventListener('click', () => {
     const toCommit = spPendingPages;
     if (toCommit.length === 0) { setAddMode(false); return; }
@@ -3819,6 +3825,14 @@
       monthHeader.classList.toggle('collapsed', willCollapse);
       const body = monthHeader.nextElementSibling;
       if (body && body.classList.contains('sp-month-body')) body.style.display = willCollapse ? 'none' : '';
+      return;
+    }
+
+    // 목록 끝 "+" 타일 → 캔버스의 "페이지 추가" 버튼과 동일한 날짜 선택 오버레이 팝업
+    const addTile = e.target.closest('.sp-add-tile');
+    if (addTile) {
+      const r = addTile.querySelector('.sp-thumb').getBoundingClientRect();
+      openAddPageMenu(r.left + r.width / 2, r.bottom + 8);
       return;
     }
 
