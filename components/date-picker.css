@@ -129,8 +129,11 @@
 }
 .dp-day-circle.selected { background: rgba(0,0,0,0.86); }
 .dp-day-circle.taken { background: rgba(0,0,0,0.08); }
-.dp-day-cell:not(.taken):hover .dp-day-circle:not(.selected) { background: rgba(0,0,0,0.05); }
+.dp-day-cell:not(.taken):not(.disabled):hover .dp-day-circle:not(.selected) { background: rgba(0,0,0,0.05); }
 .dp-day-cell.taken { cursor: default; }
+/* 선택 가능 범위(노트 기간) 밖 날짜 — 배경 없이 숫자만 흐리게 */
+.dp-day-cell.disabled { cursor: default; }
+.dp-day-circle.disabled .dp-day-num { color: rgba(0,0,0,0.15); }
 .dp-day-num {
   font-family: 'Pretendard', sans-serif;
   font-weight: 400; font-size: 16px;
@@ -142,6 +145,7 @@
 }
 .dp-day-circle.selected .dp-day-num { color: white; }
 .dp-day-circle.taken .dp-day-num { color: rgba(0,0,0,0.2); }
+.dp-nav-btn:disabled { opacity: 0.25; cursor: default; pointer-events: none; }
 .dp-confirm-btn {
   height: 48px;
   background: rgba(0,0,0,0.86);

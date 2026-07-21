@@ -3556,7 +3556,7 @@
       {
         lucideIcon: 'calendar-days',
         label: '날짜 직접 선택',
-        onClick() { datePicker.open(); }
+        onClick() { openPageDatePicker(); }
       },
       {
         lucideIcon: 'file-stack',
@@ -3783,6 +3783,14 @@
     }
   });
 
+  // 페이지 날짜를 고르는 캘린더는 항상 활성 노트의 기간을 범위로 걸고 연다 —
+  // 기간 밖 날짜와 이미 페이지가 있는 날짜는 비활성화되어 선택할 수 없다.
+  function openPageDatePicker() {
+    const period = document.querySelector('.tab.active')?._periodState || defaultNotePeriod();
+    datePicker.setRange(period.start, period.end);
+    datePicker.open();
+  }
+
   // ── Date selection mini-menu ───────────────────────────────
   const _td = new Date();
   const _todayY = _td.getFullYear();
@@ -3938,7 +3946,7 @@
         onClick() {
           // 캘린더에서 날짜를 하나 골라 추가한다 — openAddPageMenu가 activeCard를 null로
           // 리셋해 두므로, 확인 시 datePicker.onConfirm이 createPage로 이어진다.
-          datePicker.open();
+          openPageDatePicker();
         }
       }
     ],
@@ -4057,9 +4065,9 @@
 
     const dateEl = e.target.closest('.hd-date-val, .study-date-val');
     if (!dateEl) return;
-    // 이미 날짜가 있는 기존 페이지의 날짜 변경: 바로 캘린더 열기
+    // 이미 날짜가 있는 기존 페이지의 날짜 변경: 바로 캘린더 열기 (노트 기간 안으로 제한)
     activeCard = dateEl.closest('.card');
-    datePicker.open();
+    openPageDatePicker();
   });
 
   // ── Toolbar side panel toggle ──────────────────────────────

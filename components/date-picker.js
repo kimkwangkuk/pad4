@@ -10,6 +10,20 @@ class DatePicker {
     this.takenDates = new Set(
       (options.takenDates || []).map(d => `${d.year}-${d.month}-${d.day}`)
     );
+    this.range = null; // {start, end} — 각각 {year, month, day}. 설정 시 범위 밖 날짜는 비활성화
+  }
+
+  // 선택 가능한 날짜 범위 설정 — null을 넘기면 제한 해제
+  setRange(start, end) {
+    this.range = start && end ? { start, end } : null;
+  }
+
+  _inRange(day) {
+    if (!this.range) return true;
+    const v = this.year * 10000 + this.month * 100 + day;
+    const s = this.range.start, e = this.range.end;
+    return v >= s.year * 10000 + s.month * 100 + s.day
+        && v <= e.year * 10000 + e.month * 100 + e.day;
   }
 
   _buildSheet() {
@@ -92,12 +106,13 @@ class DatePicker {
         const day = (i + j) - startOffset + 1;
         const valid = day >= 1 && day <= daysInMonth;
         const taken = valid && this.takenDates.has(`${this.year}-${this.month}-${day}`);
+        const disabled = valid && !this._inRange(day); // 선택 가능 범위(노트 기간) 밖
         const cell = document.createElement('div');
-        cell.className = 'dp-day-cell' + (valid ? '' : ' empty') + (taken ? ' taken' : '');
-        const sel = (day === this.selected && !taken) ? ' selected' : '';
-        const circleCls = `dp-day-circle${sel}${taken ? ' taken' : ''}`;
+        cell.className = 'dp-day-cell' + (valid ? '' : ' empty') + (taken ? ' taken' : '') + (disabled ? ' disabled' : '');
+        const sel = (day === this.selected && !taken && !disabled) ? ' selected' : '';
+        const circleCls = `dp-day-circle${sel}${taken ? ' taken' : ''}${disabled ? ' disabled' : ''}`;
         cell.innerHTML = `<div class="${circleCls}"><span class="dp-day-num">${valid ? day : ''}</span></div>`;
-        if (valid && !taken) {
+        if (valid && !taken && !disabled) {
           cell.addEventListener('click', () => {
             this.selected = day;
             this._renderGrid(sheet); // 선택 표시만 갱신 — 확인 버튼을 눌러야 실제로 확정된다
@@ -108,11 +123,36 @@ class DatePicker {
       grid.appendChild(row);
     }
 
+    // 범위가 설정되어 있으면 범위 밖 달로는 아예 이동하지 못하게 화살표를 잠근다
+    const ym = this.year * 100 + this.month;
+    const prevBtn = sheet.querySelector('.dp-prev');
+    const nextBtn = sheet.querySelector('.dp-next');
+    if (prevBtn && nextBtn) {
+      prevBtn.disabled = !!this.range && ym <= this.range.start.year * 100 + this.range.start.month;
+      nextBtn.disabled = !!this.range && ym >= this.range.end.year * 100 + this.range.end.month;
+    }
+
     const confirmBtn = sheet.querySelector('.dp-header-confirm-btn');
     if (confirmBtn) confirmBtn.disabled = this.selected == null;
   }
 
   open() {
+    // 범위가 설정되어 있으면 범위 밖 달에서 열리지 않도록 시작 달로 보정하고,
+    // 이전에 골라둔 날짜가 범위 밖이거나 이미 페이지가 있는 날짜면 선택을 해제한다
+    if (this.range) {
+      const ym = this.year * 100 + this.month;
+      const sYm = this.range.start.year * 100 + this.range.start.month;
+      const eYm = this.range.end.year * 100 + this.range.end.month;
+      if (ym < sYm || ym > eYm) {
+        this.year = this.range.start.year;
+        this.month = this.range.start.month;
+        this.selected = null;
+      }
+      if (this.selected != null &&
+          (!this._inRange(this.selected) || this.takenDates.has(`${this.year}-${this.month}-${this.selected}`))) {
+        this.selected = null;
+      }
+    }
     if (!this._overlay) {
       this._overlay = document.createElement('div');
       this._overlay.className = 'dp-overlay dp-hidden';
