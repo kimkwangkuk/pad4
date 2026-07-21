@@ -868,31 +868,14 @@
 
     /* ─── SIDE PANEL THUMBNAIL CLICK ─────────────── */
     .sp-card[data-date-key] { cursor: pointer; }
-    .sp-blank { cursor: pointer; }
     .sp-thumb-add { cursor: pointer; }
 
-    /* ─── SIDE PANEL: 노트 표지·이름·기간 요약 ──────────────
-       기간은 왼쪽 텍스트로, 수정은 오른쪽 별도 버튼으로 분리(전체를 하나의 버튼으로 묶지 않는다) */
+    /* ─── SIDE PANEL: 노트 기간 요약 ──────────────
+       표지·이름 없이 플래너 기간(왼쪽 텍스트) + 설정(오른쪽 버튼)만, 아래에 구분선 */
     .sp-note-info {
-      display: flex; align-items: center; gap: 10px;
-      padding: 8px 16px 14px; flex-shrink: 0;
-    }
-    .sp-note-cover {
-      width: 34px; flex-shrink: 0;
-      aspect-ratio: 133 / 177.658;
-      border-radius: 3px;
-      border: 1px solid rgba(0,0,0,0.1);
-      background: #d8dbe2;
-    }
-    .sp-note-info-text {
-      flex: 1; min-width: 0;
-      display: flex; flex-direction: column; gap: 4px;
-    }
-    .sp-note-name {
-      font-family: 'Pretendard', sans-serif;
-      font-size: 14px; font-weight: 700;
-      color: rgba(0,0,0,0.86); letter-spacing: -0.042px; line-height: 1.3;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      display: block;
+      padding: 8px 16px 12px; flex-shrink: 0;
+      border-bottom: 1px solid rgba(0,0,0,0.08);
     }
     .sp-note-period-row {
       display: flex; align-items: center; justify-content: space-between; gap: 8px;
@@ -913,11 +896,34 @@
     }
     .sp-note-period-edit-btn:hover { background: rgba(0,0,0,0.1); }
 
+    /* ─── SIDE PANEL: 하단 고정 푸터의 페이지 추가 버튼 ───────────────
+       캔버스 하단 .add-page-btn과 같은 점선 스타일. 누르면 "페이지 날짜 선택" 오버레이
+       팝업이 화면 중앙이 아니라 이 버튼 바로 위에 뜬다 */
+    .sp-footer {
+      flex-shrink: 0;
+      padding: 10px 16px 14px;
+      border-top: 1px solid rgba(0,0,0,0.08);
+      background: white;
+    }
+    .sp-add-page-btn {
+      width: 100%; height: 44px;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      border: 1px dashed #acacac; border-radius: 12px;
+      background: transparent;
+      font-family: 'Pretendard', sans-serif; font-size: 14px; font-weight: 500;
+      color: rgba(0,0,0,0.86); letter-spacing: -0.042px;
+      cursor: pointer; -webkit-tap-highlight-color: transparent;
+      transition: background 0.12s;
+    }
+    .sp-add-page-btn:hover { background: rgba(0,0,0,0.03); }
+    .sp-add-page-btn:active { background: rgba(0,0,0,0.07); }
+
     /* ─── SIDE PANEL: 오늘로 이동 버튼 ───────────────
        .sp-panel(position:absolute) 안에 떠서, 오늘자 슬롯이 목록(.sp-content) 자체 스크롤
-       밖으로 나가면 나타난다. 캔버스의 #todayFabBtn과 동일한 위치(하단 고정)·스타일(유리 필)을 쓴다. */
+       밖으로 나가면 나타난다. 캔버스의 #todayFabBtn과 동일한 스타일(유리 필)을 쓰되,
+       하단 푸터(페이지 추가 버튼) 위에 뜨도록 bottom을 푸터 높이만큼 올린다. */
     .sp-today-fab {
-      position: absolute; left: 50%; bottom: 16px; z-index: 20;
+      position: absolute; left: 50%; bottom: 85px; z-index: 20;
       transform: translateX(-50%) translateY(12px);
       opacity: 0; pointer-events: none;
       transition: opacity 0.22s ease, transform 0.22s cubic-bezier(0.4, 0, 0.2, 1);
@@ -2640,18 +2646,21 @@
       <div class="sp-header">
         <span class="sp-header-title" id="spHeaderTitle">페이지</span>
       </div>
-      <!-- 노트 표지·이름·기간 요약. 기간은 왼쪽에 텍스트로, 수정은 오른쪽 버튼으로 분리 -->
+      <!-- 노트 기간 요약. 표지·이름 없이 기간은 왼쪽 텍스트로, 설정은 오른쪽 버튼으로 분리 -->
       <div class="sp-note-info">
-        <div class="sp-note-cover" id="spNoteCover"></div>
-        <div class="sp-note-info-text">
-          <span class="sp-note-name" id="spNoteName"></span>
-          <div class="sp-note-period-row">
-            <span class="sp-note-period-sub" id="spNotePeriodSub"></span>
-            <button class="sp-note-period-edit-btn" id="spPeriodEditBtn" type="button">수정</button>
-          </div>
+        <div class="sp-note-period-row">
+          <span class="sp-note-period-sub" id="spNotePeriodSub"></span>
+          <button class="sp-note-period-edit-btn" id="spPeriodEditBtn" type="button">설정</button>
         </div>
       </div>
       <div class="sp-content"></div>
+      <!-- 패널 하단 고정 푸터 — 누르면 캔버스 하단 버튼과 동일한 "페이지 날짜 선택" 오버레이
+           팝업이 (화면 중앙이 아니라) 이 버튼 근처에 뜬다 -->
+      <div class="sp-footer">
+        <button class="sp-add-page-btn" id="spAddPageBtn" type="button">
+          <i data-lucide="plus" style="width:16px;height:16px;"></i><span>페이지 추가</span>
+        </button>
+      </div>
       <!-- 오늘자 슬롯이 패널 스크롤 밖으로 나가면(목록 자체 스크롤 기준) 뜨는 이동 버튼 -->
       <button class="glass-pill-btn sp-today-fab" id="spTodayFabBtn" type="button" aria-label="오늘로 이동">
         <span class="glass-pill-btn-icon">
@@ -3303,6 +3312,8 @@
     const cardByTime = new Map();
     datedCards.forEach(card => cardByTime.set(parseCardDate(card).getTime(), card));
 
+    // 페이지가 없는 날짜(빈 슬롯)는 표시하지 않는다 — 기간 안에서 실제 페이지가 있는 날짜만 나열.
+    // 페이지 추가는 패널 하단 푸터의 "페이지 추가" 버튼으로만 한다.
     const items = [];
     const cursor = new Date(startDate);
     while (cursor <= endDate) {
@@ -3310,13 +3321,6 @@
       const existingCard = cardByTime.get(t) || null;
       if (existingCard) {
         items.push({ card: existingCard, time: t, isToday: t === today.getTime(), label: `${cursor.getMonth() + 1}/${cursor.getDate()}` });
-      } else if (t >= today.getTime()) {
-        items.push({
-          isBlank: true, time: t,
-          y: cursor.getFullYear(), m: cursor.getMonth() + 1, d: cursor.getDate(),
-          isToday: t === today.getTime(),
-          label: `${cursor.getMonth() + 1}/${cursor.getDate()}`,
-        });
       }
       cursor.setDate(cursor.getDate() + 1);
     }
@@ -3349,18 +3353,11 @@
 
       group.items.forEach(item => {
         const spCard = document.createElement('div');
-        spCard.className = 'sp-card' + (item.card && item.card === selectedCard ? ' sp-selected' : '');
+        spCard.className = 'sp-card' + (item.card === selectedCard ? ' sp-selected' : '');
         const todayBadge = item.isToday ? '<span class="sp-today-badge">오늘</span>' : '';
-        if (item.isBlank) {
-          spCard.classList.add('sp-blank');
-          spCard.dataset.y = item.y; spCard.dataset.m = item.m; spCard.dataset.d = item.d;
-          if (item.isToday) spCard.dataset.today = '1';
-          spCard.innerHTML = `<div class="sp-thumb sp-thumb-add"><span class="sp-add-icon">+</span></div><div class="sp-list-info"><div class="sp-list-title-row"><span class="sp-list-title">${item.label}</span>${todayBadge}</div></div>`;
-        } else {
-          const studyTime = item.card.querySelector('.hd-time-val')?.textContent?.trim() || '0:00:00';
-          spCard.dataset.dateKey = dateKey(parseCardDate(item.card));
-          spCard.innerHTML = `<div class="sp-thumb"></div><div class="sp-list-info"><div class="sp-list-title-row"><span class="sp-list-title">${item.label}</span>${todayBadge}</div></div><span class="sp-list-time">${studyTime}</span><i data-lucide="more-horizontal" class="sp-more-icon"></i>`;
-        }
+        const studyTime = item.card.querySelector('.hd-time-val')?.textContent?.trim() || '0:00:00';
+        spCard.dataset.dateKey = dateKey(parseCardDate(item.card));
+        spCard.innerHTML = `<div class="sp-thumb"></div><div class="sp-list-info"><div class="sp-list-title-row"><span class="sp-list-title">${item.label}</span>${todayBadge}</div></div><span class="sp-list-time">${studyTime}</span><i data-lucide="more-horizontal" class="sp-more-icon"></i>`;
         body.appendChild(spCard);
       });
       spContent.appendChild(body);
@@ -3372,9 +3369,7 @@
     watchSpTodayFab();
   }
 
-  // ── 노트 표지·이름·기간 요약 + 우측 "수정" 버튼 → 기간(시작일~종료일) 수정 팝업 ──
-  const spNoteCover = document.getElementById('spNoteCover');
-  const spNoteName = document.getElementById('spNoteName');
+  // ── 노트 기간 요약 + 우측 "설정" 버튼 → 기간(시작일~종료일) 수정 팝업 ──
   const spNotePeriodSub = document.getElementById('spNotePeriodSub');
   const spPeriodEditBtn = document.getElementById('spPeriodEditBtn');
   const spPeriodEditBackdrop = document.getElementById('spPeriodEditBackdrop');
@@ -3387,11 +3382,6 @@
     const activeTabEl = document.querySelector('.tab.active');
     if (!activeTabEl) return;
     const period = activeTabEl._periodState || defaultNotePeriod();
-    const name = activeTabEl.querySelector('.tab-label')?.textContent || activeTabEl.dataset.tabName || '';
-    spNoteCover.style.background = activeTabEl.dataset.coverPattern
-      ? patternCSS(activeTabEl.dataset.coverPattern, activeTabEl.dataset.coverColor || '#d8dbe2')
-      : (activeTabEl.dataset.coverColor || '#d8dbe2');
-    spNoteName.textContent = name;
     spNotePeriodSub.textContent = `플래너 기간: ${formatPeriodDate(period.start)} ~ ${formatPeriodDate(period.end)}`;
   }
 
@@ -3444,14 +3434,13 @@
   spPeriodEditBackdrop.addEventListener('click', () => spPeriodEditBackdrop.classList.remove('show'));
   document.getElementById('spPeriodEditDoneBtn').addEventListener('click', () => spPeriodEditBackdrop.classList.remove('show'));
 
-  // ── 사이드 패널의 "오늘로 이동" 버튼: 오늘자 슬롯(빈 칸 또는 실제 카드)이 .sp-content 자체
-  //    스크롤 밖으로 나가면 뜬다. rebuildPanel이 매번 슬롯 DOM을 새로 그리므로, 다시 그릴 때마다
-  //    관찰 대상도 새로 연결한다.
+  // ── 사이드 패널의 "오늘로 이동" 버튼: 오늘자 카드가 .sp-content 자체 스크롤 밖으로
+  //    나가면 뜬다. rebuildPanel이 매번 슬롯 DOM을 새로 그리므로, 다시 그릴 때마다
+  //    관찰 대상도 새로 연결한다. (빈 슬롯은 더 이상 없으므로 오늘 페이지 카드만 찾는다)
   const spTodayFabBtn = document.getElementById('spTodayFabBtn');
   const spContentEl = document.querySelector('.sp-content');
   function getTodaySpCardEl() {
-    return document.querySelector('.sp-blank[data-today="1"]') ||
-      document.querySelector(`.sp-card[data-date-key="${dateKey(new Date())}"]`);
+    return document.querySelector(`.sp-card[data-date-key="${dateKey(new Date())}"]`);
   }
   spTodayFabBtn.addEventListener('click', () => {
     const el = getTodaySpCardEl();
@@ -3780,19 +3769,6 @@
       return;
     }
 
-    const blank = e.target.closest('.sp-blank');
-    if (blank) {
-      if (blank.dataset.today === '1') {
-        // 오늘 빈칸 → 이미 캔버스에 떠 있는 "오늘' 페이지 추가" 미리보기를 그대로 활성화한다
-        const gc = document.querySelector('.card.card-ghost');
-        const frame = gc && gc.closest('.ghost-frame');
-        if (gc && frame) activateGhostCard(frame, gc, gc.dataset.dateText);
-      } else {
-        createPage(parseInt(blank.dataset.y, 10), parseInt(blank.dataset.m, 10), parseInt(blank.dataset.d, 10));
-      }
-      return;
-    }
-
     const moreIcon = e.target.closest('.sp-more-icon');
     if (moreIcon) {
       const spCard = moreIcon.closest('.sp-card[data-date-key]');
@@ -3962,6 +3938,14 @@
   addPageBtn.addEventListener('click', () => {
     const rect = addPageBtn.getBoundingClientRect();
     openAddPageMenu(rect.left + rect.width / 2, rect.top, { above: true });
+  });
+
+  // 패널 하단 푸터의 "페이지 추가" 버튼 — 캔버스 버튼과 동일한 오버레이 팝업을,
+  // 화면 중앙이 아니라 버튼 바로 위(근처)에 띄운다
+  const spAddPageBtn = document.getElementById('spAddPageBtn');
+  spAddPageBtn.addEventListener('click', () => {
+    const rect = spAddPageBtn.getBoundingClientRect();
+    openAddPageMenu(rect.left + rect.width / 2, rect.top - 8, { above: true });
   });
 
   const dateSelectMenu = new OverlayMenu({
