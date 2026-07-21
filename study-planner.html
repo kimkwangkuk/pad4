@@ -3891,8 +3891,6 @@
   }
 
   // ── "페이지 추가" 진입점 (캔버스 하단 버튼 · 사이드패널 add 타일 공용) ──
-  let _lastDateMenuPos = null;
-
   function openAddPageMenu(x, y, opts) {
     activeCard = null;
     const todayTaken = datePicker.takenDates.has(`${_todayY}-${_todayM}-${_todayD}`);
@@ -3913,18 +3911,8 @@
       });
     }
     dateSelectMenu.setTitle('페이지 날짜 선택');
-    _lastDateMenuPos = { x, y, opts };
     dateSelectMenu.open(x, y, opts);
   }
-
-  window.onInsertPickerClosed = () => {
-    if (_lastDateMenuPos) {
-      // 팝업이 완전히 닫히는 애니메이션(0.22s)이 끝난 뒤 약간의 여유를 두고 다시 띄움
-      setTimeout(() => {
-        openAddPageMenu(_lastDateMenuPos.x, _lastDateMenuPos.y, _lastDateMenuPos.opts);
-      }, 400);
-    }
-  };
 
   addPageBtn.addEventListener('click', () => {
     const rect = addPageBtn.getBoundingClientRect();
@@ -3949,15 +3937,7 @@
           openPageDatePicker();
         }
       }
-    ],
-    preview: {
-      render(el) {
-        if (window.ipBuildConfiguredCardEl) renderMp2Thumb(window.ipBuildConfiguredCardEl(), el);
-      },
-      onClick() {
-        window.openInsertPicker();
-      }
-    }
+    ]
   });
 
   // ── 페이지 패널 더보기 메뉴 ────────────────────────────────────
