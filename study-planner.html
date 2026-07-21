@@ -871,28 +871,12 @@
     .sp-blank { cursor: pointer; }
     .sp-thumb-add { cursor: pointer; }
 
-    /* ─── SIDE PANEL: 노트 표지·이름·기간 요약 ──────────────
-       기간은 왼쪽 텍스트로, 수정은 오른쪽 별도 버튼으로 분리(전체를 하나의 버튼으로 묶지 않는다) */
+    /* ─── SIDE PANEL: 노트 기간 요약 ──────────────
+       표지·이름 없이 기간(왼쪽 텍스트) + 수정(오른쪽 버튼)만, 아래 목록과 구분되는 바텀 라인 */
     .sp-note-info {
-      display: flex; align-items: center; gap: 10px;
-      padding: 8px 16px 14px; flex-shrink: 0;
-    }
-    .sp-note-cover {
-      width: 34px; flex-shrink: 0;
-      aspect-ratio: 133 / 177.658;
-      border-radius: 3px;
-      border: 1px solid rgba(0,0,0,0.1);
-      background: #d8dbe2;
-    }
-    .sp-note-info-text {
-      flex: 1; min-width: 0;
-      display: flex; flex-direction: column; gap: 4px;
-    }
-    .sp-note-name {
-      font-family: 'Pretendard', sans-serif;
-      font-size: 14px; font-weight: 700;
-      color: rgba(0,0,0,0.86); letter-spacing: -0.042px; line-height: 1.3;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      display: block;
+      padding: 8px 16px 12px; flex-shrink: 0;
+      border-bottom: 1px solid rgba(0,0,0,0.08);
     }
     .sp-note-period-row {
       display: flex; align-items: center; justify-content: space-between; gap: 8px;
@@ -2640,15 +2624,11 @@
       <div class="sp-header">
         <span class="sp-header-title" id="spHeaderTitle">페이지</span>
       </div>
-      <!-- 노트 표지·이름·기간 요약. 기간은 왼쪽에 텍스트로, 수정은 오른쪽 버튼으로 분리 -->
+      <!-- 노트 기간 요약. 표지·이름 없이 기간은 왼쪽 텍스트로, 수정은 오른쪽 버튼으로 분리 -->
       <div class="sp-note-info">
-        <div class="sp-note-cover" id="spNoteCover"></div>
-        <div class="sp-note-info-text">
-          <span class="sp-note-name" id="spNoteName"></span>
-          <div class="sp-note-period-row">
-            <span class="sp-note-period-sub" id="spNotePeriodSub"></span>
-            <button class="sp-note-period-edit-btn" id="spPeriodEditBtn" type="button">수정</button>
-          </div>
+        <div class="sp-note-period-row">
+          <span class="sp-note-period-sub" id="spNotePeriodSub"></span>
+          <button class="sp-note-period-edit-btn" id="spPeriodEditBtn" type="button">수정</button>
         </div>
       </div>
       <div class="sp-content"></div>
@@ -3372,9 +3352,7 @@
     watchSpTodayFab();
   }
 
-  // ── 노트 표지·이름·기간 요약 + 우측 "수정" 버튼 → 기간(시작일~종료일) 수정 팝업 ──
-  const spNoteCover = document.getElementById('spNoteCover');
-  const spNoteName = document.getElementById('spNoteName');
+  // ── 노트 기간 요약 + 우측 "수정" 버튼 → 기간(시작일~종료일) 수정 팝업 ──
   const spNotePeriodSub = document.getElementById('spNotePeriodSub');
   const spPeriodEditBtn = document.getElementById('spPeriodEditBtn');
   const spPeriodEditBackdrop = document.getElementById('spPeriodEditBackdrop');
@@ -3387,11 +3365,6 @@
     const activeTabEl = document.querySelector('.tab.active');
     if (!activeTabEl) return;
     const period = activeTabEl._periodState || defaultNotePeriod();
-    const name = activeTabEl.querySelector('.tab-label')?.textContent || activeTabEl.dataset.tabName || '';
-    spNoteCover.style.background = activeTabEl.dataset.coverPattern
-      ? patternCSS(activeTabEl.dataset.coverPattern, activeTabEl.dataset.coverColor || '#d8dbe2')
-      : (activeTabEl.dataset.coverColor || '#d8dbe2');
-    spNoteName.textContent = name;
     spNotePeriodSub.textContent = `플래너 기간: ${formatPeriodDate(period.start)} ~ ${formatPeriodDate(period.end)}`;
   }
 
