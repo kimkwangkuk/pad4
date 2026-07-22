@@ -3542,10 +3542,13 @@
         canvasZoomWrap.appendChild(banner);
       }
     });
-    // 마지막 페이지 아래에는 페이지 추가 버튼 대신 기간 끝 마커(B안)를 붙인다 —
-    // 설정한 기간이 여기서 끝났다는 표시이고, "기간 설정" 버튼으로 기간을 늘릴 수 있다
+    // 노트 기간의 마지막 날짜에 해당하는 페이지가 캔버스에 있을 때만, 그 아래에 기간 끝
+    // 마커(B안)를 붙인다 — 설정한 기간이 여기서 끝났다는 표시이고, "기간 설정" 버튼으로
+    // 기간을 늘릴 수 있다. 종료일 페이지가 아직 없으면 아무것도 붙이지 않는다.
     canvasZoomWrap.querySelector('.canvas-end-ui')?.remove();
-    canvasZoomWrap.appendChild(buildCanvasEndUI(period));
+    if (visibleDatedCards.some(c => parseCardDate(c).getTime() === periodEndTime)) {
+      canvasZoomWrap.appendChild(buildCanvasEndUI(period));
+    }
 
     rebuildPanel(datedCards, selectedCard);
     // 새로 추가/선택된 페이지 엘리먼트로 직접 스크롤 — 인덱스 계산은 숨김 카드가 끼면 어긋난다
