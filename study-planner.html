@@ -4072,6 +4072,37 @@
   // Start centered on the last (most recent) page
   scrollToCard(canvasScroll.querySelectorAll('.card').length - 1, false);
 
+  // ── 캔버스 스크롤 → 현재 보고 있는(화면 중앙에 가장 가까운) 페이지를 패널에서 포커스 표시 ──
+  // 스크롤할 때마다 중앙 장면의 카드를 찾아 패널에서 그 카드를 sp-selected로 강조하고
+  // 목록도 그 카드가 보이도록 맞춘다. 선택 모드·빼놓은 페이지 탭에서는 비활성화한다.
+  let focusScrollRaf = null;
+  function focusScrolledPage() {
+    if (spSelectMode || spViewMode === 'hidden') return;
+    const areaRect = mainArea.getBoundingClientRect();
+    const centerY = areaRect.top + areaRect.height / 2;
+    let best = null, bestDist = Infinity;
+    canvasZoomWrap.querySelectorAll('.canvas-scene').forEach(scene => {
+      const card = scene.querySelector('.card');
+      if (!card) return;
+      const r = scene.getBoundingClientRect();
+      const d = Math.abs((r.top + r.height / 2) - centerY);
+      if (d < bestDist) { bestDist = d; best = card; }
+    });
+    if (!best) return;
+    const key = dateKey(parseCardDate(best));
+    let panelCard = null;
+    document.querySelectorAll('.sp-card').forEach(c => {
+      const on = c.dataset.dateKey === key;
+      c.classList.toggle('sp-selected', on);
+      if (on) panelCard = c;
+    });
+    if (panelCard) panelCard.scrollIntoView({ block: 'nearest' });
+  }
+  mainArea.addEventListener('scroll', () => {
+    if (focusScrollRaf) return;
+    focusScrollRaf = requestAnimationFrame(() => { focusScrollRaf = null; focusScrolledPage(); });
+  }, { passive: true });
+
   // ── Side panel: single delegation handler (works for dynamic cards too) ──
   // 활성 탭 소유 카드만 찾는다 — 다른 탭(예: 데일리)에 같은 날짜 카드가 있어도 이 노트의
   // 카드를 반환해야 썸네일·이동·빼기가 현재 노트 종류(위클리/먼슬리)와 일치한다.
