@@ -3694,7 +3694,6 @@
   const removePresetMenu = new OverlayMenu({
     items: [
       { lucideIcon: 'file-clock', label: '기록 없는 지난 페이지', onClick() { enterRemoveSelectMode({ noRecord: true }); } },
-      { lucideIcon: 'history', label: '지난 페이지 전체', onClick() { enterRemoveSelectMode({ past: true }); } },
       { lucideIcon: 'square-check-big', label: '직접 선택', onClick() { enterRemoveSelectMode({}); } },
     ]
   });
