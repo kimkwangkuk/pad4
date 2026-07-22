@@ -4174,7 +4174,12 @@
       {
         lucideIcon: 'file-minus',
         label: '페이지 빼기',
-        onClick() { removeOneDialog.open(); }
+        onClick() {
+          // 확인 팝업 없이 바로 뺀다 (되돌리기 토스트로 되돌릴 수 있다)
+          const card = activePageCard;
+          activePageCard = null;
+          removePages(card ? [card] : []);
+        }
       },
       {
         lucideIcon: 'file-stack',
@@ -4229,19 +4234,6 @@
     if (window.__todayFabReady) window.watchTodayFab();
     pageToast.show('페이지를 다시 넣었어요.');
   }
-
-  // 더보기 메뉴에서 페이지 하나를 뺄 때의 확인 다이얼로그
-  const removeOneDialog = new Dialog({
-    title: '이 페이지를 뺄까요?',
-    message: '빼놓은 페이지는 목록과 캔버스에서 빠지고, "빼놓은 페이지" 탭에서 언제든 다시 넣을 수 있어요.',
-    confirmLabel: '빼기',
-    cancelLabel: '취소',
-    onConfirm: () => {
-      const card = activePageCard;
-      activePageCard = null;
-      removePages(card ? [card] : []);
-    }
-  });
 
   canvasScroll.addEventListener('click', e => {
     // ── + 버튼: 빈 행 없으면 추가 ─────────────────────
