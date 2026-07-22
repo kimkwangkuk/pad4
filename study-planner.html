@@ -427,6 +427,35 @@
       overflow: hidden;
     }
 
+    /* ─── 위클리 카드 (주 단위) ───────────────────── */
+    .wk-inner { padding: 40px 44px; gap: 22px; }
+    .wk-header { display: flex; align-items: baseline; justify-content: space-between; flex-shrink: 0; }
+    .wk-title { font-family: 'Pretendard', sans-serif; font-size: 30px; font-weight: 700; color: rgba(0,0,0,0.86); letter-spacing: -0.5px; }
+    .wk-range { font-family: 'Pretendard', sans-serif; font-size: 16px; font-weight: 500; color: rgba(0,0,0,0.4); }
+    .wk-days { flex: 1; display: flex; flex-direction: column; }
+    .wk-day { flex: 1; display: flex; align-items: stretch; gap: 16px; border-top: 1px solid rgba(0,0,0,0.09); padding: 8px 0; }
+    .wk-day:last-child { border-bottom: 1px solid rgba(0,0,0,0.09); }
+    .wk-day-head { width: 54px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
+    .wk-dow { font-family: 'Pretendard', sans-serif; font-size: 15px; font-weight: 700; color: rgba(0,0,0,0.7); }
+    .wk-date { font-family: 'Pretendard', sans-serif; font-size: 13px; font-weight: 500; color: rgba(0,0,0,0.35); }
+    .wk-note { flex: 1; }
+    /* 토/일 강조 */
+    .wk-day:nth-child(6) .wk-dow { color: #3b7fd6; }
+    .wk-day:nth-child(7) .wk-dow { color: #e05a5a; }
+
+    /* ─── 먼슬리 카드 (월 단위 캘린더) ───────────── */
+    .mo-inner { padding: 40px 40px 32px; gap: 18px; }
+    .mo-header { flex-shrink: 0; }
+    .mo-title { font-family: 'Pretendard', sans-serif; font-size: 30px; font-weight: 700; color: rgba(0,0,0,0.86); letter-spacing: -0.5px; }
+    .mo-dow-row { display: grid; grid-template-columns: repeat(7, 1fr); flex-shrink: 0; }
+    .mo-dow-row span { text-align: center; font-family: 'Pretendard', sans-serif; font-size: 13px; font-weight: 600; color: rgba(0,0,0,0.4); padding-bottom: 6px; }
+    .mo-dow-row span:nth-child(6) { color: #3b7fd6; }
+    .mo-dow-row span:nth-child(7) { color: #e05a5a; }
+    .mo-grid { flex: 1; display: grid; grid-template-columns: repeat(7, 1fr); grid-auto-rows: 1fr; border-top: 1px solid rgba(0,0,0,0.09); border-left: 1px solid rgba(0,0,0,0.09); }
+    .mo-cell { border-right: 1px solid rgba(0,0,0,0.09); border-bottom: 1px solid rgba(0,0,0,0.09); padding: 5px 7px; }
+    .mo-cell.mo-empty { background: rgba(0,0,0,0.015); }
+    .mo-daynum { font-family: 'Pretendard', sans-serif; font-size: 13px; font-weight: 500; color: rgba(0,0,0,0.6); }
+
     /* ─── HEADER  (106px) ────────────────────────── */
     .card-header {
       width: 568px;
@@ -923,6 +952,8 @@
     .canvas-zoom-wrap > .card[data-sp-hidden="true"] { display: none; }
     /* 노트 기간 밖 날짜의 페이지도 캔버스에서 감춤 (sortPages가 매번 다시 판정) */
     .canvas-zoom-wrap > .card.card-out-of-period { display: none; }
+    /* 다른 탭 소유 카드는 이 탭 캔버스에서 감춤 — 캔버스는 하나지만 탭마다 다른 콘텐츠가 된다 */
+    .canvas-zoom-wrap > .card.card-other-tab { display: none; }
     /* 빼놓은 페이지 탭이 비었을 때 안내 문구 */
     .sp-empty-msg {
       padding: 40px 0; text-align: center;
@@ -3417,6 +3448,9 @@
   const canvasScroll = document.getElementById('canvasScroll');
   const canvasZoomWrap = document.getElementById('canvasZoomWrap');
   let pageCount = PAGES.length;
+  // 탭마다 고유 id를 부여하고, 카드는 dataset.ownerTab으로 소속 탭을 기억한다 —
+  // 캔버스는 하나지만 활성 탭 소유 카드만 보여줘서 탭마다 다른 콘텐츠가 되게 한다.
+  let tabIdCounter = 0;
 
   PAGES.forEach((page) => {
     canvasZoomWrap.insertAdjacentHTML('beforeend', buildCardHTML(page));
@@ -3807,8 +3841,12 @@
   }
 
   function sortPages(selectedCard, revealBanners) {
+    // 활성 탭 소유 카드만 이 탭의 캔버스에 표시한다 — 다른 탭 소유 카드는 .card-other-tab으로
+    // 숨겨(display:none) 캔버스는 하나여도 탭마다 다른 콘텐츠가 되게 한다.
+    const activeTabId = document.querySelector('.tab.active')?.dataset.tabId;
     const allCards = Array.from(canvasScroll.querySelectorAll('.card'));
-    let datedCards = allCards.filter(c => c.dataset.canvasState === 'with-date');
+    allCards.forEach(c => c.classList.toggle('card-other-tab', !!activeTabId && c.dataset.ownerTab !== activeTabId));
+    let datedCards = allCards.filter(c => c.dataset.canvasState === 'with-date' && !c.classList.contains('card-other-tab'));
     datedCards.sort((a, b) => parseCardDate(a) - parseCardDate(b));
     canvasZoomWrap.querySelectorAll('.canvas-ad-banner, .canvas-end-ui').forEach(b => b.remove());
     // 이전 장면(.canvas-scene) 래퍼 해체 — 카드를 다시 직계 자식으로 꺼내고 래퍼는 버린다.
@@ -3975,7 +4013,13 @@
     spViewMode = 'all';
     applySpViewMode();
     document.getElementById('spHeaderSpacerLeft').textContent = '구매';
-    sortPages();
+    // 이 탭에 아직 카드가 없으면(처음 여는 노트) 그 노트 종류(kind)에 맞는 페이지를 만들어둔다.
+    // ensurePagesForPeriod가 카드를 만들면 내부에서 sortPages를 부르고, 아니면 여기서 부른다.
+    const activeTab = document.querySelector('.tab.active');
+    const period = activeTab?._periodState || defaultNotePeriod();
+    const before = canvasZoomWrap.querySelectorAll(`.card[data-owner-tab="${activeTab?.dataset.tabId}"]`).length;
+    ensurePagesForPeriod(period);
+    if (canvasZoomWrap.querySelectorAll(`.card[data-owner-tab="${activeTab?.dataset.tabId}"]`).length === before) sortPages();
     // 노트 전환 시 "오늘로 이동" 플로팅 버튼이 감시하는 대상도 새로 고른다. 전역 함수 선언은
     // 호이스팅으로 인해 정의 이전에도 window.watchTodayFab이 이미 존재하는 것처럼 보이므로
     // (TDZ 오류 유발), 별도의 준비완료 플래그로 안전하게 가드한다 — 최초 페이지 로드 시점엔
@@ -4147,23 +4191,106 @@
     return newCard;
   }
 
+  // 그 날짜가 속한 주의 월요일
+  function mondayOf(date) {
+    const d = new Date(date); const wd = (d.getDay() + 6) % 7; // 월=0
+    d.setDate(d.getDate() - wd); d.setHours(0, 0, 0, 0); return d;
+  }
+  // ── 위클리 카드: 대표 날짜 = 그 주 월요일. 월~일 7행 리스트 ──
+  function buildWeeklyPageCard(startDate) {
+    const mon = mondayOf(startDate);
+    const y = String(mon.getFullYear()).slice(2);
+    const dateText = `${y}.${String(mon.getMonth() + 1).padStart(2, '0')}.${String(mon.getDate()).padStart(2, '0')}`;
+    const weekOfMonth = Math.ceil(mon.getDate() / 7);
+    const sun = new Date(mon); sun.setDate(sun.getDate() + 6);
+    const DOW = ['월', '화', '수', '목', '금', '토', '일'];
+    let rows = '';
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(mon); d.setDate(d.getDate() + i);
+      rows += `<div class="wk-day"><div class="wk-day-head"><span class="wk-dow">${DOW[i]}</span><span class="wk-date">${d.getDate()}</span></div><div class="wk-note"></div></div>`;
+    }
+    const el = document.createElement('div');
+    el.className = 'card';
+    el.dataset.canvasState = 'with-date';
+    el.dataset.pageKind = 'weekly';
+    el.dataset.dateText = dateText;
+    el.innerHTML = `<canvas class="card-draw-canvas" width="600" height="800"></canvas>
+      <div class="card-inner wk-inner">
+        <div class="wk-header"><span class="wk-title">${mon.getMonth() + 1}월 ${weekOfMonth}주</span><span class="wk-range">${mon.getMonth() + 1}.${mon.getDate()} – ${sun.getMonth() + 1}.${sun.getDate()}</span></div>
+        <div class="wk-days">${rows}</div>
+      </div>`;
+    canvasZoomWrap.appendChild(el);
+    datePicker.takenDates.add(`${mon.getFullYear()}-${mon.getMonth() + 1}-${mon.getDate()}`);
+    return el;
+  }
+  // ── 먼슬리 카드: 대표 날짜 = 그 달 1일. 7열 캘린더 그리드 ──
+  function buildMonthlyPageCard(year, month) {
+    const first = new Date(year, month - 1, 1);
+    const dateText = `${String(year).slice(2)}.${String(month).padStart(2, '0')}.01`;
+    const startOffset = (first.getDay() + 6) % 7; // 월=0
+    const daysInMonth = new Date(year, month, 0).getDate();
+    const DOW = ['월', '화', '수', '목', '금', '토', '일'];
+    let cells = '';
+    const total = Math.ceil((startOffset + daysInMonth) / 7) * 7;
+    for (let i = 0; i < total; i++) {
+      const day = i - startOffset + 1;
+      const valid = day >= 1 && day <= daysInMonth;
+      cells += `<div class="mo-cell${valid ? '' : ' mo-empty'}">${valid ? `<span class="mo-daynum">${day}</span>` : ''}</div>`;
+    }
+    const el = document.createElement('div');
+    el.className = 'card';
+    el.dataset.canvasState = 'with-date';
+    el.dataset.pageKind = 'monthly';
+    el.dataset.dateText = dateText;
+    el.innerHTML = `<canvas class="card-draw-canvas" width="600" height="800"></canvas>
+      <div class="card-inner mo-inner">
+        <div class="mo-header"><span class="mo-title">${year}년 ${month}월</span></div>
+        <div class="mo-dow-row">${DOW.map(d => `<span>${d}</span>`).join('')}</div>
+        <div class="mo-grid">${cells}</div>
+      </div>`;
+    canvasZoomWrap.appendChild(el);
+    datePicker.takenDates.add(`${year}-${month}-1`);
+    return el;
+  }
+
+  // 활성 탭의 노트 종류(kind)에 따라 기간 안의 페이지를 미리 만들어둔다.
+  // daily=매일 / weekly=주(월요일)마다 / monthly=월(1일)마다. 각 카드는 활성 탭 소유로 태그한다.
   function ensurePagesForPeriod(period) {
+    const activeTab = document.querySelector('.tab.active');
+    const kind = activeTab?.dataset.noteKind || 'daily';
+    const ownerTab = activeTab?.dataset.tabId;
     const startDate = new Date(period.start.year, period.start.month - 1, period.start.day);
     const endDate = new Date(period.end.year, period.end.month - 1, period.end.day);
+    // 이 탭 소유 카드만 "이미 있음" 판정에 넣는다 (다른 탭 카드와 섞이지 않게)
     const existing = new Set(
       Array.from(canvasZoomWrap.querySelectorAll('.card[data-canvas-state="with-date"]'))
+        .filter(c => c.dataset.ownerTab === ownerTab)
         .map(c => parseCardDate(c).toDateString())
     );
-    const cursor = new Date(startDate);
-    let added = false;
-    while (cursor <= endDate) {
-      if (!existing.has(cursor.toDateString())) {
-        buildBlankPageCard(cursor.getFullYear(), cursor.getMonth() + 1, cursor.getDate());
-        added = true;
+    const newCards = [];
+    if (kind === 'weekly') {
+      const cursor = mondayOf(startDate);
+      while (cursor <= endDate) {
+        if (!existing.has(cursor.toDateString())) newCards.push(buildWeeklyPageCard(cursor));
+        cursor.setDate(cursor.getDate() + 7);
       }
-      cursor.setDate(cursor.getDate() + 1);
+    } else if (kind === 'monthly') {
+      const cursor = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+      while (cursor <= endDate) {
+        if (!existing.has(cursor.toDateString())) newCards.push(buildMonthlyPageCard(cursor.getFullYear(), cursor.getMonth() + 1));
+        cursor.setMonth(cursor.getMonth() + 1);
+      }
+    } else {
+      const cursor = new Date(startDate);
+      while (cursor <= endDate) {
+        if (!existing.has(cursor.toDateString())) newCards.push(buildBlankPageCard(cursor.getFullYear(), cursor.getMonth() + 1, cursor.getDate()));
+        cursor.setDate(cursor.getDate() + 1);
+      }
     }
-    if (added) sortPages();
+    if (newCards.length) {
+      newCards.forEach(c => { if (ownerTab) c.dataset.ownerTab = ownerTab; });
+      sortPages();
+    }
   }
 
   // ── 페이지 패널 더보기 메뉴 ────────────────────────────────────
@@ -4425,6 +4552,8 @@
   };
   const NW_PATTERNS = ['dot', 'line'];
   const NW_TYPE_ICON = { '데일리': 'sun', '위클리': 'calendar-range', '먼슬리': 'calendar' };
+  // 노트 종류(한글 라벨) → 캔버스 렌더 kind. 탭·페이지 카드가 이 kind로 레이아웃을 정한다.
+  const NW_TYPE_KIND = { '데일리': 'daily', '위클리': 'weekly', '먼슬리': 'monthly' };
   const NW_INSERT_DESC = {
     lines:    '시간대별로 일정과 메모를 함께 적는 기본형 레이아웃이에요. 하루를 촘촘하게 기록하고 싶을 때 잘 맞아요.',
     blank:    '군더더기 없이 깔끔한 여백 중심 레이아웃이에요. 자유롭게 쓰고 그리고 싶은 분께 추천해요.',
@@ -4698,18 +4827,19 @@
     const cover = NW_COVERS.find(c => c.id === ncState.coverId);
     const name = ncNameInput.value.trim() || ncSubtitleEl.textContent;
     const noteType = ncState.noteType;
+    const kind = NW_TYPE_KIND[ncState.type] || 'daily'; // 데일리/위클리/먼슬리 → 캔버스 렌더 kind
     const period = { start: ncState.periodStart, end: ncState.periodEnd };
 
     ncCloseScreen();
 
-    const note = { name, date: '방금 전', icon: NW_TYPE_ICON[ncState.type] || 'file-text', color: cover.bg, pattern: ncState.coverPattern !== 'none' ? ncState.coverPattern : null, noteType, period };
+    const note = { name, date: '방금 전', icon: NW_TYPE_ICON[ncState.type] || 'file-text', color: cover.bg, pattern: ncState.coverPattern !== 'none' ? ncState.coverPattern : null, noteType, kind, period };
     const cardEl = buildNoteCardEl(note);
     HOME_NOTES.unshift(note);
     hsNotesEl.insertBefore(cardEl, hsNotesEl.firstChild);
     lucide.createIcons({ nodes: [cardEl] });
 
     nwShowNoteCreated(name, { bg: cover.bg, pattern: ncState.coverPattern !== 'none' ? ncState.coverPattern : null });
-    openTabFromHome(note.name, note.icon, 'note', note.noteType, note.period, { color: note.color, pattern: note.pattern });
+    openTabFromHome(note.name, note.icon, 'note', note.noteType, note.period, { color: note.color, pattern: note.pattern, kind });
   });
 
   function nwDetailPreviewHTML(ins, color) {
@@ -5143,9 +5273,9 @@
   const tabsSection = document.querySelector('.tabs-section');
 
   const HOME_NOTES = [
-    { name: '데일리 노트', date: '2일 전', icon: 'sun',            color: '#f34c18' },
-    { name: '위클리 노트', date: '2일 전', icon: 'calendar-range', color: '#452c83' },
-    { name: '먼슬리 노트', date: '2일 전', icon: 'calendar',       color: '#1e7f00' },
+    { name: '데일리 노트', date: '2일 전', icon: 'sun',            color: '#f34c18', kind: 'daily' },
+    { name: '위클리 노트', date: '2일 전', icon: 'calendar-range', color: '#452c83', kind: 'weekly' },
+    { name: '먼슬리 노트', date: '2일 전', icon: 'calendar',       color: '#1e7f00', kind: 'monthly' },
   ];
 
   // rgb() 문자열로 커버색을 어둡게 만들어 책등(spine) 색을 계산 (참고: note-creation-ipad-v5.html darkenHex)
@@ -5174,7 +5304,7 @@
         <div class="chev">⌄</div>
       </div>
     `;
-    card.addEventListener('click', () => openTabFromHome(note.name, note.icon || 'file-text', 'note', note.noteType || 'scroll', note.period, { color: note.color, pattern: note.pattern }));
+    card.addEventListener('click', () => openTabFromHome(note.name, note.icon || 'file-text', 'note', note.noteType || 'scroll', note.period, { color: note.color, pattern: note.pattern, kind: note.kind || 'daily' }));
     return card;
   }
 
@@ -5305,6 +5435,8 @@
     newTab.dataset.tabName = name;
     newTab._periodState = period ? { start: period.start, end: period.end } : defaultNotePeriod();
     newTab.dataset.noteType = noteType || 'scroll';
+    newTab.dataset.noteKind = cover?.kind || 'daily'; // 데일리/위클리/먼슬리 — 캔버스 카드 레이아웃 결정
+    newTab.dataset.tabId = 't' + (tabIdCounter++); // 탭마다 고유 id — 카드 소유 구분용
     newTab.innerHTML = `
       <img class="tab-curve" src="assets/tab-active-left.svg" style="width:29px;height:36px;flex-shrink:0;display:block;">
       <div class="tab-inner">
@@ -5342,7 +5474,12 @@
   tabLabels.querySelectorAll('.tab').forEach(t => {
     if (!t._periodState) t._periodState = defaultNotePeriod();
     if (!t.dataset.coverColor) t.dataset.coverColor = '#d8dbe2';
+    if (!t.dataset.tabId) t.dataset.tabId = 't' + (tabIdCounter++); // 정적 탭 = t0
+    if (!t.dataset.noteKind) t.dataset.noteKind = 'daily';
   });
+  // 초기 시드 카드(PAGES)는 첫 정적 탭 소유로 귀속한다
+  const firstTabId = tabLabels.querySelector('.tab')?.dataset.tabId;
+  canvasZoomWrap.querySelectorAll('.card').forEach(c => { if (!c.dataset.ownerTab) c.dataset.ownerTab = firstTabId; });
   refreshTabLayout();
   updateView();
   // updateView()의 sortPages() 재정렬이 끝난 뒤에 채워야 배너 위치·초기 스크롤이 흔들리지 않는다 —
