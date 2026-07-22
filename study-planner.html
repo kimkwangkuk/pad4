@@ -891,6 +891,8 @@
     .sp-card.sp-checked .sp-thumb { border-color: #242424; }
     /* 선택 모드 동안 더보기(…) 아이콘은 숨긴다 — 탭 = 선택 토글 */
     .sp-panel.sp-selecting .sp-more-icon { display: none; }
+    /* 선택 모드 동안 노트 정보 줄(플래너 기간·설정)도 숨겨서 패널 전체가 빼기 UI가 된다 */
+    .sp-panel.sp-selecting .sp-note-info { display: none; }
     /* 선택 모드 하단 액션바 — 선택 개수와 함께 빼기 실행 */
     .sp-remove-bar {
       flex-shrink: 0;
@@ -3631,6 +3633,7 @@
       }
     });
     document.getElementById('sidePanel').classList.add('sp-selecting');
+    document.getElementById('spHeaderTitle').textContent = '페이지 빼기'; // 패널 전체가 빼기 모드임을 드러낸다
     updateSelUI();
     sortPages(); // rebuildPanel이 체크 서클과 미리 체크된 상태를 그린다
   }
@@ -3638,6 +3641,7 @@
     spSelectMode = false;
     spSelectedKeys.clear();
     document.getElementById('sidePanel').classList.remove('sp-selecting');
+    document.getElementById('spHeaderTitle').textContent = '페이지';
     updateSelUI();
     if (!opts.skipRebuild) sortPages();
   }
