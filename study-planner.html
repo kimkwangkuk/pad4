@@ -2789,7 +2789,7 @@
           <button class="sp-bar-action" id="spRemoveModeBtn" type="button">페이지 빼기</button>
           <button class="sp-bar-action" id="spRestoreAllBtn" type="button" style="display:none;">모두 다시 넣기</button>
           <div class="sp-sel-bar" id="spSelBar" style="display:none;">
-            <button class="sp-sel-chip" id="spSelNoRecordChip" type="button">기록 없는 페이지</button>
+            <button class="sp-sel-chip" id="spSelNoRecordChip" type="button">기록 없는 과거 페이지</button>
             <button class="sp-bar-action" id="spSelCancelBtn" type="button">취소</button>
           </div>
         </div>
@@ -3688,7 +3688,7 @@
     document.getElementById('spViewTags').style.display = spSelectMode ? 'none' : '';
     const noRecordCount = spRemovableCards().filter(spIsNoRecordPast).length;
     const chip = document.getElementById('spSelNoRecordChip');
-    chip.textContent = `기록 없는 페이지 ${noRecordCount}`;
+    chip.textContent = `기록 없는 과거 페이지 ${noRecordCount}`;
     chip.classList.toggle('active', spSelNoRecordOn);
     document.getElementById('spRemoveBar').hidden = !spSelectMode;
     const cta = document.getElementById('spRemoveCtaBtn');
