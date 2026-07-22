@@ -12,7 +12,9 @@ class Toast {
     document.body.appendChild(this._el);
   }
 
-  show(message, duration = 2400) {
+  /* opts.actionLabel/opts.onAction — 메시지 옆에 액션 버튼(예: "되돌리기")을 붙인다.
+     버튼을 누르면 토스트를 즉시 닫고 onAction을 실행한다. */
+  show(message, duration = 2400, opts = {}) {
     if (!this._el) this._build();
 
     clearTimeout(this._hideTimer);
@@ -21,14 +23,30 @@ class Toast {
     this._el.offsetHeight; // force reflow to restart transition
 
     this._el.textContent = message;
+    if (opts.actionLabel) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'toast-action';
+      btn.textContent = opts.actionLabel;
+      btn.addEventListener('click', () => {
+        this.hide();
+        opts.onAction?.();
+      });
+      this._el.appendChild(btn);
+    }
     this._el.classList.add('toast-visible');
 
-    this._hideTimer = setTimeout(() => {
-      this._el.classList.replace('toast-visible', 'toast-hiding');
-      this._removeTimer = setTimeout(() => {
-        this._el.classList.remove('toast-hiding');
-      }, 220);
-    }, duration);
+    this._hideTimer = setTimeout(() => this.hide(), duration);
+  }
+
+  hide() {
+    if (!this._el) return;
+    clearTimeout(this._hideTimer);
+    clearTimeout(this._removeTimer);
+    this._el.classList.replace('toast-visible', 'toast-hiding');
+    this._removeTimer = setTimeout(() => {
+      this._el.classList.remove('toast-hiding');
+    }, 220);
   }
 }
 

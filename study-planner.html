@@ -828,11 +828,11 @@
 
     /* ─── SIDE PANEL THUMBNAIL CLICK ─────────────── */
     .sp-card[data-date-key] { cursor: pointer; }
-    /* ─── SIDE PANEL: 페이지/숨김 보기 태그 바 ───────────
+    /* ─── SIDE PANEL: 페이지/빼놓은 페이지 보기 태그 바 ───────────
        바는 스크롤 목록(.sp-content) 맨 위에 고정(position:sticky)되어, 날짜 카드들이
-       그 아래로 스크롤되어도 항상 최상단에 붙어있다. "페이지/숨김" 태그로 숨긴 페이지 목록을
-       오가며(숨긴 페이지는 숨김 탭에서 복원), 개수 숫자는 표시하지 않는다.
-       노트 정보 줄(플래너 기간·설정)은 어느 보기에서든 항상 표시된다.
+       그 아래로 스크롤되어도 항상 최상단에 붙어있다. "빼놓은 페이지" 탭에서 뺀 페이지를
+       확인하고 다시 넣는다. 바 우측은 상황별 버튼: 페이지 탭 = "페이지 빼기"(선택 모드 진입),
+       빼놓은 페이지 탭 = "모두 다시 넣기". 선택 모드에서는 태그 대신 조건 칩 + 취소가 보인다.
        .sp-content의 위쪽 padding을 없애고 그만큼을 이 바 자체의 padding-top으로 옮겨서,
        바의 불투명한 배경이 상단 여백까지 완전히 덮도록 한다(그 틈으로 목록이 비쳐 보이는 문제 방지). */
     .sp-sticky-filter-bar {
@@ -855,30 +855,85 @@
     .sp-view-tag.active {
       background: rgba(0,0,0,0.86); color: white; font-weight: 600;
     }
-    /* 숨김 탭에서만 바 우측에 보이는 "자동 숨김" 진입점 — 미니 스위치는 상태 표시용이고
-       실제 적용은 눌렀을 때 뜨는 자동 숨김 팝업의 토글에서 한다 */
-    .sp-autohide-entry {
+    /* 바 우측의 텍스트 버튼(페이지 빼기 / 모두 다시 넣기 / 취소) */
+    .sp-bar-action {
       margin-left: auto;
-      display: flex; align-items: center; gap: 6px;
-      background: none; border: none; padding: 2px;
-      font-family: 'Pretendard', sans-serif; font-size: 12px; font-weight: 500;
+      background: none; border: none; padding: 4px 2px;
+      font-family: 'Pretendard', sans-serif; font-size: 12px; font-weight: 600;
       color: rgba(0,0,0,0.55); letter-spacing: -0.036px;
       cursor: pointer; white-space: nowrap;
       -webkit-tap-highlight-color: transparent;
     }
-    .sp-autohide-entry .sls-switch {
-      margin-left: 0; width: 32px; height: 20px;
-      pointer-events: none; /* 버튼 전체가 팝업 진입점이므로 스위치 자체는 클릭을 먹지 않는다 */
+    .sp-bar-action:hover { color: rgba(0,0,0,0.86); }
+    /* 선택 모드 바: 조건 칩(일괄 선택/해제) + 취소 */
+    .sp-sel-bar {
+      flex: 1; min-width: 0;
+      display: flex; align-items: center; gap: 6px;
     }
-    .sp-autohide-entry .sls-switch::after { width: 16px; height: 16px; }
-    .sp-autohide-entry .sls-switch.on::after { left: 14px; }
-    /* 숨긴 페이지(수동·자동 모두) 캔버스에서 감춤 — .sp-thumb 안의 썸네일 클론에는 적용되지
+    .sp-sel-chip {
+      padding: 5px 10px; border-radius: 999px;
+      background: none; border: 1px solid rgba(0,0,0,0.18);
+      font-family: 'Pretendard', sans-serif; font-size: 12px; font-weight: 500;
+      color: rgba(0,0,0,0.55); letter-spacing: -0.036px;
+      cursor: pointer; white-space: nowrap;
+      transition: background 0.12s, color 0.12s, border-color 0.12s;
+    }
+    .sp-sel-chip.active {
+      background: rgba(0,0,0,0.86); border-color: rgba(0,0,0,0.86);
+      color: white; font-weight: 600;
+    }
+    /* 선택 모드: 썸네일 우측 상단 체크 서클 — 카드 탭으로 토글 */
+    .sp-check {
+      position: absolute; top: 5px; right: 5px; z-index: 2;
+      width: 20px; height: 20px; border-radius: 50%;
+      background: rgba(255,255,255,0.92);
+      border: 1.5px solid rgba(0,0,0,0.35);
+      display: flex; align-items: center; justify-content: center;
+      pointer-events: none;
+    }
+    .sp-check svg { opacity: 0; }
+    .sp-card.sp-checked .sp-check {
+      background: rgba(0,0,0,0.86); border-color: rgba(0,0,0,0.86);
+    }
+    .sp-card.sp-checked .sp-check svg { opacity: 1; }
+    .sp-card.sp-checked .sp-thumb { border-color: #242424; }
+    /* 선택 모드 동안 더보기(…) 아이콘은 숨긴다 — 탭 = 선택 토글 */
+    .sp-panel.sp-selecting .sp-more-icon { display: none; }
+    /* 선택 모드 하단 액션바 — 선택 개수와 함께 빼기 실행 */
+    .sp-remove-bar {
+      flex-shrink: 0;
+      padding: 10px 16px 14px;
+      border-top: 1px solid rgba(0,0,0,0.08);
+      background: white;
+    }
+    .sp-remove-bar[hidden] { display: none; }
+    .sp-remove-cta {
+      width: 100%; height: 44px;
+      background: rgba(0,0,0,0.86); border: none; border-radius: 12px;
+      font-family: 'Pretendard', sans-serif; font-size: 14px; font-weight: 600;
+      color: #fff; letter-spacing: -0.042px;
+      cursor: pointer; transition: background 0.12s, opacity 0.12s;
+    }
+    .sp-remove-cta:hover { background: rgba(0,0,0,0.72); }
+    .sp-remove-cta:disabled { opacity: 0.3; cursor: default; pointer-events: none; }
+    /* 목록 상단 제안 배너 — 기록 없는 지난 페이지가 쌓이면 한 번에 빼기를 제안 */
+    .sp-suggest-banner {
+      width: 100%;
+      display: flex; align-items: center; gap: 6px;
+      padding: 9px 12px; margin-bottom: 8px;
+      background: rgba(0,0,0,0.04); border: none; border-radius: 10px;
+      font-family: 'Pretendard', sans-serif; font-size: 12px; font-weight: 500;
+      color: rgba(0,0,0,0.6); letter-spacing: -0.036px; text-align: left;
+      cursor: pointer; -webkit-tap-highlight-color: transparent;
+      transition: background 0.12s;
+    }
+    .sp-suggest-banner:hover { background: rgba(0,0,0,0.07); }
+    /* 빼놓은 페이지는 캔버스에서 감춤 — .sp-thumb 안의 썸네일 클론에는 적용되지
        않도록 canvas-zoom-wrap의 직계 자식으로 한정한다 */
-    .canvas-zoom-wrap > .card[data-sp-hidden="true"],
-    .canvas-zoom-wrap > .card[data-auto-hidden="true"] { display: none; }
+    .canvas-zoom-wrap > .card[data-sp-hidden="true"] { display: none; }
     /* 노트 기간 밖 날짜의 페이지도 캔버스에서 감춤 (sortPages가 매번 다시 판정) */
     .canvas-zoom-wrap > .card.card-out-of-period { display: none; }
-    /* 숨김 탭이 비었을 때 안내 문구 */
+    /* 빼놓은 페이지 탭이 비었을 때 안내 문구 */
     .sp-empty-msg {
       padding: 40px 0; text-align: center;
       font-family: 'Pretendard', sans-serif; font-size: 12px; font-weight: 500;
@@ -895,8 +950,8 @@
     /* ─── 목록 설정 팝업 — 속지 변경(#changeTypePopup)과 같은 중앙 팝업 패턴(bsm 네비바+그래버).
        기간 수정 팝업(nc-format, z960)과 날짜 선택(z2000)이 이 위로 떠야 하므로
        z-index를 그보다 낮게 둔다 ─── */
-    #listSettingsBackdrop, #autoHideBackdrop { z-index: 940; }
-    #listSettingsPopup, #autoHidePopup {
+    #listSettingsBackdrop { z-index: 940; }
+    #listSettingsPopup {
       position: fixed; z-index: 941;
       left: 50%; top: 50%;
       transform: translateX(-50%) translateY(calc(-50% + 20px));
@@ -910,7 +965,7 @@
       transition: opacity 0.22s ease, transform 0.22s cubic-bezier(0.34,1.1,0.64,1);
       padding-bottom: 24px;
     }
-    #listSettingsPopup.visible, #autoHidePopup.visible {
+    #listSettingsPopup.visible {
       opacity: 1; pointer-events: auto;
       transform: translateX(-50%) translateY(-50%);
     }
@@ -2712,20 +2767,28 @@
         <button class="sp-note-settings-btn" id="spListSettingsBtn" type="button">설정</button>
       </div>
       <div class="sp-content">
-        <!-- 스크롤 영역 최상단에 붙어있는 페이지/숨김 보기 태그 바 — 날짜 목록 위에 항상 고정된다.
-             숨긴 페이지(수동·자동)는 숨김 탭에서 확인·복원하며, 태그에 개수는 표시하지 않는다. -->
+        <!-- 스크롤 영역 최상단에 붙어있는 보기 태그 바 — 날짜 목록 위에 항상 고정된다.
+             뺀 페이지는 "빼놓은 페이지" 탭에서 확인하고 다시 넣는다. 우측 버튼은 상황별:
+             페이지 탭 = "페이지 빼기"(조건 프리셋 메뉴 → 선택 모드), 빼놓은 페이지 탭 = "모두 다시 넣기".
+             선택 모드에서는 태그 대신 조건 칩(기록 없음/지난 날짜)과 취소가 표시된다. -->
         <div class="sp-sticky-filter-bar">
-          <div class="sp-view-tags">
+          <div class="sp-view-tags" id="spViewTags">
             <button class="sp-view-tag active" data-view-mode="all" type="button">페이지</button>
-            <button class="sp-view-tag" data-view-mode="hidden" type="button">숨김</button>
+            <button class="sp-view-tag" data-view-mode="hidden" type="button">빼놓은 페이지</button>
           </div>
-          <!-- 숨김 탭에서만 표시 — 누르면 자동 숨김 팝업이 뜬다(스위치는 상태 표시용 진입점) -->
-          <button class="sp-autohide-entry" id="spAutoHideEntryBtn" type="button" style="display:none;">
-            <span>자동 숨김</span>
-            <span class="sls-switch" id="spAutoHideEntrySwitch"></span>
-          </button>
+          <button class="sp-bar-action" id="spRemoveModeBtn" type="button">페이지 빼기</button>
+          <button class="sp-bar-action" id="spRestoreAllBtn" type="button" style="display:none;">모두 다시 넣기</button>
+          <div class="sp-sel-bar" id="spSelBar" style="display:none;">
+            <button class="sp-sel-chip" data-sel-chip="noRecord" type="button">기록 없음</button>
+            <button class="sp-sel-chip" data-sel-chip="past" type="button">지난 날짜</button>
+            <button class="sp-bar-action" id="spSelCancelBtn" type="button">취소</button>
+          </div>
         </div>
         <div id="spDateList"></div>
+      </div>
+      <!-- 선택 모드 하단 액션바 — 선택한 페이지 수와 함께 빼기 실행 -->
+      <div class="sp-remove-bar" id="spRemoveBar" hidden>
+        <button class="sp-remove-cta" id="spRemoveCtaBtn" type="button" disabled>페이지 빼기</button>
       </div>
     </div>
 
@@ -2751,24 +2814,6 @@
       </div>
     </div>
 
-    <!-- 숨김 탭의 "자동 숨김" 진입점 → 같은 bsm 중앙 팝업. 설명을 읽고 여기의 토글로
-         실제 적용한다(실시간 적용, 완료 버튼 없음) -->
-    <div id="autoHideBackdrop" class="bsm-backdrop"></div>
-    <div id="autoHidePopup">
-      <!-- 그래버 행 없이 bsm-header(64px)만 사용 — 캘린더(dp-topbar 64px)와 같은 상단 간격 -->
-      <div class="bsm-header">
-        <div class="bsm-spacer"></div>
-        <span class="bsm-title">자동 숨김</span>
-        <button class="bsm-close-btn" id="autoHideCloseBtn">✕</button>
-      </div>
-      <div class="sls-body">
-        <div class="sls-pop-row sls-toggle-row" id="slsAutoHideRow">
-          <span class="sls-pop-row-label">기록 없는 날 자동 숨기기</span>
-          <button class="sls-switch" id="slsAutoHideSwitch" type="button" role="switch" aria-checked="false"></button>
-        </div>
-        <div class="sls-desc">오늘 이전 날짜 중 기록이 없는 페이지를 자동으로 숨깁니다. 숨긴 페이지는 "숨김" 탭에서 확인하고 복원할 수 있습니다.</div>
-      </div>
-    </div>
 
     <!-- 오늘자 임시 페이지 "속지 변경" → 페이지 설정 사이드 패널 (Figma 5017:326690 / 5017:326734)
          .sp-panel과 마찬가지로 workspace 안에서 슬라이드 — 툴바를 덮지 않고 캔버스 영역 안에서만 나온다 -->
@@ -3395,18 +3440,21 @@
     return false;
   }
 
-  // "기록 없는 날 자동 숨기기" — 목록 설정 패널의 스위치. 켜면 오늘 이전 날짜 중 기록이 없는
-  // 페이지에 data-auto-hidden을 매겨 캔버스·전체 탭에서 감춘다. 자동으로 숨겨진 페이지도
-  // 숨김 탭에 나타나며, 거기서 복원하면 data-sp-keep 예외가 붙어 규칙이 다시 숨기지 않는다.
-  let spAutoHideNoRecord = false;
-
-  // 목록 상단 바의 페이지/숨김 보기 태그 — 'all'은 숨기지 않은 페이지 목록,
-  // 'hidden'은 숨긴(수동+자동) 페이지 목록(여기서 복원 가능).
+  // 목록 상단 바의 보기 태그 — 'all'은 빼지 않은 페이지 목록,
+  // 'hidden'은 빼놓은 페이지 목록(여기서 다시 넣을 수 있다).
+  // "빼기"는 삭제가 아니라 바인더에서 속지를 빼서 따로 보관하는 개념 — data-sp-hidden으로 표시만 한다.
   let spViewMode = 'all';
 
-  function isCardHiddenAny(card) {
-    return card.dataset.spHidden === 'true' || card.dataset.autoHidden === 'true';
+  function isCardRemoved(card) {
+    return card.dataset.spHidden === 'true';
   }
+
+  // ── 페이지 빼기 선택 모드 상태 ──
+  // spSelectedKeys에는 dateKey(예: "2026-7-21")를 담는다. 조건 칩은 일괄 선택/해제용이고,
+  // 칩을 켠 뒤에도 카드를 개별 탭해서 자유롭게 조정할 수 있다.
+  let spSelectMode = false;
+  const spSelectedKeys = new Set();
+  const spSelChips = { noRecord: false, past: false };
 
   // 사이드 패널 = "노트 기간"(시작일~종료일) 안의 날짜를 하루 단위로 나열한 목록 — 기간의 모든
   // 날짜에 이미 페이지가 미리 등록되어 있으므로(ensurePagesForPeriod), 빈 칸 상태는 없다.
@@ -3427,13 +3475,13 @@
 
     const items = [];
     const cursor = new Date(startDate);
-    const showHiddenOnly = spViewMode === 'hidden';
+    const showRemovedOnly = spViewMode === 'hidden';
     while (cursor <= endDate) {
       const t = cursor.getTime();
       const existingCard = cardByTime.get(t) || null;
       if (existingCard) {
-        // 숨김 탭: 숨긴(수동+자동) 페이지만 / 전체 탭: 숨기지 않은 페이지만
-        const passes = showHiddenOnly ? isCardHiddenAny(existingCard) : !isCardHiddenAny(existingCard);
+        // 빼놓은 페이지 탭: 뺀 페이지만 / 페이지 탭: 빼지 않은 페이지만
+        const passes = showRemovedOnly ? isCardRemoved(existingCard) : !isCardRemoved(existingCard);
         if (passes) {
           items.push({ card: existingCard, time: t, isToday: t === today.getTime(), label: `${cursor.getMonth() + 1}/${cursor.getDate()}` });
         }
@@ -3441,26 +3489,44 @@
       cursor.setDate(cursor.getDate() + 1);
     }
 
+    // 제안 배너: 기록 없는 지난 페이지가 쌓여 있으면 목록 상단에서 한 번에 빼기를 제안한다 —
+    // 자동으로 빼지 않고, 누르면 해당 페이지들이 미리 체크된 선택 모드로 들어간다
+    if (!showRemovedOnly && !spSelectMode) {
+      const suggestCount = items.filter(it => it.time < today.getTime() && !cardHasRecord(it.card)).length;
+      if (suggestCount > 0) {
+        const banner = document.createElement('button');
+        banner.type = 'button';
+        banner.className = 'sp-suggest-banner';
+        banner.innerHTML = `<i data-lucide="file-clock" style="width:14px;height:14px;flex-shrink:0;"></i><span>기록 없는 지난 페이지 ${suggestCount}장, 빼둘까요?</span>`;
+        banner.addEventListener('click', () => enterRemoveSelectMode({ noRecord: true }));
+        spContent.appendChild(banner);
+      }
+    }
+
     // 날짜 카드를 2열 행으로 바로 그린다 — 월 단위 그루핑 없이 기간 전체가 하나의 목록
+    const selecting = spSelectMode && !showRemovedOnly;
     for (let i = 0; i < items.length; i += 2) {
       const row = document.createElement('div');
       row.className = 'sp-row';
       for (let j = i; j < Math.min(i + 2, items.length); j++) {
         const item = items[j];
         const spCard = document.createElement('div');
+        const key = dateKey(parseCardDate(item.card));
         spCard.className = 'sp-card' + (item.card === selectedCard ? ' sp-selected' : '');
-        spCard.dataset.dateKey = dateKey(parseCardDate(item.card));
+        spCard.dataset.dateKey = key;
+        if (selecting && spSelectedKeys.has(key)) spCard.classList.add('sp-checked');
         const todayBadge = item.isToday ? '<span class="sp-badge">오늘</span>' : '';
-        spCard.innerHTML = `<div class="sp-thumb">${todayBadge}</div><div class="sp-caption"><span class="sp-date">${item.label}</span><i data-lucide="more-horizontal" class="sp-more-icon"></i></div>`;
+        const checkEl = selecting ? '<span class="sp-check"><i data-lucide="check" style="width:12px;height:12px;color:#fff;"></i></span>' : '';
+        spCard.innerHTML = `<div class="sp-thumb">${todayBadge}${checkEl}</div><div class="sp-caption"><span class="sp-date">${item.label}</span><i data-lucide="more-horizontal" class="sp-more-icon"></i></div>`;
         row.appendChild(spCard);
       }
       spContent.appendChild(row);
     }
 
-    if (showHiddenOnly && items.length === 0) {
+    if (showRemovedOnly && items.length === 0) {
       const empty = document.createElement('div');
       empty.className = 'sp-empty-msg';
-      empty.textContent = '숨긴 페이지가 없습니다';
+      empty.textContent = '빼놓은 페이지가 없습니다';
       spContent.appendChild(empty);
     }
     lucide.createIcons({ nodes: [spContent] });
@@ -3473,16 +3539,18 @@
     panelToggleBtn.classList.remove('panel-open');
   });
 
-  // ── 보기 전환: 목록 상단 고정 바의 페이지/숨김 태그 ──
+  // ── 보기 전환: 목록 상단 고정 바의 페이지/빼놓은 페이지 태그 ──
   // 노트 정보 줄(플래너 기간·설정)은 어느 보기에서든 항상 표시한다. 태그에 개수는 표시하지 않는다.
   const spViewTagBtns = document.querySelectorAll('.sp-view-tag');
   function applySpViewMode() {
     spViewTagBtns.forEach(b => b.classList.toggle('active', b.dataset.viewMode === spViewMode));
-    // 숨김 탭에서만 바 우측에 "자동 숨김" 진입점을 보여준다
-    document.getElementById('spAutoHideEntryBtn').style.display = spViewMode === 'hidden' ? '' : 'none';
+    // 바 우측 버튼은 상황별: 페이지 탭(선택 모드 아님) = "페이지 빼기", 빼놓은 페이지 탭 = "모두 다시 넣기"
+    document.getElementById('spRemoveModeBtn').style.display = (spViewMode === 'all' && !spSelectMode) ? '' : 'none';
+    document.getElementById('spRestoreAllBtn').style.display = (spViewMode === 'hidden' && !spSelectMode) ? '' : 'none';
   }
   function setSpViewMode(mode) {
     if (spViewMode === mode) return;
+    if (spSelectMode) exitRemoveSelectMode({ skipRebuild: true }); // 탭을 옮기면 선택 모드는 종료
     spViewMode = mode;
     applySpViewMode();
     sortPages();
@@ -3550,7 +3618,6 @@
   //    뜨며(중앙 타이틀 네비바 + ✕), 설정은 실시간 적용이라 완료 버튼 없이 ✕·딤 클릭으로 닫는다 ──
   const listSettingsBackdrop = document.getElementById('listSettingsBackdrop');
   const listSettingsPopup = document.getElementById('listSettingsPopup');
-  const slsAutoHideSwitch = document.getElementById('slsAutoHideSwitch');
   function closeListSettings() {
     listSettingsBackdrop.classList.remove('visible');
     listSettingsPopup.classList.remove('visible');
@@ -3563,27 +3630,123 @@
   listSettingsBackdrop.addEventListener('click', closeListSettings);
   document.getElementById('slsCloseBtn').addEventListener('click', closeListSettings);
 
-  // ── 자동 숨김 팝업: 숨김 탭 바 우측의 "자동 숨김" 진입점으로 연다. 바의 미니 스위치는
-  //    상태 표시용이고, 실제 적용은 이 팝업의 토글에서 실시간으로 한다 ──
-  const autoHideBackdrop = document.getElementById('autoHideBackdrop');
-  const autoHidePopup = document.getElementById('autoHidePopup');
-  const spAutoHideEntrySwitch = document.getElementById('spAutoHideEntrySwitch');
-  function closeAutoHidePopup() {
-    autoHideBackdrop.classList.remove('visible');
-    autoHidePopup.classList.remove('visible');
+  // ── 페이지 빼기 선택 모드 ──────────────────────────────────
+  // "페이지 빼기" 버튼 → 조건 프리셋 메뉴 → (해당 조건이 미리 체크된) 선택 모드 진입.
+  // 프리셋을 골라도 즉시 빼지 않고, 체크 상태를 확인·조정한 뒤 하단 CTA로 실행한다.
+
+  // 페이지 탭에 보이는(빼지 않은, 기간 안의) 카드들
+  function spRemovableCards() {
+    return Array.from(canvasZoomWrap.querySelectorAll('.card[data-canvas-state="with-date"]'))
+      .filter(c => !isCardRemoved(c) && !c.classList.contains('card-out-of-period'));
   }
-  document.getElementById('spAutoHideEntryBtn').addEventListener('click', () => {
-    autoHideBackdrop.classList.add('visible');
-    autoHidePopup.classList.add('visible');
+  function spChipMatches(chip, card) {
+    const t0 = new Date(); t0.setHours(0, 0, 0, 0);
+    if (chip === 'past') return parseCardDate(card) < t0;
+    if (chip === 'noRecord') return parseCardDate(card) < t0 && !cardHasRecord(card);
+    return false;
+  }
+
+  function updateSelUI() {
+    document.getElementById('spSelBar').style.display = spSelectMode ? '' : 'none';
+    document.getElementById('spViewTags').style.display = spSelectMode ? 'none' : '';
+    document.querySelectorAll('.sp-sel-chip').forEach(ch => ch.classList.toggle('active', !!spSelChips[ch.dataset.selChip]));
+    document.getElementById('spRemoveBar').hidden = !spSelectMode;
+    const cta = document.getElementById('spRemoveCtaBtn');
+    cta.disabled = spSelectedKeys.size === 0;
+    cta.textContent = spSelectedKeys.size ? `${spSelectedKeys.size}개 페이지 빼기` : '페이지 빼기';
+    applySpViewMode(); // 우측 텍스트 버튼(페이지 빼기/모두 다시 넣기) 표시 갱신
+  }
+
+  function enterRemoveSelectMode(preset = {}) {
+    if (spViewMode !== 'all') { spViewMode = 'all'; applySpViewMode(); }
+    spSelectMode = true;
+    spSelectedKeys.clear();
+    spSelChips.noRecord = !!preset.noRecord;
+    spSelChips.past = !!preset.past;
+    spRemovableCards().forEach(c => {
+      if ((spSelChips.noRecord && spChipMatches('noRecord', c)) ||
+          (spSelChips.past && spChipMatches('past', c))) {
+        spSelectedKeys.add(dateKey(parseCardDate(c)));
+      }
+    });
+    document.getElementById('sidePanel').classList.add('sp-selecting');
+    updateSelUI();
+    sortPages(); // rebuildPanel이 체크 서클과 미리 체크된 상태를 그린다
+  }
+  function exitRemoveSelectMode(opts = {}) {
+    spSelectMode = false;
+    spSelectedKeys.clear();
+    spSelChips.noRecord = false; spSelChips.past = false;
+    document.getElementById('sidePanel').classList.remove('sp-selecting');
+    updateSelUI();
+    if (!opts.skipRebuild) sortPages();
+  }
+  function toggleRemoveSelection(key) {
+    if (spSelectedKeys.has(key)) spSelectedKeys.delete(key);
+    else spSelectedKeys.add(key);
+    // 목록 전체를 다시 그리지 않고 해당 카드의 체크 표시만 토글
+    document.querySelectorAll(`.sp-card[data-date-key="${key}"]`).forEach(el =>
+      el.classList.toggle('sp-checked', spSelectedKeys.has(key)));
+    updateSelUI();
+  }
+
+  // "페이지 빼기" 버튼 → 조건 프리셋 오버레이 메뉴
+  const removePresetMenu = new OverlayMenu({
+    items: [
+      { lucideIcon: 'file-clock', label: '기록 없는 지난 페이지', onClick() { enterRemoveSelectMode({ noRecord: true }); } },
+      { lucideIcon: 'history', label: '지난 페이지 전체', onClick() { enterRemoveSelectMode({ past: true }); } },
+      { lucideIcon: 'square-check-big', label: '직접 선택', onClick() { enterRemoveSelectMode({}); } },
+    ]
   });
-  autoHideBackdrop.addEventListener('click', closeAutoHidePopup);
-  document.getElementById('autoHideCloseBtn').addEventListener('click', closeAutoHidePopup);
-  document.getElementById('slsAutoHideRow').addEventListener('click', () => {
-    spAutoHideNoRecord = !spAutoHideNoRecord;
-    slsAutoHideSwitch.classList.toggle('on', spAutoHideNoRecord);
-    slsAutoHideSwitch.setAttribute('aria-checked', String(spAutoHideNoRecord));
-    spAutoHideEntrySwitch.classList.toggle('on', spAutoHideNoRecord); // 진입점 미니 스위치도 동기화
-    sortPages();
+  document.getElementById('spRemoveModeBtn').addEventListener('click', (e) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    removePresetMenu.setTitle('어떤 페이지를 뺄까요?');
+    removePresetMenu.open(r.left + r.width / 2, r.bottom + 6);
+  });
+
+  // 선택 모드 바: 조건 칩(켜면 해당 조건 일괄 선택, 끄면 일괄 해제) + 취소
+  document.querySelectorAll('.sp-sel-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      const key = chip.dataset.selChip;
+      spSelChips[key] = !spSelChips[key];
+      spRemovableCards().forEach(c => {
+        if (spChipMatches(key, c)) {
+          const k = dateKey(parseCardDate(c));
+          if (spSelChips[key]) spSelectedKeys.add(k); else spSelectedKeys.delete(k);
+        }
+      });
+      updateSelUI();
+      sortPages(); // 체크 표시 일괄 갱신
+    });
+  });
+  document.getElementById('spSelCancelBtn').addEventListener('click', () => exitRemoveSelectMode());
+
+  // 하단 CTA → 확인 다이얼로그(UI 키트) → 실행
+  const removeConfirmDialog = new Dialog({
+    title: '페이지를 뺄까요?',
+    message: '빼놓은 페이지는 목록과 캔버스에서 빠지고, "빼놓은 페이지" 탭에서 언제든 다시 넣을 수 있어요.',
+    confirmLabel: '빼기',
+    cancelLabel: '취소',
+    onConfirm() {
+      const cards = spRemovableCards().filter(c => spSelectedKeys.has(dateKey(parseCardDate(c))));
+      exitRemoveSelectMode({ skipRebuild: true });
+      removePages(cards);
+    }
+  });
+  document.getElementById('spRemoveCtaBtn').addEventListener('click', () => {
+    if (!spSelectedKeys.size) return;
+    removeConfirmDialog.update({ title: `페이지 ${spSelectedKeys.size}개를 뺄까요?` });
+    removeConfirmDialog.open();
+  });
+
+  // 빼놓은 페이지 탭의 "모두 다시 넣기"
+  document.getElementById('spRestoreAllBtn').addEventListener('click', () => {
+    const removed = Array.from(canvasZoomWrap.querySelectorAll('.card[data-sp-hidden="true"]'));
+    if (!removed.length) return;
+    removed.forEach(c => { delete c.dataset.spHidden; });
+    sortPages(null);
+    if (window.__todayFabReady) window.watchTodayFab();
+    pageToast.show(`페이지 ${removed.length}개를 다시 넣었어요.`);
   });
 
   const premiumDialog = new Dialog({
@@ -3658,19 +3821,9 @@
     });
     outOfPeriodCards.forEach(c => canvasZoomWrap.appendChild(c));
 
-    // "기록 없는 날 자동 숨기기": 오늘 이전 + 기록 없음 + 수동 숨김/복원 예외(data-sp-keep)가
-    // 아닌 카드에 data-auto-hidden을 매긴다. 스위치를 끄면 속성이 걷혀 즉시 다시 보인다.
-    const autoCutoff = new Date(); autoCutoff.setHours(0, 0, 0, 0);
-    datedCards.forEach(c => {
-      const auto = spAutoHideNoRecord
-        && c.dataset.spHidden !== 'true' && c.dataset.spKeep !== 'true'
-        && parseCardDate(c) < autoCutoff && !cardHasRecord(c);
-      if (auto) c.dataset.autoHidden = 'true'; else delete c.dataset.autoHidden;
-    });
-
     const orderedEls = datedCards.slice();
-    // 숨긴 페이지(수동·자동)는 캔버스에서 display:none이므로 배너는 보이는 카드 사이에만 끼운다
-    const visibleEls = orderedEls.filter(el => !isCardHiddenAny(el));
+    // 빼놓은 페이지는 캔버스에서 display:none이므로 배너는 보이는 카드 사이에만 끼운다
+    const visibleEls = orderedEls.filter(el => !isCardRemoved(el));
     const lastVisibleEl = visibleEls[visibleEls.length - 1] || null;
 
     // revealBanners가 true면(새 페이지가 막 추가된 경우) 새로 만든 배너를 여기서 즉시
@@ -3678,9 +3831,9 @@
     // 이미 숨겨진 상태로 스타일이 확정되어야 "1→0" 깜빡임 없이 깔끔하게 시작한다
     const newBanners = [];
     // 보이는 카드는 "장면" 하나로 감싼다 — 카드 + (마지막이 아니면) 아래 광고 배너가 한 장면.
-    // 숨긴 카드는 장면 없이 직계 자식으로 붙인다(display:none이라 레이아웃에 안 낀다).
+    // 빼놓은 카드는 장면 없이 직계 자식으로 붙인다(display:none이라 레이아웃에 안 낀다).
     orderedEls.forEach(el => {
-      if (isCardHiddenAny(el)) { canvasZoomWrap.appendChild(el); return; }
+      if (isCardRemoved(el)) { canvasZoomWrap.appendChild(el); return; }
       const scene = document.createElement('div');
       scene.className = 'canvas-scene';
       const fit = document.createElement('div');
@@ -3726,9 +3879,9 @@
 
   // ── Thumbnail renderer ────────────────────────────────────
   function renderThumb(card, thumbEl) {
-    // .sp-thumb 안의 "오늘" 뱃지는 새로 그린 카드 스냅샷에 지워지지/가려지지 않도록 떼어뒀다가
-    // 스냅샷 위에 다시 얹는다(뱃지가 카드 클론보다 나중에 붙어야 위로 보인다)
-    const badge = thumbEl.querySelector('.sp-badge');
+    // .sp-thumb 안의 "오늘" 뱃지·선택 체크 서클은 새로 그린 카드 스냅샷에 지워지지/가려지지
+    // 않도록 떼어뒀다가 스냅샷 위에 다시 얹는다(클론보다 나중에 붙어야 위로 보인다)
+    const overlays = Array.from(thumbEl.querySelectorAll('.sp-badge, .sp-check'));
     thumbEl.innerHTML = '';
     const cardW = 600, cardH = 800;
     const thumbW = thumbEl.offsetWidth || 70;
@@ -3756,7 +3909,7 @@
       'pointer-events:none;box-shadow:none;border-radius:0;margin:0'
     ].join(';');
     thumbEl.appendChild(clone);
-    if (badge) thumbEl.appendChild(badge);
+    overlays.forEach(el => thumbEl.appendChild(el));
   }
 
   function updateAllThumbs() {
@@ -3838,17 +3991,22 @@
       if (!card) return;
       activePageCard = card;
       const r = moreIcon.getBoundingClientRect();
-      // 숨긴 페이지(수동·자동)에는 복원 메뉴를, 일반 페이지에는 숨김/속지 변경 메뉴를 띄운다
-      const menu = isCardHiddenAny(card) ? hiddenPageMenu : pageMenu;
+      // 빼놓은 페이지에는 다시 넣기 메뉴를, 일반 페이지에는 빼기/속지 변경 메뉴를 띄운다
+      const menu = isCardRemoved(card) ? hiddenPageMenu : pageMenu;
       menu.open(r.left + r.width / 2, r.top, { above: true });
       return;
     }
 
     const pageCard = e.target.closest('.sp-card[data-date-key]');
     if (pageCard) {
+      // 선택 모드: 카드 탭 = 캔버스 이동이 아니라 빼기 대상 체크 토글
+      if (spSelectMode && spViewMode === 'all') {
+        toggleRemoveSelection(pageCard.dataset.dateKey);
+        return;
+      }
       const card = findCardByDateKey(pageCard.dataset.dateKey);
-      // 숨긴 페이지(수동·자동)는 캔버스에 없으므로(display:none) 스크롤 이동하지 않는다
-      if (!card || isCardHiddenAny(card)) return;
+      // 빼놓은 페이지는 캔버스에 없으므로(display:none) 스크롤 이동하지 않는다
+      if (!card || isCardRemoved(card)) return;
       document.querySelectorAll('.sp-card').forEach(t => t.classList.remove('sp-selected'));
       pageCard.classList.add('sp-selected');
       const idx = Array.from(canvasScroll.querySelectorAll('.card')).indexOf(card);
@@ -3951,9 +4109,9 @@
   const pageMenu = new OverlayMenu({
     items: [
       {
-        lucideIcon: 'eye-off',
-        label: '페이지 숨김',
-        onClick() { openHideConfirm(); }
+        lucideIcon: 'file-minus',
+        label: '페이지 빼기',
+        onClick() { removeOneDialog.open(); }
       },
       {
         lucideIcon: 'file-stack',
@@ -3963,57 +4121,64 @@
     ]
   });
 
-  // 숨김 탭의 sp-card 더보기(…)에서 열리는 메뉴 — 복원만 제공한다
+  // 빼놓은 페이지 탭의 sp-card 더보기(…)에서 열리는 메뉴 — 다시 넣기만 제공한다
   const hiddenPageMenu = new OverlayMenu({
     items: [
       {
-        lucideIcon: 'eye',
-        label: '페이지 복원',
+        lucideIcon: 'file-plus',
+        label: '다시 넣기',
         onClick() {
           const card = activePageCard;
           activePageCard = null;
-          restorePage(card);
+          reinsertPage(card);
         }
       }
     ]
   });
 
-  // 삭제 대신 숨김 — 카드를 DOM에서 지우지 않고 data-sp-hidden으로 표시만 해서
-  // 캔버스·전체 목록에서 감추고, 필터 바의 "숨김" 탭에서 언제든 복원할 수 있게 한다.
-  // 날짜는 계속 사용 중(takenDates 유지) — 페이지가 사라진 게 아니라 감춰진 것이기 때문.
-  function hidePage(card) {
-    if (!card) return;
-    card.dataset.spHidden = 'true';
+  // 삭제 대신 빼기 — 카드를 DOM에서 지우지 않고 data-sp-hidden으로 표시만 해서
+  // 캔버스·페이지 목록에서 빼내고, "빼놓은 페이지" 탭에서 언제든 다시 넣을 수 있게 한다.
+  // 날짜는 계속 사용 중(takenDates 유지) — 페이지가 사라진 게 아니라 따로 보관 중이기 때문.
+  function removePages(cards) {
+    if (!cards || !cards.length) return;
+    cards.forEach(c => { c.dataset.spHidden = 'true'; });
     sortPages(null);
     if (window.__todayFabReady) window.watchTodayFab();
-    pageToast.show('페이지를 숨겼습니다. "숨김" 탭에서 복원할 수 있습니다.');
+    const removed = cards.slice();
+    pageToast.show(
+      removed.length === 1 ? '페이지 1개를 뺐어요' : `페이지 ${removed.length}개를 뺐어요`,
+      3600,
+      {
+        actionLabel: '되돌리기',
+        onAction() {
+          removed.forEach(c => { delete c.dataset.spHidden; });
+          sortPages(null);
+          if (window.__todayFabReady) window.watchTodayFab();
+        }
+      }
+    );
   }
 
-  function restorePage(card) {
+  function reinsertPage(card) {
     if (!card) return;
     delete card.dataset.spHidden;
-    // 자동 숨김 규칙에 걸리는 카드는 복원 직후 다시 숨겨지므로, 예외(keep)를 남겨 규칙에서 뺀다
-    const t0 = new Date(); t0.setHours(0, 0, 0, 0);
-    if (spAutoHideNoRecord && parseCardDate(card) < t0 && !cardHasRecord(card)) card.dataset.spKeep = 'true';
-    delete card.dataset.autoHidden;
     sortPages(null);
     if (window.__todayFabReady) window.watchTodayFab();
-    pageToast.show('페이지가 복원되었습니다.');
+    pageToast.show('페이지를 다시 넣었어요.');
   }
 
-  const hideDialog = new Dialog({
-    title: '페이지를 숨기시겠습니까?',
-    message: '숨긴 페이지는 목록과 캔버스에 표시되지 않습니다. 패널의 "숨김" 탭에서 언제든 복원할 수 있습니다.',
-    confirmLabel: '숨김',
+  // 더보기 메뉴에서 페이지 하나를 뺄 때의 확인 다이얼로그
+  const removeOneDialog = new Dialog({
+    title: '이 페이지를 뺄까요?',
+    message: '빼놓은 페이지는 목록과 캔버스에서 빠지고, "빼놓은 페이지" 탭에서 언제든 다시 넣을 수 있어요.',
+    confirmLabel: '빼기',
     cancelLabel: '취소',
     onConfirm: () => {
       const card = activePageCard;
       activePageCard = null;
-      hidePage(card);
+      removePages(card ? [card] : []);
     }
   });
-
-  function openHideConfirm() { hideDialog.open(); }
 
   canvasScroll.addEventListener('click', e => {
     // ── + 버튼: 빈 행 없으면 추가 ─────────────────────
@@ -5139,7 +5304,7 @@
     const t = new Date();
     // 숨긴 페이지(수동·자동)는 캔버스에 없으므로(display:none) 이동 대상에서 제외한다
     return Array.from(canvasZoomWrap.querySelectorAll('.card[data-canvas-state="with-date"]'))
-      .find(c => !isCardHiddenAny(c) && parseCardDate(c).toDateString() === t.toDateString()) || null;
+      .find(c => !isCardRemoved(c) && parseCardDate(c).toDateString() === t.toDateString()) || null;
   }
   todayFabBtn.addEventListener('click', () => {
     const el = getTodayCardEl();
