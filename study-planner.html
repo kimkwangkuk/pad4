@@ -2795,7 +2795,8 @@
     <!-- SIDE PANEL (sibling of main-area, so it doesn't scroll with canvas) -->
     <div class="sp-panel" id="sidePanel">
       <div class="sp-header">
-        <span class="sp-header-spacer" id="spHeaderSpacerLeft">구매</span>
+        <!-- 타이틀 왼쪽 "선택" 버튼 → 페이지 빼기 선택 모드 진입. 페이지 탭에서만 보인다 -->
+        <button class="sp-header-select-btn" id="spSelectModeBtn" type="button">선택</button>
         <span class="sp-header-title" id="spHeaderTitle">페이지</span>
         <!-- 패널 닫기 버튼. 패널 우측 상단 고정 위치라 스크롤해도 항상 같은 자리 -->
         <button class="sp-panel-close-btn" id="spPanelCloseBtn" type="button" aria-label="패널 닫기">
@@ -2817,7 +2818,6 @@
             <button class="sp-view-tag active" data-view-mode="all" type="button">페이지</button>
             <button class="sp-view-tag" data-view-mode="hidden" type="button">빼놓은 페이지</button>
           </div>
-          <button class="sp-bar-action" id="spRemoveModeBtn" type="button">페이지 빼기</button>
           <button class="sp-bar-action" id="spRestoreAllBtn" type="button" style="display:none;">모두 다시 넣기</button>
           <div class="sp-sel-bar" id="spSelBar" style="display:none;">
             <button class="sp-sel-chip" id="spSelNoRecordChip" type="button">기록 없는 과거 페이지</button>
@@ -3613,8 +3613,8 @@
   const spViewTagBtns = document.querySelectorAll('.sp-view-tag');
   function applySpViewMode() {
     spViewTagBtns.forEach(b => b.classList.toggle('active', b.dataset.viewMode === spViewMode));
-    // 바 우측 버튼은 상황별: 페이지 탭(선택 모드 아님) = "페이지 빼기", 빼놓은 페이지 탭 = "모두 다시 넣기"
-    document.getElementById('spRemoveModeBtn').style.display = (spViewMode === 'all' && !spSelectMode) ? '' : 'none';
+    // 헤더 "선택" 버튼은 페이지 탭 & 선택 모드 아닐 때만 / 필터바 "모두 다시 넣기"는 빼놓은 페이지 탭
+    document.getElementById('spSelectModeBtn').hidden = !(spViewMode === 'all' && !spSelectMode);
     document.getElementById('spRestoreAllBtn').style.display = (spViewMode === 'hidden' && !spSelectMode) ? '' : 'none';
   }
   function setSpViewMode(mode) {
@@ -3761,8 +3761,8 @@
     updateSelUI();
   }
 
-  // "페이지 빼기" 버튼 — 팝업 없이 바로 선택 모드로 들어간다
-  document.getElementById('spRemoveModeBtn').addEventListener('click', () => enterRemoveSelectMode());
+  // 헤더 "선택" 버튼 — 팝업 없이 바로 페이지 빼기 선택 모드로 들어간다
+  document.getElementById('spSelectModeBtn').addEventListener('click', () => enterRemoveSelectMode());
 
   // "기록 없는 페이지" 태그 — 켜면 해당 페이지들만 선택, 끄면 선택 해제
   document.getElementById('spSelNoRecordChip').addEventListener('click', () => {
@@ -4012,7 +4012,6 @@
     // 노트를 전환하면 보기 모드를 "페이지"로 되돌린다 — 타이틀·노트 정보 줄 표시도 함께 복구
     spViewMode = 'all';
     applySpViewMode();
-    document.getElementById('spHeaderSpacerLeft').textContent = '구매';
     // 이 탭에 아직 카드가 없으면(처음 여는 노트) 그 노트 종류(kind)에 맞는 페이지를 만들어둔다.
     // ensurePagesForPeriod가 카드를 만들면 내부에서 sortPages를 부르고, 아니면 여기서 부른다.
     const activeTab = document.querySelector('.tab.active');
@@ -4071,6 +4070,37 @@
 
   // Start centered on the last (most recent) page
   scrollToCard(canvasScroll.querySelectorAll('.card').length - 1, false);
+
+  // ── 캔버스 스크롤 → 화면 중앙 페이지에 포커스 ──
+  // 스크롤 위치의 페이지(화면 중앙에 가장 가까운 장면)를 감지해 패널에서 그 카드를 강조하고
+  // 목록도 그 카드가 보이도록 맞춘다. 선택 모드·빼놓은 페이지 탭에서는 비활성화한다.
+  let focusScrollRaf = null;
+  function focusScrolledPage() {
+    if (spSelectMode || spViewMode === 'hidden') return;
+    const areaRect = mainArea.getBoundingClientRect();
+    const centerY = areaRect.top + areaRect.height / 2;
+    let best = null, bestDist = Infinity;
+    canvasZoomWrap.querySelectorAll('.canvas-scene').forEach(scene => {
+      const card = scene.querySelector('.card');
+      if (!card) return;
+      const r = scene.getBoundingClientRect();
+      const d = Math.abs((r.top + r.height / 2) - centerY);
+      if (d < bestDist) { bestDist = d; best = card; }
+    });
+    if (!best) return;
+    const key = dateKey(parseCardDate(best));
+    let panelCard = null;
+    document.querySelectorAll('.sp-card').forEach(c => {
+      const on = c.dataset.dateKey === key;
+      c.classList.toggle('sp-selected', on);
+      if (on) panelCard = c;
+    });
+    if (panelCard) panelCard.scrollIntoView({ block: 'nearest' });
+  }
+  mainArea.addEventListener('scroll', () => {
+    if (focusScrollRaf) return;
+    focusScrollRaf = requestAnimationFrame(() => { focusScrollRaf = null; focusScrolledPage(); });
+  }, { passive: true });
 
   // ── Side panel: single delegation handler (works for dynamic cards too) ──
   function findCardByDateKey(key) {
