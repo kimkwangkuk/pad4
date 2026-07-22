@@ -3739,7 +3739,10 @@
   function updateSelUI() {
     document.getElementById('spSelBar').style.display = spSelectMode ? '' : 'none';
     document.getElementById('spViewTags').style.display = spSelectMode ? 'none' : '';
-    document.getElementById('spSelNoRecordChip').classList.toggle('active', spSelNoRecordOn);
+    const noRecordCount = spRemovableCards().filter(spIsNoRecordPast).length;
+    const chip = document.getElementById('spSelNoRecordChip');
+    chip.textContent = `기록 없는 페이지 ${noRecordCount}`;
+    chip.classList.toggle('active', spSelNoRecordOn);
     document.getElementById('spRemoveBar').hidden = !spSelectMode;
     const cta = document.getElementById('spRemoveCtaBtn');
     cta.disabled = spSelectedKeys.size === 0;
