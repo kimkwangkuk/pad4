@@ -929,39 +929,26 @@
       font-family: 'Pretendard', sans-serif; font-size: 12px; font-weight: 500;
       color: rgba(0,0,0,0.35); letter-spacing: -0.036px;
     }
-    /* ─── SIDE PANEL: 빼놓은 페이지 더미(pile) ───────────
-       리스트 대신 한곳에 뭉쳐있는 종이 더미 — 탭한 페이지가 맨 앞으로 스르륵 올라온다 */
-    .sp-pile-wrap {
-      display: flex; flex-direction: column; align-items: center;
-      padding: 28px 0 8px; gap: 16px;
-    }
-    .sp-pile {
+    /* ─── CANVAS: 빼놓은 페이지 더미(pile) ───────────
+       빼놓은 페이지 탭에서 캔버스에 뺀 페이지들이 한곳에 쌓인 종이 더미로 보인다.
+       탭한 페이지가 맨 앞으로 스르륵 올라온다. 안 뺀 카드는 캔버스에서 숨긴다. */
+    .canvas-zoom-wrap.viewing-removed > .card { display: none; }
+    .canvas-pile {
       position: relative;
-      width: 170px;
-      aspect-ratio: 133 / 177.658;
+      width: 600px; height: 800px;
     }
-    .sp-pile-card {
-      position: absolute; inset: 0;
+    .canvas-pile > .card {
+      position: absolute; top: 0; left: 0;
+      margin: 0;
       cursor: pointer;
-      transition: transform 0.28s cubic-bezier(0.34, 1.2, 0.64, 1);
+      box-shadow: 0 8px 30px rgba(0,0,0,0.16);
+      transition: transform 0.3s cubic-bezier(0.34, 1.2, 0.64, 1);
       -webkit-tap-highlight-color: transparent;
     }
-    .sp-pile-card .sp-thumb {
-      width: 100%; height: 100%;
-      box-shadow: 0 3px 12px rgba(0,0,0,0.14);
-    }
-    .sp-pile-caption {
-      font-family: 'Pretendard', sans-serif; font-size: 12px; font-weight: 600;
-      color: rgba(0,0,0,0.6); letter-spacing: -0.036px;
-    }
-    .sp-pile-restore-btn {
-      height: 34px; padding: 0 16px;
-      background: rgba(0,0,0,0.86); border: none; border-radius: 999px;
-      font-family: 'Pretendard', sans-serif; font-size: 12px; font-weight: 600;
-      color: #fff; letter-spacing: -0.036px;
-      cursor: pointer; transition: background 0.12s;
-    }
-    .sp-pile-restore-btn:hover { background: rgba(0,0,0,0.72); }
+    /* 더미 안 카드는 편집 대상이 아니라 "집어 올리는" 종이 — 내부 요소 클릭을 막고 카드 전체가 클릭된다 */
+    .canvas-pile > .card * { pointer-events: none; }
+    /* pile 안에서는 빼놓음(display:none) 규칙을 무시하고 항상 보이게 한다 */
+    .canvas-pile > .card[data-sp-hidden="true"] { display: block; }
     /* 패널 고정 헤더 우측 상단의 패널 닫기(X) 버튼 */
     .sp-panel-close-btn {
       width: 26px; height: 26px; flex-shrink: 0;
@@ -3478,39 +3465,39 @@
   const spSelectedKeys = new Set();
 
   // ── 빼놓은 페이지 더미(pile) 순서 ──
-  // 빼놓은 페이지 탭은 리스트가 아니라 한곳에 뭉쳐있는 종이 더미로 보여준다.
-  // 배열의 마지막 원소가 맨 앞(위)에 보이는 페이지 — 카드를 탭하면 맨 뒤로 옮겨 맨 앞에 온다.
+  // 빼놓은 페이지 탭에서는 캔버스에 뺀 페이지들이 한곳에 뭉쳐있는 종이 더미로 보인다.
+  // spPileOrder의 마지막 원소가 맨 앞(위)에 보이는 페이지 — 패널·캔버스에서 카드를 탭하면
+  // 그 페이지를 맨 뒤로 옮겨(=맨 앞으로) 스르륵 올라오게 한다. 원소는 dateKey.
   let spPileOrder = [];
-  // 더미 속 페이지들의 흐트러진 각도/어긋남 — 인덱스 기반이라 다시 그려도 모양이 유지된다
-  const SP_PILE_ROTS = [-7, 5, -3, 8, -5, 2, 6, -8, 3, -2];
-  const SP_PILE_OFFS = [[-4, 3], [5, -2], [-2, -4], [3, 4], [-5, -1], [2, 2], [4, -3], [-3, 1], [1, -2], [-1, 4]];
+  // 더미 속 페이지들의 흐트러진 각도/어긋남(캔버스는 600x800 풀사이즈라 오프셋을 크게) —
+  // 인덱스 기반이라 다시 그려도 모양이 유지된다
+  const SP_PILE_ROTS = [-6, 4, -3, 7, -5, 2, 5, -7, 3, -2];
+  const SP_PILE_OFFS = [[-26, 20], [30, -14], [-14, -28], [22, 26], [-32, -8], [14, 14], [26, -22], [-20, 8], [8, -16], [-8, 28]];
   function spPileTransform(i, total) {
     // 맨 앞 페이지는 똑바로, 뒤에 깔린 페이지들은 살짝 돌아가고 어긋난 채 뭉쳐 있다
     if (i === total - 1) return 'translate(0, 0) rotate(0deg)';
     const o = SP_PILE_OFFS[i % SP_PILE_OFFS.length];
     return `translate(${o[0]}px, ${o[1]}px) rotate(${SP_PILE_ROTS[i % SP_PILE_ROTS.length]}deg)`;
   }
-  function spPileLabelFromKey(key) {
-    const parts = key.split('-'); // "2026-7-15" → "7/15"
-    return `${parts[1]}/${parts[2]}`;
-  }
   function spPileFrontKey() { return spPileOrder[spPileOrder.length - 1] || null; }
-  // 탭한 페이지를 더미 맨 앞으로 — DOM을 다시 만들지 않고 transform/z-index만 바꿔 스르륵 올라오게 한다
+  // 탭한 페이지를 캔버스 더미 맨 앞으로 — DOM을 다시 만들지 않고 transform/z-index만 바꿔 스르륵 올라온다
   function spPileBringToFront(key) {
     const idx = spPileOrder.indexOf(key);
     if (idx === -1 || idx === spPileOrder.length - 1) return;
     spPileOrder.splice(idx, 1);
     spPileOrder.push(key);
-    const pile = document.querySelector('.sp-pile');
+    const pile = document.querySelector('.canvas-pile');
     if (!pile) { sortPages(); return; }
     spPileOrder.forEach((k, i) => {
-      const el = pile.querySelector(`.sp-pile-card[data-date-key="${k}"]`);
+      const el = pile.querySelector(`.card[data-pile-key="${k}"]`);
       if (!el) return;
       el.style.zIndex = i + 1;
       el.style.transform = spPileTransform(i, spPileOrder.length);
     });
-    const caption = document.querySelector('.sp-pile-caption');
-    if (caption) caption.textContent = `${spPileLabelFromKey(key)} · 빼놓은 페이지 ${spPileOrder.length}장`;
+    // 패널에서 현재 맨 앞 페이지를 강조 표시
+    document.querySelectorAll('.sp-card').forEach(c => c.classList.remove('sp-selected'));
+    const frontPanelCard = document.querySelector(`.sp-card[data-date-key="${key}"]`);
+    if (frontPanelCard) frontPanelCard.classList.add('sp-selected');
   }
 
   // 사이드 패널 = "노트 기간"(시작일~종료일) 안의 날짜를 하루 단위로 나열한 목록 — 기간의 모든
@@ -3546,60 +3533,20 @@
       cursor.setDate(cursor.getDate() + 1);
     }
 
-    // 빼놓은 페이지 탭: 리스트가 아니라 한곳에 뭉쳐있는 종이 더미로 그린다.
-    // 탭한 페이지가 맨 앞(위)으로 올라오고, 아래 캡션에 맨 앞 페이지의 날짜와 전체 장수를 보여준다.
-    if (showRemovedOnly) {
-      if (items.length === 0) {
-        const empty = document.createElement('div');
-        empty.className = 'sp-empty-msg';
-        empty.textContent = '빼놓은 페이지가 없습니다';
-        spContent.appendChild(empty);
-        lucide.createIcons({ nodes: [spContent] });
-        return;
-      }
-      // 더미 순서 유지: 사라진 키는 걷어내고 새 키는 뒤(=맨 앞)에 붙인다
-      const keys = items.map(it => dateKey(parseCardDate(it.card)));
-      spPileOrder = spPileOrder.filter(k => keys.includes(k));
-      keys.forEach(k => { if (!spPileOrder.includes(k)) spPileOrder.push(k); });
-
-      const wrap = document.createElement('div');
-      wrap.className = 'sp-pile-wrap';
-      const pile = document.createElement('div');
-      pile.className = 'sp-pile';
-      spPileOrder.forEach((k, i) => {
-        const spCard = document.createElement('div');
-        spCard.className = 'sp-card sp-pile-card';
-        spCard.dataset.dateKey = k;
-        spCard.style.zIndex = i + 1;
-        spCard.style.transform = spPileTransform(i, spPileOrder.length);
-        spCard.innerHTML = '<div class="sp-thumb"></div>';
-        pile.appendChild(spCard);
-      });
-      wrap.appendChild(pile);
-
-      const caption = document.createElement('div');
-      caption.className = 'sp-pile-caption';
-      caption.textContent = `${spPileLabelFromKey(spPileFrontKey())} · 빼놓은 페이지 ${items.length}장`;
-      wrap.appendChild(caption);
-
-      // 맨 앞에 보이는 페이지를 다시 넣는다 — 클릭 시점의 맨 앞 페이지를 읽는다
-      const restoreBtn = document.createElement('button');
-      restoreBtn.type = 'button';
-      restoreBtn.className = 'sp-pile-restore-btn';
-      restoreBtn.textContent = '이 페이지 다시 넣기';
-      restoreBtn.addEventListener('click', () => {
-        const front = spPileFrontKey();
-        if (front) reinsertPage(findCardByDateKey(front));
-      });
-      wrap.appendChild(restoreBtn);
-
-      spContent.appendChild(wrap);
+    // 빼놓은 페이지 탭도 페이지 탭과 동일하게 2열 그리드로 나열한다. 다만 캔버스에서는
+    // 빼놓은 페이지들이 한곳에 쌓인 종이 더미로 보이며(sortPages), 패널 카드를 탭하면
+    // 캔버스 더미에서 그 페이지가 맨 앞으로 올라온다.
+    if (showRemovedOnly && items.length === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'sp-empty-msg';
+      empty.textContent = '빼놓은 페이지가 없습니다';
+      spContent.appendChild(empty);
       lucide.createIcons({ nodes: [spContent] });
       return;
     }
 
     // 날짜 카드를 2열 행으로 바로 그린다 — 월 단위 그루핑 없이 기간 전체가 하나의 목록
-    const selecting = spSelectMode;
+    const selecting = spSelectMode && !showRemovedOnly;
     for (let i = 0; i < items.length; i += 2) {
       const row = document.createElement('div');
       row.className = 'sp-row';
@@ -3875,10 +3822,15 @@
     datedCards.sort((a, b) => parseCardDate(a) - parseCardDate(b));
     canvasZoomWrap.querySelectorAll('.canvas-ad-banner, .canvas-end-ui').forEach(b => b.remove());
     // 이전 장면(.canvas-scene) 래퍼 해체 — 카드를 다시 직계 자식으로 꺼내고 래퍼는 버린다.
-    // 아래에서 보이는 카드들만 새 장면으로 다시 감싼다.
+    // 더미(.canvas-pile)에 있던 카드는 겹침용 transform/z-index/pile 표시를 걷어낸다.
     canvasZoomWrap.querySelectorAll('.canvas-scene').forEach(scene => {
       const inner = scene.querySelectorAll('.card');
-      inner.forEach(el => canvasZoomWrap.insertBefore(el, scene));
+      inner.forEach(el => {
+        el.style.transform = '';
+        el.style.zIndex = '';
+        delete el.dataset.pileKey;
+        canvasZoomWrap.insertBefore(el, scene);
+      });
       scene.remove();
     });
 
@@ -3897,6 +3849,37 @@
       return inPeriod;
     });
     outOfPeriodCards.forEach(c => canvasZoomWrap.appendChild(c));
+
+    // ── 빼놓은 페이지 탭: 캔버스에 뺀 페이지들을 한곳에 쌓인 종이 더미로 보여준다 ──
+    // (안 뺀 카드는 .viewing-removed 규칙으로 캔버스에서 숨긴다)
+    canvasZoomWrap.classList.toggle('viewing-removed', spViewMode === 'hidden');
+    if (spViewMode === 'hidden') {
+      const removed = datedCards.filter(c => isCardRemoved(c));
+      const keys = removed.map(c => dateKey(parseCardDate(c)));
+      spPileOrder = spPileOrder.filter(k => keys.includes(k));
+      keys.forEach(k => { if (!spPileOrder.includes(k)) spPileOrder.push(k); });
+
+      if (removed.length) {
+        const scene = document.createElement('div'); scene.className = 'canvas-scene';
+        const fit = document.createElement('div'); fit.className = 'scene-fit';
+        const pile = document.createElement('div'); pile.className = 'canvas-pile';
+        spPileOrder.forEach((k, i) => {
+          const card = removed.find(c => dateKey(parseCardDate(c)) === k);
+          if (!card) return;
+          card.dataset.pileKey = k;
+          card.style.zIndex = i + 1;
+          card.style.transform = spPileTransform(i, spPileOrder.length);
+          pile.appendChild(card);
+        });
+        fit.appendChild(pile);
+        scene.appendChild(fit);
+        canvasZoomWrap.appendChild(scene);
+      }
+      updateSceneScale();
+      rebuildPanel(datedCards, selectedCard);
+      setTimeout(updateAllThumbs, 50);
+      return [];
+    }
 
     const orderedEls = datedCards.slice();
     // 빼놓은 페이지는 캔버스에서 display:none이므로 배너는 보이는 카드 사이에만 끼운다
@@ -4078,8 +4061,8 @@
 
     const pageCard = e.target.closest('.sp-card[data-date-key]');
     if (pageCard) {
-      // 빼놓은 페이지 더미: 카드 탭 = 그 페이지를 더미 맨 앞으로
-      if (pageCard.classList.contains('sp-pile-card')) {
+      // 빼놓은 페이지 탭: 패널 카드 탭 = 캔버스 더미에서 그 페이지를 맨 앞으로 올린다
+      if (spViewMode === 'hidden') {
         spPileBringToFront(pageCard.dataset.dateKey);
         return;
       }
@@ -4096,6 +4079,12 @@
       const idx = Array.from(canvasScroll.querySelectorAll('.card')).indexOf(card);
       scrollToCard(idx, true);
     }
+  });
+
+  // 캔버스 더미 카드 탭 = 그 페이지를 맨 앞으로 (내부 편집 요소는 pointer-events:none이라 카드 전체가 잡힘)
+  canvasZoomWrap.addEventListener('click', e => {
+    const pileCard = e.target.closest('.canvas-pile > .card');
+    if (pileCard && pileCard.dataset.pileKey) spPileBringToFront(pileCard.dataset.pileKey);
   });
 
   // ── Date picker (event delegation on canvas) ──────────────
