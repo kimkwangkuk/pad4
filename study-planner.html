@@ -4073,9 +4073,12 @@
   scrollToCard(canvasScroll.querySelectorAll('.card').length - 1, false);
 
   // ── Side panel: single delegation handler (works for dynamic cards too) ──
+  // 활성 탭 소유 카드만 찾는다 — 다른 탭(예: 데일리)에 같은 날짜 카드가 있어도 이 노트의
+  // 카드를 반환해야 썸네일·이동·빼기가 현재 노트 종류(위클리/먼슬리)와 일치한다.
   function findCardByDateKey(key) {
+    const activeTabId = document.querySelector('.tab.active')?.dataset.tabId;
     return Array.from(canvasScroll.querySelectorAll('.card[data-canvas-state="with-date"]'))
-      .find(c => dateKey(parseCardDate(c)) === key);
+      .find(c => c.dataset.ownerTab === activeTabId && dateKey(parseCardDate(c)) === key);
   }
 
   document.querySelector('.sp-content').addEventListener('click', e => {
