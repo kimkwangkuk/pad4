@@ -865,14 +865,22 @@
       -webkit-tap-highlight-color: transparent;
     }
     .sp-bar-action:hover { color: rgba(0,0,0,0.86); }
-    /* 선택 모드 바: 타이틀 + 취소 */
+    /* 선택 모드 바: "기록 없는 페이지" 태그(누르면 해당 페이지들만 선택) + 취소 */
     .sp-sel-bar {
       flex: 1; min-width: 0;
       display: flex; align-items: center; gap: 6px;
     }
-    .sp-sel-title {
-      font-family: 'Pretendard', sans-serif; font-size: 12px; font-weight: 600;
-      color: rgba(0,0,0,0.7); letter-spacing: -0.036px; white-space: nowrap;
+    .sp-sel-chip {
+      padding: 5px 12px; border-radius: 999px;
+      background: none; border: 1px solid rgba(0,0,0,0.18);
+      font-family: 'Pretendard', sans-serif; font-size: 12px; font-weight: 500;
+      color: rgba(0,0,0,0.55); letter-spacing: -0.036px;
+      cursor: pointer; white-space: nowrap;
+      transition: background 0.12s, color 0.12s, border-color 0.12s;
+    }
+    .sp-sel-chip.active {
+      background: rgba(0,0,0,0.86); border-color: rgba(0,0,0,0.86);
+      color: white; font-weight: 600;
     }
     /* 선택 모드: 썸네일 우측 상단 체크 서클 — 카드 탭으로 토글 */
     .sp-check {
@@ -2761,7 +2769,7 @@
           <button class="sp-bar-action" id="spRemoveModeBtn" type="button">페이지 빼기</button>
           <button class="sp-bar-action" id="spRestoreAllBtn" type="button" style="display:none;">모두 다시 넣기</button>
           <div class="sp-sel-bar" id="spSelBar" style="display:none;">
-            <span class="sp-sel-title">빼놓을 페이지 선택</span>
+            <button class="sp-sel-chip" id="spSelNoRecordChip" type="button">기록 없는 페이지</button>
             <button class="sp-bar-action" id="spSelCancelBtn" type="button">취소</button>
           </div>
         </div>
@@ -3597,24 +3605,27 @@
   document.getElementById('slsCloseBtn').addEventListener('click', closeListSettings);
 
   // ── 페이지 빼기 선택 모드 ──────────────────────────────────
-  // "페이지 빼기" 버튼 → 조건 프리셋 메뉴 → (해당 조건이 미리 체크된) 선택 모드 진입.
-  // 프리셋을 골라도 즉시 빼지 않고, 체크 상태를 확인·조정한 뒤 하단 CTA로 실행한다.
+  // "페이지 빼기" 버튼 → 팝업 없이 바로 선택 모드 진입. 선택 모드 안의 "기록 없는 페이지"
+  // 태그로 해당 페이지들만 일괄 선택할 수 있고, 카드를 개별 탭해서 자유롭게 조정한 뒤
+  // 하단 CTA(선택 개수 표시)로 실행한다.
 
   // 페이지 탭에 보이는(빼지 않은, 기간 안의) 카드들
   function spRemovableCards() {
     return Array.from(canvasZoomWrap.querySelectorAll('.card[data-canvas-state="with-date"]'))
       .filter(c => !isCardRemoved(c) && !c.classList.contains('card-out-of-period'));
   }
-  function spChipMatches(chip, card) {
+  // "기록 없는 페이지" = 오늘 이전 날짜인데 타임 테이블 기록이 없는 페이지
+  function spIsNoRecordPast(card) {
     const t0 = new Date(); t0.setHours(0, 0, 0, 0);
-    if (chip === 'past') return parseCardDate(card) < t0;
-    if (chip === 'noRecord') return parseCardDate(card) < t0 && !cardHasRecord(card);
-    return false;
+    return parseCardDate(card) < t0 && !cardHasRecord(card);
   }
+
+  let spSelNoRecordOn = false; // "기록 없는 페이지" 태그 토글 상태
 
   function updateSelUI() {
     document.getElementById('spSelBar').style.display = spSelectMode ? '' : 'none';
     document.getElementById('spViewTags').style.display = spSelectMode ? 'none' : '';
+    document.getElementById('spSelNoRecordChip').classList.toggle('active', spSelNoRecordOn);
     document.getElementById('spRemoveBar').hidden = !spSelectMode;
     const cta = document.getElementById('spRemoveCtaBtn');
     cta.disabled = spSelectedKeys.size === 0;
@@ -3622,24 +3633,20 @@
     applySpViewMode(); // 우측 텍스트 버튼(페이지 빼기/모두 다시 넣기) 표시 갱신
   }
 
-  function enterRemoveSelectMode(preset = {}) {
+  function enterRemoveSelectMode() {
     if (spViewMode !== 'all') { spViewMode = 'all'; applySpViewMode(); }
     spSelectMode = true;
     spSelectedKeys.clear();
-    spRemovableCards().forEach(c => {
-      if ((preset.noRecord && spChipMatches('noRecord', c)) ||
-          (preset.past && spChipMatches('past', c))) {
-        spSelectedKeys.add(dateKey(parseCardDate(c)));
-      }
-    });
+    spSelNoRecordOn = false;
     document.getElementById('sidePanel').classList.add('sp-selecting');
     document.getElementById('spHeaderTitle').textContent = '페이지 빼기'; // 패널 전체가 빼기 모드임을 드러낸다
     updateSelUI();
-    sortPages(); // rebuildPanel이 체크 서클과 미리 체크된 상태를 그린다
+    sortPages(); // rebuildPanel이 체크 서클을 그린다
   }
   function exitRemoveSelectMode(opts = {}) {
     spSelectMode = false;
     spSelectedKeys.clear();
+    spSelNoRecordOn = false;
     document.getElementById('sidePanel').classList.remove('sp-selecting');
     document.getElementById('spHeaderTitle').textContent = '페이지';
     updateSelUI();
@@ -3648,23 +3655,28 @@
   function toggleRemoveSelection(key) {
     if (spSelectedKeys.has(key)) spSelectedKeys.delete(key);
     else spSelectedKeys.add(key);
+    // 개별 조정을 시작하면 선택이 더 이상 "기록 없는 페이지만"이 아니므로 태그 표시를 끈다
+    spSelNoRecordOn = false;
     // 목록 전체를 다시 그리지 않고 해당 카드의 체크 표시만 토글
     document.querySelectorAll(`.sp-card[data-date-key="${key}"]`).forEach(el =>
       el.classList.toggle('sp-checked', spSelectedKeys.has(key)));
     updateSelUI();
   }
 
-  // "페이지 빼기" 버튼 → 조건 프리셋 오버레이 메뉴
-  const removePresetMenu = new OverlayMenu({
-    items: [
-      { lucideIcon: 'file-clock', label: '기록 없는 지난 페이지', onClick() { enterRemoveSelectMode({ noRecord: true }); } },
-      { lucideIcon: 'square-check-big', label: '직접 선택', onClick() { enterRemoveSelectMode({}); } },
-    ]
-  });
-  document.getElementById('spRemoveModeBtn').addEventListener('click', (e) => {
-    const r = e.currentTarget.getBoundingClientRect();
-    removePresetMenu.setTitle('어떤 페이지를 뺄까요?');
-    removePresetMenu.open(r.left + r.width / 2, r.bottom + 6);
+  // "페이지 빼기" 버튼 — 팝업 없이 바로 선택 모드로 들어간다
+  document.getElementById('spRemoveModeBtn').addEventListener('click', () => enterRemoveSelectMode());
+
+  // "기록 없는 페이지" 태그 — 켜면 해당 페이지들만 선택, 끄면 선택 해제
+  document.getElementById('spSelNoRecordChip').addEventListener('click', () => {
+    spSelNoRecordOn = !spSelNoRecordOn;
+    spSelectedKeys.clear();
+    if (spSelNoRecordOn) {
+      spRemovableCards().forEach(c => {
+        if (spIsNoRecordPast(c)) spSelectedKeys.add(dateKey(parseCardDate(c)));
+      });
+    }
+    updateSelUI();
+    sortPages(); // 체크 표시 일괄 갱신
   });
 
   document.getElementById('spSelCancelBtn').addEventListener('click', () => exitRemoveSelectMode());
