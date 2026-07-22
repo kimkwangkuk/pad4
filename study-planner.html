@@ -3745,22 +3745,12 @@
 
   document.getElementById('spSelCancelBtn').addEventListener('click', () => exitRemoveSelectMode());
 
-  // 하단 CTA → 확인 다이얼로그(UI 키트) → 실행
-  const removeConfirmDialog = new Dialog({
-    title: '페이지를 뺄까요?',
-    message: '빼놓은 페이지는 목록과 캔버스에서 빠지고, "빼놓은 페이지" 탭에서 언제든 다시 넣을 수 있어요.',
-    confirmLabel: '빼기',
-    cancelLabel: '취소',
-    onConfirm() {
-      const cards = spRemovableCards().filter(c => spSelectedKeys.has(dateKey(parseCardDate(c))));
-      exitRemoveSelectMode({ skipRebuild: true });
-      removePages(cards);
-    }
-  });
+  // 하단 CTA → 확인 팝업 없이 바로 빼기 실행 (되돌리기 토스트로 실수를 되돌릴 수 있다)
   document.getElementById('spRemoveCtaBtn').addEventListener('click', () => {
     if (!spSelectedKeys.size) return;
-    removeConfirmDialog.update({ title: `페이지 ${spSelectedKeys.size}개를 뺄까요?` });
-    removeConfirmDialog.open();
+    const cards = spRemovableCards().filter(c => spSelectedKeys.has(dateKey(parseCardDate(c))));
+    exitRemoveSelectMode({ skipRebuild: true });
+    removePages(cards);
   });
 
   // 빼놓은 페이지 탭의 "모두 다시 넣기"
