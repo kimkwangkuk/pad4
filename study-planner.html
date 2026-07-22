@@ -908,18 +908,6 @@
     }
     .sp-remove-cta:hover { background: rgba(0,0,0,0.72); }
     .sp-remove-cta:disabled { opacity: 0.3; cursor: default; pointer-events: none; }
-    /* 목록 상단 제안 배너 — 기록 없는 지난 페이지가 쌓이면 한 번에 빼기를 제안 */
-    .sp-suggest-banner {
-      width: 100%;
-      display: flex; align-items: center; gap: 6px;
-      padding: 9px 12px; margin-bottom: 8px;
-      background: rgba(0,0,0,0.04); border: none; border-radius: 10px;
-      font-family: 'Pretendard', sans-serif; font-size: 12px; font-weight: 500;
-      color: rgba(0,0,0,0.6); letter-spacing: -0.036px; text-align: left;
-      cursor: pointer; -webkit-tap-highlight-color: transparent;
-      transition: background 0.12s;
-    }
-    .sp-suggest-banner:hover { background: rgba(0,0,0,0.07); }
     /* 빼놓은 페이지는 캔버스에서 감춤 — .sp-thumb 안의 썸네일 클론에는 적용되지
        않도록 canvas-zoom-wrap의 직계 자식으로 한정한다 */
     .canvas-zoom-wrap > .card[data-sp-hidden="true"] { display: none; }
@@ -3477,20 +3465,6 @@
         }
       }
       cursor.setDate(cursor.getDate() + 1);
-    }
-
-    // 제안 배너: 기록 없는 지난 페이지가 쌓여 있으면 목록 상단에서 한 번에 빼기를 제안한다 —
-    // 자동으로 빼지 않고, 누르면 해당 페이지들이 미리 체크된 선택 모드로 들어간다
-    if (!showRemovedOnly && !spSelectMode) {
-      const suggestCount = items.filter(it => it.time < today.getTime() && !cardHasRecord(it.card)).length;
-      if (suggestCount > 0) {
-        const banner = document.createElement('button');
-        banner.type = 'button';
-        banner.className = 'sp-suggest-banner';
-        banner.innerHTML = `<i data-lucide="file-clock" style="width:14px;height:14px;flex-shrink:0;"></i><span>기록 없는 지난 페이지 ${suggestCount}장, 빼둘까요?</span>`;
-        banner.addEventListener('click', () => enterRemoveSelectMode({ noRecord: true }));
-        spContent.appendChild(banner);
-      }
     }
 
     // 날짜 카드를 2열 행으로 바로 그린다 — 월 단위 그루핑 없이 기간 전체가 하나의 목록
