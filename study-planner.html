@@ -5493,10 +5493,21 @@
   //    누르면 그 위치로 스크롤한다 ──
   const todayFabBtn = document.getElementById('todayFabBtn');
   function getTodayCardEl() {
-    const t = new Date();
-    // 숨긴 페이지(수동·자동)는 캔버스에 없으므로(display:none) 이동 대상에서 제외한다
+    const t = new Date(); t.setHours(0, 0, 0, 0);
+    const activeTab = document.querySelector('.tab.active');
+    const activeTabId = activeTab?.dataset.tabId;
+    const kind = activeTab?.dataset.noteKind || 'daily';
+    // 활성 탭 소유이고, 빼거나 기간 밖(display:none)이 아닌 카드만 대상 — 다른 탭의 오늘 카드를
+    // 잡으면 이 탭에선 숨겨져(offsetTop 0) 맨 위로 튄다. 오늘이 "포함되는" 카드를 kind별로 찾는다:
+    // 데일리=오늘 날짜, 위클리=오늘이 속한 주(월요일), 먼슬리=이번 달.
     return Array.from(canvasZoomWrap.querySelectorAll('.card[data-canvas-state="with-date"]'))
-      .find(c => !isCardRemoved(c) && parseCardDate(c).toDateString() === t.toDateString()) || null;
+      .find(c => {
+        if (c.dataset.ownerTab !== activeTabId || isCardRemoved(c) || c.classList.contains('card-out-of-period')) return false;
+        const d = parseCardDate(c);
+        if (kind === 'weekly') return d.getTime() === mondayOf(t).getTime();
+        if (kind === 'monthly') return d.getFullYear() === t.getFullYear() && d.getMonth() === t.getMonth();
+        return d.toDateString() === t.toDateString();
+      }) || null;
   }
   todayFabBtn.addEventListener('click', () => {
     const el = getTodayCardEl();
