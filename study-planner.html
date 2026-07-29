@@ -3025,15 +3025,9 @@
   const _ydLabel = `${_ydTmp.getMonth()+1}/${_ydTmp.getDate()}`;
   const _yr2 = String(new Date().getFullYear()).slice(2);
 
-  // 각 페이지에 공부시간(studyTime)을 더미로 등록한다 — 있는 날은 "공부한 날",
-  // 없는 날(예: 5/19)은 기록 없는 날. 카드의 Total Time과 캘린더 표시가 이 값을 쓴다.
-  const PAGES = [
-    { id: 'p0', dateText: `${_yr2}.05.17`, label: '5/17',  today: false, studyTime: '4:18:05' },
-    { id: 'p1', dateText: `${_yr2}.05.18`, label: '5/18',  today: false, studyTime: '2:37:50' },
-    { id: 'p2', dateText: `${_yr2}.05.19`, label: '5/19',  today: false },
-    { id: 'p3', dateText: `${_yr2}.05.20`, label: '5/20',  today: false, studyTime: '3:15:35' },
-    { id: 'p4', dateText: _ydText,    label: _ydLabel, today: false, studyTime: '3:50:40' },
-  ];
+  // 노트는 더미 페이지 없이 빈 상태로 시작한다 — 사용자가 오늘 프리뷰(ghost)나 날짜 직접 선택으로
+  // 처음부터 페이지를 추가한다. (캘린더의 공부시간 더미는 아래 STUDY_TIMES에서 별도로 유지)
+  const PAGES = [];
 
   // 날짜별 공부시간 맵 ("YYYY-M-D" → "H:MM:SS") — 캘린더/카드가 공유한다.
   // 공부는 했지만 페이지를 추가하지 않은 날도 있으므로, 5·6·7월 어제까지의 날짜에 더미
