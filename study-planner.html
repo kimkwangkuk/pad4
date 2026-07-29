@@ -2279,7 +2279,20 @@
     .note-info .txt { flex:1; min-width:0; }
     .note-info .nname { font-family: 'Pretendard', sans-serif; font-size:14px; font-weight:600; color:rgba(0,0,0,.86); letter-spacing:-.042px; line-height:1.4; }
     .note-info .ntime { font-family: 'Pretendard', sans-serif; font-size:10px; font-weight:400; color:rgba(0,0,0,.59); line-height:1.4; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-    .note-info .chev { font-size:12px; color:rgba(0,0,0,.4); padding:2px 8px 0; }
+    .note-info .chev { font-size:12px; color:rgba(0,0,0,.4); padding:2px 8px 0; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+
+    /* ─── 홈 노트 이름 변경 팝업 ───────────────────────────── */
+    .rn-backdrop { position:fixed; inset:0; background:rgba(0,0,0,0.35); opacity:0; pointer-events:none; transition:opacity .2s; z-index:6000; }
+    .rn-backdrop.visible { opacity:1; pointer-events:auto; }
+    .rn-popup { position:fixed; left:50%; top:50%; transform:translate(-50%,-46%); width:300px; background:#fff; border-radius:20px; padding:22px 20px 16px; box-shadow:0 12px 40px rgba(0,0,0,0.18); opacity:0; pointer-events:none; transition:opacity .2s, transform .2s; z-index:6001; font-family:'Pretendard',sans-serif; }
+    .rn-popup.visible { opacity:1; pointer-events:auto; transform:translate(-50%,-50%); }
+    .rn-title { font-size:16px; font-weight:700; color:rgba(0,0,0,0.86); text-align:center; margin-bottom:16px; }
+    .rn-input { width:100%; box-sizing:border-box; height:44px; border:1px solid rgba(0,0,0,0.14); border-radius:12px; padding:0 14px; font-size:15px; font-family:inherit; color:rgba(0,0,0,0.86); outline:none; }
+    .rn-input:focus { border-color:rgba(0,0,0,0.55); }
+    .rn-actions { display:flex; gap:8px; margin-top:16px; }
+    .rn-btn { flex:1; height:44px; border:none; border-radius:12px; font-size:15px; font-weight:600; font-family:inherit; cursor:pointer; }
+    .rn-cancel { background:rgba(0,0,0,0.06); color:rgba(0,0,0,0.7); }
+    .rn-confirm { background:#242424; color:#fff; }
 
     /* ─── VIEW PLACEHOLDER (non-note tabs) ────────────────── */
     .view-placeholder {
@@ -4774,7 +4787,9 @@
   const tabsSection = document.querySelector('.tabs-section');
 
   const HOME_NOTES = [
-    { name: '나의 하루 기록',             date: '2일 전', icon: 'sun',            color: '#f34c18' },
+    { name: '데일리 플래너', date: '2일 전', icon: 'sun',            color: '#f34c18' },
+    { name: '위클리 플래너', date: '2일 전', icon: 'calendar-range', color: '#452c83' },
+    { name: '먼슬리 플래너', date: '2일 전', icon: 'calendar-days',  color: '#1e7f00' },
   ];
 
   // rgb() 문자열로 커버색을 어둡게 만들어 책등(spine) 색을 계산 (참고: note-creation-ipad-v5.html darkenHex)
@@ -4804,6 +4819,12 @@
       </div>
     `;
     card.addEventListener('click', () => openTabFromHome(note.name, note.icon || 'file-text', 'note', note.noteType || 'scroll'));
+    const chevEl = card.querySelector('.chev');
+    const nameEl = card.querySelector('.nname');
+    chevEl.addEventListener('click', (e) => {
+      e.stopPropagation(); // 카드 클릭(노트 열기)과 분리 — 화살표는 메뉴만 연다
+      openHomeNoteMenu(chevEl, note, nameEl);
+    });
     return card;
   }
 
@@ -4812,6 +4833,67 @@
   });
 
   lucide.createIcons({ nodes: [homeScreen] });
+
+  // ── 홈 노트 이름 변경 (화살표 → 이름 변경 메뉴 → 팝업) ──────────
+  let homeNoteMenuTarget = null; // { note, nameEl }
+  const homeNoteMenu = new OverlayMenu({
+    items: [
+      { lucideIcon: 'pencil', label: '이름 변경', onClick() {
+          if (homeNoteMenuTarget) openRenamePopup(homeNoteMenuTarget.note, homeNoteMenuTarget.nameEl);
+      } }
+    ]
+  });
+
+  function openHomeNoteMenu(chevEl, note, nameEl) {
+    homeNoteMenuTarget = { note, nameEl };
+    const r = chevEl.getBoundingClientRect();
+    homeNoteMenu.open(r.left + r.width / 2, r.bottom + 4);
+  }
+
+  // 이름 변경 팝업 (동적 생성)
+  const renameBackdrop = document.createElement('div');
+  renameBackdrop.className = 'rn-backdrop';
+  const renamePopup = document.createElement('div');
+  renamePopup.className = 'rn-popup';
+  renamePopup.innerHTML = `
+    <div class="rn-title">이름 변경</div>
+    <input class="rn-input" type="text" maxlength="40" placeholder="노트 이름">
+    <div class="rn-actions">
+      <button class="rn-btn rn-cancel">취소</button>
+      <button class="rn-btn rn-confirm">확인</button>
+    </div>`;
+  document.body.appendChild(renameBackdrop);
+  document.body.appendChild(renamePopup);
+  const renameInput = renamePopup.querySelector('.rn-input');
+  let renameTarget = null;
+
+  function openRenamePopup(note, nameEl) {
+    renameTarget = { note, nameEl };
+    renameInput.value = note.name;
+    renameBackdrop.classList.add('visible');
+    renamePopup.classList.add('visible');
+    setTimeout(() => { renameInput.focus(); renameInput.select(); }, 40);
+  }
+  function closeRenamePopup() {
+    renameBackdrop.classList.remove('visible');
+    renamePopup.classList.remove('visible');
+    renameTarget = null;
+  }
+  function confirmRename() {
+    const v = renameInput.value.trim();
+    if (v && renameTarget) {
+      renameTarget.note.name = v;
+      renameTarget.nameEl.textContent = v;
+    }
+    closeRenamePopup();
+  }
+  renamePopup.querySelector('.rn-confirm').addEventListener('click', confirmRename);
+  renamePopup.querySelector('.rn-cancel').addEventListener('click', closeRenamePopup);
+  renameBackdrop.addEventListener('click', closeRenamePopup);
+  renameInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') confirmRename();
+    else if (e.key === 'Escape') closeRenamePopup();
+  });
 
   // ── Home screen show / hide ────────────────────────────
   studyBtn.addEventListener('click', () => {
