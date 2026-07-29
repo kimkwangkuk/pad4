@@ -3127,11 +3127,23 @@
     return bd.subjects.map(subj).join('');
   }
 
+  // D-day 목표: 8월 15일 (해당 연도). 페이지 날짜 기준 남은 일수를 D-N / D-DAY / D+N 으로 표시
+  const DDAY_TARGET = new Date(new Date().getFullYear(), 7, 15);
+  function ddayText(dateText) {
+    if (!dateText) return '–';
+    const [yy, mm, dd] = dateText.split('.');
+    const d = new Date(2000 + parseInt(yy, 10), parseInt(mm, 10) - 1, parseInt(dd, 10));
+    const diff = Math.round((DDAY_TARGET - d) / 86400000);
+    if (diff > 0) return `D-${diff}`;
+    if (diff < 0) return `D+${-diff}`;
+    return 'D-DAY';
+  }
+
   function buildCardHTML(page) {
     const state   = page.empty ? 'empty' : 'with-date';
     const dateVal = page.empty ? '날짜 선택' : page.dateText;
     const dateCls = page.empty ? 'hd-date-val placeholder' : 'hd-date-val';
-    const dday    = page.today ? 'D-3'     : '–';
+    const dday    = page.empty ? '–' : ddayText(page.dateText);
     const time    = page.studyTime || (page.today ? '5:30:24' : '–');
     return `
 <div class="card" data-page-id="${page.id}" data-canvas-state="${state}">
@@ -4469,6 +4481,8 @@
   const mp2CustomInput       = document.getElementById('mp2CustomInput');
 
   function buildStudyCardEl(isEmpty = false, dateText = null) {
+    const _ddText = dateText ? dateText.replace(/^\|\s*/, '') : '';
+    const ddayVal = (!isEmpty && _ddText) ? ddayText(_ddText) : 'Dday..';
     const TT_LABELS = ['5','6','7','8','9','10','11','12','1','2','3','4','5','6','7','8','9','10','11','12','1','2','3','4'];
     const gridRowsHTML = TT_LABELS.map(lbl => `
       <tr style="height:22px;">
@@ -4535,7 +4549,7 @@
             <div style="border-top:1px solid rgba(0,0,0,0.4);border-bottom:1px solid rgba(0,0,0,0.4);">
               <div style="display:flex;align-items:center;gap:10px;height:28px;border-top:1px solid rgba(0,0,0,0.08);">
                 <span class="hd-small-label" style="width:54px;flex-shrink:0;font-size:9px;font-weight:600;color:rgba(0,0,0,0.2);">Dday</span>
-                ${isEmpty ? '' : '<span class="hd-dday-val" style="font-size:12px;font-weight:500;color:rgba(0,0,0,0.86);">Dday..</span>'}
+                ${isEmpty ? '' : `<span class="hd-dday-val" style="font-size:12px;font-weight:500;color:rgba(0,0,0,0.86);">${ddayVal}</span>`}
               </div>
               <div style="display:flex;align-items:center;gap:10px;height:28px;border-top:1px solid rgba(0,0,0,0.08);">
                 <span class="hd-small-label" style="width:54px;flex-shrink:0;font-size:9px;font-weight:600;color:rgba(0,0,0,0.2);">Total Time</span>
@@ -5359,7 +5373,7 @@
             <div class="hd-date-wrap"><span class="hd-date-val${!isWithDate ? ' placeholder' : ''}">${!isWithDate ? '날짜 선택' : existingDate}</span></div>
           </div>
           <div class="hd-right">
-            <div class="hd-right-section"><span class="hd-small-label">Dday</span><span class="hd-dday-val">–</span></div>
+            <div class="hd-right-section"><span class="hd-small-label">Dday</span><span class="hd-dday-val">${isWithDate ? ddayText(existingDate) : '–'}</span></div>
             <div class="hd-right-section"><span class="hd-small-label">Total Time</span><span class="hd-time-val">–</span></div>
           </div>
         </div>
