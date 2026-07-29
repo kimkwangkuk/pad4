@@ -114,14 +114,24 @@
   line-height: 1.5;
   color: rgba(0,0,0,0.5);
 }
-.dp-week-row { display: flex; height: 44px; align-items: center; }
+.dp-week-row { display: flex; height: 50px; align-items: center; }
 .dp-day-cell {
   flex: 1; height: 100%;
-  display: flex; align-items: center; justify-content: center;
-  padding: 2px 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 0;
+  padding: 0;
   overflow: hidden;
   cursor: pointer;
 }
+/* 셀 아래 공부시간 마크 — 항상 자리를 차지해(빈 값은 공백) 동그라미 위치를 고정한다 */
+.dp-study-mark {
+  height: 9px; line-height: 9px;
+  font-family: 'Pretendard', sans-serif;
+  font-weight: 600; font-size: 9px;
+  letter-spacing: -0.03px;
+  color: rgba(37,99,235,0.9);
+}
+.dp-day-cell.taken .dp-study-mark { color: rgba(0,0,0,0.28); }
 .dp-day-cell.empty { opacity: 0; pointer-events: none; }
 .dp-day-circle {
   width: 40px; height: 40px;

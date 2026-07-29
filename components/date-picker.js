@@ -11,6 +11,15 @@ class DatePicker {
     this.takenDates = new Set(
       (options.takenDates || []).map(d => `${d.year}-${d.month}-${d.day}`)
     );
+    // 날짜별 공부시간 맵 ("YYYY-M-D" → "H:MM:SS"). 공부한 날짜는 셀 아래에 시간 단위로 작게 표시된다.
+    this.studyDates = options.studyDates || {};
+  }
+
+  // "4:18:05" → "4h" (캘린더 셀 아래에 표시할 짧은 형태)
+  _studyLabel(timeStr) {
+    if (!timeStr) return '';
+    const h = parseInt(String(timeStr).split(':')[0], 10);
+    return isNaN(h) ? '' : `${h}h`;
   }
 
   _buildSheet() {
@@ -97,12 +106,17 @@ class DatePicker {
       for (let j = 0; j < 7; j++) {
         const day = (i + j) - startOffset + 1;
         const valid = day >= 1 && day <= daysInMonth;
-        const taken = valid && this.takenDates.has(`${this.year}-${this.month}-${day}`);
+        const dateKey = `${this.year}-${this.month}-${day}`;
+        const taken = valid && this.takenDates.has(dateKey);
+        const study = valid ? this._studyLabel(this.studyDates[dateKey]) : '';
         const cell = document.createElement('div');
-        cell.className = 'dp-day-cell' + (valid ? '' : ' empty') + (taken ? ' taken' : '');
+        cell.className = 'dp-day-cell' + (valid ? '' : ' empty') + (taken ? ' taken' : '') + (study ? ' has-study' : '');
         const sel = (day === this.selected && !taken) ? ' selected' : '';
         const circleCls = `dp-day-circle${sel}${taken ? ' taken' : ''}`;
-        cell.innerHTML = `<div class="${circleCls}"><span class="dp-day-num">${valid ? day : ''}</span></div>`;
+        // 공부시간 마크는 항상 자리를 차지하게 두어(빈 셀은 공백) 날짜 동그라미의 세로 위치가 일정하다
+        cell.innerHTML =
+          `<div class="${circleCls}"><span class="dp-day-num">${valid ? day : ''}</span></div>` +
+          `<span class="dp-study-mark">${study}</span>`;
         if (valid && !taken) {
           cell.addEventListener('click', () => {
             this.selected = day;

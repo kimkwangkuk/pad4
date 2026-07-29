@@ -3012,13 +3012,24 @@
   const _ydLabel = `${_ydTmp.getMonth()+1}/${_ydTmp.getDate()}`;
   const _yr2 = String(new Date().getFullYear()).slice(2);
 
+  // 각 페이지에 공부시간(studyTime)을 더미로 등록한다 — 있는 날은 "공부한 날",
+  // 없는 날(예: 5/19)은 기록 없는 날. 카드의 Total Time과 캘린더 표시가 이 값을 쓴다.
   const PAGES = [
-    { id: 'p0', dateText: `${_yr2}.05.17`, label: '5/17',  today: false },
-    { id: 'p1', dateText: `${_yr2}.05.18`, label: '5/18',  today: false },
+    { id: 'p0', dateText: `${_yr2}.05.17`, label: '5/17',  today: false, studyTime: '4:18:05' },
+    { id: 'p1', dateText: `${_yr2}.05.18`, label: '5/18',  today: false, studyTime: '2:37:50' },
     { id: 'p2', dateText: `${_yr2}.05.19`, label: '5/19',  today: false },
-    { id: 'p3', dateText: `${_yr2}.05.20`, label: '5/20',  today: false },
-    { id: 'p4', dateText: _ydText,    label: _ydLabel, today: false },
+    { id: 'p3', dateText: `${_yr2}.05.20`, label: '5/20',  today: false, studyTime: '3:15:35' },
+    { id: 'p4', dateText: _ydText,    label: _ydLabel, today: false, studyTime: '3:50:40' },
   ];
+
+  // 날짜별 공부시간 맵 ("YYYY-M-D" → "H:MM:SS") — 캘린더/카드가 공유한다. createPage로 새 페이지를
+  // 만들면 여기에도 반영된다.
+  const STUDY_TIMES = {};
+  PAGES.forEach(p => {
+    if (!p.studyTime) return;
+    const [yy, mm, dd] = p.dateText.split('.');
+    STUDY_TIMES[`${2000 + parseInt(yy, 10)}-${parseInt(mm, 10)}-${parseInt(dd, 10)}`] = p.studyTime;
+  });
 
   const GRID_LABELS = [
     '5','6','7','8','9','10','11',
@@ -3063,7 +3074,7 @@
     const dateVal = page.empty ? '날짜 선택' : page.dateText;
     const dateCls = page.empty ? 'hd-date-val placeholder' : 'hd-date-val';
     const dday    = page.today ? 'D-3'     : '–';
-    const time    = page.today ? '5:30:24' : '–';
+    const time    = page.studyTime || (page.today ? '5:30:24' : '–');
     return `
 <div class="card" data-page-id="${page.id}" data-canvas-state="${state}">
   ${page.empty ? `<button class="page-type-tab" id="pageTypeTabBtn">
@@ -3610,6 +3621,7 @@
   const datePicker = new DatePicker({
     year: 2026, month: 6,
     takenDates,
+    studyDates: STUDY_TIMES, // 공부한 날짜는 캘린더 셀 아래에 공부시간을 작게 표시
     onConfirm({ year, month, day }) {
       if (!day) return;
       if (activeCard) applyDate(activeCard, year, month, day);
