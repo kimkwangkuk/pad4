@@ -3401,22 +3401,30 @@
   let scrollModeFragment = null;
 
   function setCanvasMode(mode, tabEl) {
-    const spContent = document.querySelector('.sp-content');
-    if (mode === 'calendar') {
-      if (canvasZoomWrap.dataset.mode !== 'calendar') {
+    const cur = canvasZoomWrap.dataset.mode || 'scroll';
+    if (mode !== 'scroll') {
+      // 비(非)스크롤 모드(calendar/weekly/monthly): 데일리 스크롤 DOM은 보존해두고 전용 화면을 그린다
+      if (cur === 'scroll') {
         scrollModeFragment = document.createDocumentFragment();
         while (canvasZoomWrap.firstChild) scrollModeFragment.appendChild(canvasZoomWrap.firstChild);
-        canvasZoomWrap.dataset.mode = 'calendar';
+      } else if (cur !== mode) {
+        canvasZoomWrap.innerHTML = ''; // 다른 비스크롤 모드에서 넘어올 때 이전 화면 제거
       }
-      renderCalendarNoteCanvas(tabEl);
-      ensureCalendarPicker(tabEl);
-      // 캘린더 노트는 사이드바를 쓰지 않고 툴바의 사이드바 버튼이 좌상단 인라인 캘린더를
-      // 열고 닫는 토글로 쓰인다 (panelToggleBtn 핸들러 참고)
+      canvasZoomWrap.dataset.mode = mode;
+      // 이 노트 유형들은 사이드바(페이지 패널)를 쓰지 않는다
       sidePanel.close();
       panelToggleBtn.classList.remove('panel-open');
       closeCalInlinePanel(); // 탭 전환 시 이전 탭에서 열려있던 인라인 캘린더는 닫아둔다
+      if (mode === 'calendar') {
+        renderCalendarNoteCanvas(tabEl);
+        ensureCalendarPicker(tabEl);
+      } else if (mode === 'weekly') {
+        renderWeeklyCanvas(tabEl);
+      } else if (mode === 'monthly') {
+        renderMonthlyCanvas(tabEl);
+      }
     } else {
-      if (canvasZoomWrap.dataset.mode === 'calendar') {
+      if (cur !== 'scroll') {
         canvasZoomWrap.innerHTML = '';
         if (scrollModeFragment) { canvasZoomWrap.appendChild(scrollModeFragment); scrollModeFragment = null; }
         canvasZoomWrap.dataset.mode = 'scroll';
@@ -3459,6 +3467,108 @@
     const card = ensureCalendarPageCard(tabEl, state.activeDateText);
     if (before && before !== card) before.remove(); // still referenced in state.pages, safe to detach
     if (!canvasZoomWrap.contains(card)) canvasZoomWrap.appendChild(card);
+    requestAnimationFrame(() => scrollToCard(0, false));
+  }
+
+  // ── 위클리 / 먼슬리 속지 ────────────────────────────────────
+  const _WD = ['월', '화', '수', '목', '금', '토', '일'];
+  function _weekStart(d) { // 해당 날짜가 속한 주의 월요일
+    const x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    x.setDate(x.getDate() - ((x.getDay() + 6) % 7));
+    return x;
+  }
+  function _weekOfMonth(d) {
+    const firstDow = (new Date(d.getFullYear(), d.getMonth(), 1).getDay() + 6) % 7;
+    return Math.ceil((d.getDate() + firstDow) / 7);
+  }
+
+  // 주간 스프레드: 월~일 7일을 세로로 나열한 플래너 페이지
+  function buildWeekSpreadEl(anchor) {
+    const start = _weekStart(anchor);
+    const end = new Date(start); end.setDate(start.getDate() + 6);
+    const fmt = (dt) => `${dt.getMonth() + 1}.${dt.getDate()}`;
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.dataset.canvasState = 'with-date';
+    card.dataset.periodKind = 'weekly';
+    let rows = '';
+    for (let i = 0; i < 7; i++) {
+      const dt = new Date(start); dt.setDate(start.getDate() + i);
+      const col = i; // 0=월 … 5=토, 6=일
+      const dcolor = col === 6 ? '#e5484d' : (col === 5 ? '#3b6fd6' : 'rgba(0,0,0,0.86)');
+      rows += `
+        <div style="flex:1;display:flex;gap:16px;border-top:1px solid rgba(0,0,0,0.08);padding:12px 4px 0;min-height:0;">
+          <div style="width:48px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:2px;">
+            <span style="font-size:13px;font-weight:700;color:${dcolor};">${_WD[i]}</span>
+            <span style="font-size:22px;font-weight:700;color:${dcolor};line-height:1;">${dt.getDate()}</span>
+          </div>
+          <div style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:16px;">
+            <div style="border-bottom:1px solid rgba(0,0,0,0.07);"></div>
+            <div style="border-bottom:1px solid rgba(0,0,0,0.07);"></div>
+          </div>
+        </div>`;
+    }
+    card.innerHTML = `
+      <div style="flex:1;display:flex;flex-direction:column;padding:26px;box-sizing:border-box;font-family:Pretendard,sans-serif;overflow:hidden;">
+        <div style="flex-shrink:0;display:flex;align-items:baseline;gap:10px;padding-bottom:14px;border-bottom:1px solid rgba(0,0,0,0.4);">
+          <span style="font-size:12px;font-weight:700;color:rgba(0,0,0,0.35);letter-spacing:1px;">WEEKLY</span>
+          <span style="font-size:24px;font-weight:700;color:rgba(0,0,0,0.86);">${start.getMonth() + 1}월 ${_weekOfMonth(start)}주</span>
+          <span style="font-size:14px;color:rgba(0,0,0,0.45);margin-left:auto;">${fmt(start)} – ${fmt(end)}</span>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;min-height:0;">${rows}</div>
+      </div>`;
+    return card;
+  }
+
+  // 월간 그리드: 한 달 달력 형태의 플래너 페이지
+  function buildMonthGridEl(year, month) {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.dataset.canvasState = 'with-date';
+    card.dataset.periodKind = 'monthly';
+    const firstDow = (new Date(year, month - 1, 1).getDay() + 6) % 7; // 월=0
+    const daysInMonth = new Date(year, month, 0).getDate();
+    const rowCount = Math.ceil((firstDow + daysInMonth) / 7);
+    const today = new Date();
+    const isThisMonth = today.getFullYear() === year && (today.getMonth() + 1) === month;
+    const wdHeader = _WD.map((w, i) =>
+      `<div style="flex:1;text-align:center;font-size:11px;font-weight:700;color:${i === 6 ? '#e5484d' : (i === 5 ? '#3b6fd6' : 'rgba(0,0,0,0.5)')};">${w}</div>`
+    ).join('');
+    let rowsHtml = '';
+    for (let r = 0; r < rowCount; r++) {
+      let cells = '';
+      for (let c = 0; c < 7; c++) {
+        const day = r * 7 + c - firstDow + 1;
+        const valid = day >= 1 && day <= daysInMonth;
+        const dcolor = c === 6 ? '#e5484d' : (c === 5 ? '#3b6fd6' : 'rgba(0,0,0,0.78)');
+        const isToday = valid && isThisMonth && day === today.getDate();
+        cells += `<div style="flex:1;min-width:0;min-height:0;border-top:1px solid rgba(0,0,0,0.08);${c > 0 ? 'border-left:1px solid rgba(0,0,0,0.05);' : ''}padding:6px;overflow:hidden;">
+          ${valid ? `<span style="display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;font-size:12px;font-weight:${isToday ? '700' : '500'};color:${isToday ? '#fff' : dcolor};background:${isToday ? 'rgba(0,0,0,0.86)' : 'transparent'};border-radius:11px;">${day}</span>` : ''}
+        </div>`;
+      }
+      rowsHtml += `<div style="flex:1;display:flex;min-height:0;">${cells}</div>`;
+    }
+    card.innerHTML = `
+      <div style="flex:1;display:flex;flex-direction:column;padding:26px;box-sizing:border-box;font-family:Pretendard,sans-serif;overflow:hidden;">
+        <div style="flex-shrink:0;display:flex;align-items:baseline;gap:10px;padding-bottom:14px;">
+          <span style="font-size:12px;font-weight:700;color:rgba(0,0,0,0.35);letter-spacing:1px;">MONTHLY</span>
+          <span style="font-size:24px;font-weight:700;color:rgba(0,0,0,0.86);">${year}년 ${month}월</span>
+        </div>
+        <div style="flex-shrink:0;display:flex;border-bottom:1px solid rgba(0,0,0,0.4);padding-bottom:6px;">${wdHeader}</div>
+        <div style="flex:1;display:flex;flex-direction:column;min-height:0;border-bottom:1px solid rgba(0,0,0,0.4);">${rowsHtml}</div>
+      </div>`;
+    return card;
+  }
+
+  function renderWeeklyCanvas() {
+    canvasZoomWrap.innerHTML = '';
+    canvasZoomWrap.appendChild(buildWeekSpreadEl(new Date()));
+    requestAnimationFrame(() => scrollToCard(0, false));
+  }
+  function renderMonthlyCanvas() {
+    canvasZoomWrap.innerHTML = '';
+    const t = new Date();
+    canvasZoomWrap.appendChild(buildMonthGridEl(t.getFullYear(), t.getMonth() + 1));
     requestAnimationFrame(() => scrollToCard(0, false));
   }
 
@@ -4130,7 +4240,7 @@
       type, activeTab: 'insert', coverFilterTab: '컬러',
       coverId: NW_COVERS[0].id, coverPattern: 'none',
       insertId: NW_INSERTS[type][0].id, insertColors: {},
-      noteType: 'scroll',
+      noteType: type === '위클리' ? 'weekly' : type === '먼슬리' ? 'monthly' : 'scroll',
     };
   }
 
@@ -4783,9 +4893,9 @@
   const tabsSection = document.querySelector('.tabs-section');
 
   const HOME_NOTES = [
-    { name: '데일리 플래너', date: '2일 전', icon: 'sun',            color: '#f34c18' },
-    { name: '위클리 플래너', date: '2일 전', icon: 'calendar-range', color: '#452c83' },
-    { name: '먼슬리 플래너', date: '2일 전', icon: 'calendar-days',  color: '#1e7f00' },
+    { name: '데일리 플래너', date: '2일 전', icon: 'sun',            color: '#f34c18', noteType: 'scroll'  },
+    { name: '위클리 플래너', date: '2일 전', icon: 'calendar-range', color: '#452c83', noteType: 'weekly'  },
+    { name: '먼슬리 플래너', date: '2일 전', icon: 'calendar-days',  color: '#1e7f00', noteType: 'monthly' },
   ];
 
   // rgb() 문자열로 커버색을 어둡게 만들어 책등(spine) 색을 계산 (참고: note-creation-ipad-v5.html darkenHex)
@@ -4983,7 +5093,7 @@
   function updateView() {
     const activeTab = tabLabels.querySelector('.tab.active');
     const isQuick   = activeTab?.dataset.tabType === 'quick';
-    const isCalendar = !isQuick && activeTab?.dataset.noteType === 'calendar';
+    const noteType  = activeTab?.dataset.noteType || 'scroll'; // scroll/calendar/weekly/monthly
     const tabName   = activeTab?.dataset.tabName  || '';
 
     toolbar.style.display        = isQuick ? 'none' : '';
@@ -4991,7 +5101,7 @@
     viewPlaceholder.style.display = isQuick ? 'flex' : 'none';
     viewPlaceholderLabel.textContent = isQuick ? tabName : '';
 
-    if (!isQuick) setCanvasMode(isCalendar ? 'calendar' : 'scroll', activeTab);
+    if (!isQuick) setCanvasMode(noteType, activeTab);
   }
 
   function openTabFromHome(name, icon, type, noteType) {
@@ -5061,8 +5171,8 @@
   //    캔버스 스크롤 영역 밖으로 나가면 나타나고, 누르면 그 위치로 스크롤한다 ──
   const todayFabBtn = document.getElementById('todayFabBtn');
   function getTodayCardEl() {
-    // 캘린더 노트는 스크롤 캔버스와 별개의 네비게이션(좌상단 인라인 캘린더)을 쓰므로 대상에서 제외
-    if (canvasZoomWrap.dataset.mode === 'calendar') return null;
+    // 데일리 스크롤 노트에서만 '오늘로 이동' 대상이 있다 (calendar/weekly/monthly는 제외)
+    if ((canvasZoomWrap.dataset.mode || 'scroll') !== 'scroll') return null;
     const ghost = canvasZoomWrap.querySelector('[data-page-id="ghost-today"]');
     if (ghost) return ghost;
     const t = new Date();
