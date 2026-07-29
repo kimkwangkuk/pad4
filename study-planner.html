@@ -3050,23 +3050,59 @@
     return `<div class="row-sub row-sub--empty"><div class="sub-inner"><input class="sub-name-input" type="text" placeholder="할 일 입력"></div><div class="sub-check-wrap"><div class="checkbox"></div></div></div>`;
   }
 
-  function subjGroupsHTML() {
-    const SUBJ_COLORS = [
-      { bg: 'rgba(59,130,246,0.10)', fill: 'rgba(37,99,235,0.86)' },
-      { bg: 'rgba(34,197,94,0.10)',  fill: 'rgba(22,163,74,0.86)'  },
-    ];
-    const subj = (name, idx) => `
+  // ── 과목별 공부 분배 (데일리 속지) ──────────────────────────
+  // 두 과목(태블릿v2=파랑, 테마=초록)에 그날 총 공부시간을 나눠 담고, 우측 타임테이블의
+  // 셀(1칸=10분)을 과목 색으로 칠한다.
+  const SUBJ_COLORS_D = [
+    { bg: 'rgba(59,130,246,0.10)', icon: 'rgba(37,99,235,0.86)', cell: 'rgba(37,99,235,0.28)' },
+    { bg: 'rgba(34,197,94,0.10)',  icon: 'rgba(22,163,74,0.86)',  cell: 'rgba(22,163,74,0.28)'  },
+  ];
+  const SUBJ_LAYOUT = [
+    { name: '태블릿v2', colorIdx: 0, ratio: 0.6, startRow: 2 }, // 07시 행부터
+    { name: '테마',     colorIdx: 1, ratio: 0.4, startRow: 6 }, // 11시 행부터
+  ];
+  function _parseHMS(t) { const p = String(t).split(':').map(n => parseInt(n, 10)); return (p[0] || 0) * 60 + (p[1] || 0); }
+  function _fmtHM(mins) { return `${Math.floor(mins / 60)}:${String(mins % 60).padStart(2, '0')}:00`; }
+
+  // 페이지의 총 공부시간을 과목별로 분배 → { subjects, fills }
+  //   subjects: [{ name, colorIdx, time, blocks, startRow }]
+  //   fills: { rowIndex: [colorIdx, ...] } — 타임테이블 셀 색칠용
+  function studyBreakdown(page) {
+    const total = page && page.studyTime ? _parseHMS(page.studyTime) : 0;
+    let acc = 0;
+    const subjects = SUBJ_LAYOUT.map((s, i) => {
+      const mins = (i === SUBJ_LAYOUT.length - 1) ? (total - acc) : Math.round(total * s.ratio);
+      acc += mins;
+      return { name: s.name, colorIdx: s.colorIdx, time: _fmtHM(mins), blocks: Math.round(mins / 10), startRow: s.startRow };
+    });
+    const fills = {};
+    if (total > 0) {
+      subjects.forEach(s => {
+        let placed = 0, r = s.startRow, c = 0;
+        while (placed < s.blocks && r < 24) {
+          (fills[r] = fills[r] || [])[c] = s.colorIdx;
+          placed++; c++;
+          if (c >= 6) { c = 0; r++; }
+        }
+      });
+    }
+    return { subjects, fills };
+  }
+
+  function subjGroupsHTML(page) {
+    const bd = studyBreakdown(page);
+    const subj = (s) => `
       <div class="subj-group">
         <div class="row-subj">
           <div class="subj-inner">
-            <div class="play-btn" style="background:${SUBJ_COLORS[idx].bg};"><i data-lucide="play" style="width:12px;height:12px;fill:${SUBJ_COLORS[idx].fill};stroke:none;margin-left:1px;"></i></div>
-            <span class="subj-name">${name}</span>
-            <span class="subj-time">2:30:25</span>
+            <div class="play-btn" style="background:${SUBJ_COLORS_D[s.colorIdx].bg};"><i data-lucide="play" style="width:12px;height:12px;fill:${SUBJ_COLORS_D[s.colorIdx].icon};stroke:none;margin-left:1px;"></i></div>
+            <span class="subj-name">${s.name}</span>
+            <span class="subj-time">${s.time}</span>
           </div>
           <div class="subj-add"><i data-lucide="plus" style="width:20px;height:20px;"></i></div>
         </div>
       </div>`;
-    return subj('태블릿v2', 0) + subj('테마', 1);
+    return bd.subjects.map(subj).join('');
   }
 
   function buildCardHTML(page) {
@@ -3106,7 +3142,7 @@
     </div>
     <div class="card-gap"></div>
     <div class="list-area">
-      <div class="left-panel">${subjGroupsHTML()}</div>
+      <div class="left-panel">${subjGroupsHTML(page)}</div>
       <div class="panel-gap"></div>
       <div class="right-panel">
         <div class="grid-wrap">
@@ -3140,7 +3176,13 @@
       tr.appendChild(th);
       for (let c = 0; c < 6; c++) {
         const td = document.createElement('td');
-        td.className = 'g-cell' + (fills?.[i]?.[c] ? ' ' + fills[i][c] : '');
+        td.className = 'g-cell';
+        const f = fills && fills[i] ? fills[i][c] : undefined;
+        if (f !== undefined && f !== null) {
+          // 숫자 인덱스면 과목 색으로, 문자열이면 기존 클래스(pk1 등)로 처리
+          if (typeof f === 'number') td.style.background = SUBJ_COLORS_D[f].cell;
+          else td.classList.add(f);
+        }
         tr.appendChild(td);
       }
       tbody.appendChild(tr);
@@ -3170,7 +3212,7 @@
   PAGES.forEach((page) => {
     canvasZoomWrap.insertAdjacentHTML('beforeend', buildCardHTML(page));
     const card = canvasZoomWrap.lastElementChild;
-    buildGrid(card, page.today ? TODAY_FILLS : null);
+    buildGrid(card, studyBreakdown(page).fills);
     initEmojiPicker(card);
   });
 
@@ -3788,7 +3830,7 @@
       {
         lucideIcon: 'file-stack',
         label: '속지 변경',
-        onClick() { if (activePageCard) openChangeTypePopup(activePageCard); }
+        onClick() { if (activePageCard) window.openInsertPicker(activePageCard); }
       }
     ]
   });
@@ -5420,6 +5462,8 @@
     let ipSelectedId = 0;
     let ipActiveId = 0;
     let ipSourceCard = null;
+    let ipApplyTarget = null; // 속지 변경으로 열렸을 때 실제 적용할 대상 카드 (없으면 페이지 추가 흐름)
+    let ipChangeMode = false; // true면 기존 카드의 속지를 바꾸는 모드 (닫을 때 날짜 오버레이를 다시 띄우지 않음)
     let ipConfirmedColorIdx = 0; // 실제로 확정 적용된 컬러 (캔버스에 놓일 속지에 반영됨)
 
     function updateIpColorChip() {
@@ -5599,8 +5643,32 @@
       slider.goTo(0);
     }
 
+    // 기존 카드의 속지를 선택한 스터디 템플릿(+확정 컬러)으로 교체 — 페이지 추가 흐름과 동일한 결과물
+    function applyStudyTemplateToCard(card) {
+      if (!card) return;
+      const isWithDate = card.dataset.canvasState === 'with-date';
+      const existingDate = isWithDate ? (card.dataset.dateText || card.querySelector('.hd-date-val')?.textContent || '') : null;
+
+      card.dataset.pageType = 'study';
+      const tab = card.querySelector('.page-type-tab');
+      // 캔버스·탭 버튼 외 기존 내용 + 이전 틴트 제거
+      Array.from(card.children).forEach(child => {
+        if (!child.classList.contains('card-draw-canvas') && child !== tab) child.remove();
+      });
+
+      const inner = buildStudyCardEl(!isWithDate, isWithDate ? `| ${existingDate}` : null);
+      inner.className = 'study-card-inner';
+      inner.style.cssText = 'flex:1;min-height:0;display:flex;flex-direction:column;padding:22px;box-sizing:border-box;overflow:hidden;';
+      tab ? card.insertBefore(inner, tab) : card.appendChild(inner);
+      applyIpTintToCard(card); // 확정 컬러 반영
+      if (window.lucide) lucide.createIcons({ nodes: [card] });
+      if (isWithDate && typeof updateAllThumbs === 'function') setTimeout(updateAllThumbs, 50);
+    }
+
     function openInsertPicker(targetCard) {
-      ipSourceCard = targetCard || null;
+      ipApplyTarget = targetCard || null;
+      ipChangeMode = !!targetCard;
+      ipSourceCard = null; // 썸네일은 항상 속지 템플릿으로 렌더
       slider.reset(0);
       colorSheet.style.transition = 'none';
       closeIpColorSheet();
@@ -5613,8 +5681,10 @@
     function closeInsertPicker() {
       backdrop.classList.remove('visible');
       popup.classList.remove('visible');
-      // 팝업이 완전히 닫히고 캔버스로 돌아왔으니, 대기 중이던 날짜 선택 오버레이를 다시 띄움
-      if (typeof window.onInsertPickerClosed === 'function') window.onInsertPickerClosed();
+      // 페이지 추가 흐름에서만: 팝업이 닫히면 대기 중이던 날짜 선택 오버레이를 다시 띄움
+      if (!ipChangeMode && typeof window.onInsertPickerClosed === 'function') window.onInsertPickerClosed();
+      ipChangeMode = false;
+      ipApplyTarget = null;
     }
 
     window.openInsertPicker = openInsertPicker;
@@ -5628,8 +5698,10 @@
     useBtn.addEventListener('click', () => {
       if (!isIpUnlocked(ipActiveId)) return; // locked: no-op
       ipSelectedId = ipActiveId;
+      const target = ipApplyTarget; // closeInsertPicker가 초기화하기 전에 캡처
+      if (target) applyStudyTemplateToCard(target);
       closeInsertPicker();
-      pageToast.show('속지가 설정되었습니다');
+      pageToast.show(target ? '속지가 변경되었습니다' : '속지가 설정되었습니다');
     });
   })();
   // ── 오늘자 임시 페이지 "속지 변경" → 페이지 설정 사이드 패널 (Figma 5017:326690 / 5017:326734) ──
