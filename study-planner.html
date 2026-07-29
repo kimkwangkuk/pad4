@@ -3061,19 +3061,21 @@
     { name: '태블릿v2', colorIdx: 0, ratio: 0.6, startRow: 2 }, // 07시 행부터
     { name: '테마',     colorIdx: 1, ratio: 0.4, startRow: 6 }, // 11시 행부터
   ];
-  function _parseHMS(t) { const p = String(t).split(':').map(n => parseInt(n, 10)); return (p[0] || 0) * 60 + (p[1] || 0); }
-  function _fmtHM(mins) { return `${Math.floor(mins / 60)}:${String(mins % 60).padStart(2, '0')}:00`; }
+  // 시:분:초 → 총 초, 총 초 → 시:분:초 (과목 합이 총 공부시간과 초까지 정확히 일치하도록 초 단위로 다룬다)
+  function _parseHMS(t) { const p = String(t).split(':').map(n => parseInt(n, 10)); return (p[0] || 0) * 3600 + (p[1] || 0) * 60 + (p[2] || 0); }
+  function _fmtHMS(sec) { return `${Math.floor(sec / 3600)}:${String(Math.floor((sec % 3600) / 60)).padStart(2, '0')}:${String(sec % 60).padStart(2, '0')}`; }
 
   // 페이지의 총 공부시간을 과목별로 분배 → { subjects, fills }
   //   subjects: [{ name, colorIdx, time, blocks, startRow }]
   //   fills: { rowIndex: [colorIdx, ...] } — 타임테이블 셀 색칠용
   function studyBreakdown(page) {
-    const total = page && page.studyTime ? _parseHMS(page.studyTime) : 0;
+    const total = page && page.studyTime ? _parseHMS(page.studyTime) : 0; // 총 초
     let acc = 0;
     const subjects = SUBJ_LAYOUT.map((s, i) => {
-      const mins = (i === SUBJ_LAYOUT.length - 1) ? (total - acc) : Math.round(total * s.ratio);
-      acc += mins;
-      return { name: s.name, colorIdx: s.colorIdx, time: _fmtHM(mins), blocks: Math.round(mins / 10), startRow: s.startRow };
+      // 마지막 과목이 나머지를 모두 가져가 합이 총 공부시간과 정확히 일치한다
+      const secs = (i === SUBJ_LAYOUT.length - 1) ? (total - acc) : Math.round(total * s.ratio);
+      acc += secs;
+      return { name: s.name, colorIdx: s.colorIdx, time: _fmtHMS(secs), blocks: Math.round(secs / 600), startRow: s.startRow };
     });
     const fills = {};
     if (total > 0) {
