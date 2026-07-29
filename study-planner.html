@@ -4034,7 +4034,7 @@
           onClick() { createPage(_todayY, _todayM, _todayD); }
         });
       }
-      dateSelectMenu.setTitle('페이지 날짜 선택');
+      dateSelectMenu.setTitle('페이지 날짜');
     }
     _lastDateMenuPos = { x, y, opts };
     dateSelectMenu.open(x, y, opts);
@@ -4072,6 +4072,7 @@
       }
     ],
     preview: {
+      changeLabel: '변경',
       render(el) {
         if (window.ipBuildConfiguredCardEl) renderMp2Thumb(window.ipBuildConfiguredCardEl(), el);
       },

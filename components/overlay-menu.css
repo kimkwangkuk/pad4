@@ -58,6 +58,27 @@
   margin-bottom: 8px;
 }
 .om-preview:active { opacity: 0.6; }
+/* "변경" 버튼이 있는 미리보기: 썸네일 좌측, 변경 버튼 우측 (Figma 5463:1401586) */
+.om-preview.om-preview-has-change {
+  justify-content: space-between;
+  padding: 4px 6px 4px 4px;
+  cursor: default;
+  filter: none;
+}
+.om-preview.om-preview-has-change:active { opacity: 1; }
+.om-preview-change {
+  flex-shrink: 0;
+  height: 30px; padding: 0 14px;
+  background: rgba(255,255,255,0.7);
+  border: 1px solid rgba(255,255,255,0.9);
+  border-radius: 100px;
+  font-family: 'Pretendard', sans-serif; font-size: 13px; font-weight: 600;
+  color: rgba(0,0,0,0.7); letter-spacing: -0.039px;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+  transition: background 0.12s;
+}
+.om-preview-change:hover { background: rgba(255,255,255,0.9); }
+.om-preview-change:active { opacity: 0.6; }
 
 .om-preview-thumb {
   width: 70px;

@@ -21,14 +21,28 @@ class OverlayMenu {
 
     if (this.preview) {
       const previewWrap = document.createElement('div');
-      previewWrap.className = 'om-preview';
+      previewWrap.className = 'om-preview' + (this.preview.changeLabel ? ' om-preview-has-change' : '');
       const thumb = document.createElement('div');
       thumb.className = 'om-preview-thumb';
       previewWrap.appendChild(thumb);
-      previewWrap.addEventListener('click', () => {
-        this.close();
-        if (this.preview.onClick) this.preview.onClick();
-      });
+      if (this.preview.changeLabel) {
+        // 미리보기 우측 "변경" pill 버튼 — 이 버튼으로만 onClick(속지 변경)을 연다
+        const changeBtn = document.createElement('button');
+        changeBtn.className = 'om-preview-change';
+        changeBtn.type = 'button';
+        changeBtn.textContent = this.preview.changeLabel;
+        changeBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.close();
+          if (this.preview.onClick) this.preview.onClick();
+        });
+        previewWrap.appendChild(changeBtn);
+      } else {
+        previewWrap.addEventListener('click', () => {
+          this.close();
+          if (this.preview.onClick) this.preview.onClick();
+        });
+      }
       inner.appendChild(previewWrap);
       this._previewThumbEl = thumb;
 
