@@ -232,6 +232,21 @@
     .tb-btn.active { background: rgba(0,0,0,0.08); }
     .tb-btn.panel-open { background: rgba(0,0,0,0.05); }
     .tb-sep { width: 1px; height: 22px; background: #e0e0e0; margin: 0 2px; }
+    /* 일/주/월 뷰 세그먼트 컨트롤 */
+    .view-seg {
+      display: inline-flex; align-items: center;
+      margin-left: 8px; padding: 2px;
+      background: rgba(0,0,0,0.05); border-radius: 10px;
+    }
+    .view-seg-btn {
+      min-width: 34px; height: 28px; padding: 0 10px;
+      border: none; background: none; border-radius: 8px;
+      font-family: 'Pretendard', sans-serif; font-size: 14px; font-weight: 600;
+      color: rgba(0,0,0,0.45); letter-spacing: -0.3px;
+      cursor: pointer; -webkit-tap-highlight-color: transparent;
+      transition: background 0.15s, color 0.15s;
+    }
+    .view-seg-btn.active { background: #fff; color: rgba(0,0,0,0.86); box-shadow: 0 1px 3px rgba(0,0,0,0.12); }
 
     /* ─── WORKSPACE (898px, clips panel slide-in) ── */
     .workspace {
@@ -458,6 +473,35 @@
     /* Hand mode – no draw tool active */
     body.tool-hand .canvas-scroll { cursor: default; }
     body.tool-hand .card { cursor: default; }
+
+    /* 현재 뷰(일/주/월)가 아닌 카드는 캔버스에서 숨긴다 */
+    .card.card-other-view { display: none !important; }
+
+    /* ─── 주 카드 (위클리) ───────────────────── */
+    .wk-inner { flex: 1; display: flex; flex-direction: column; padding: 40px 44px; gap: 22px; }
+    .wk-header { display: flex; align-items: baseline; justify-content: space-between; flex-shrink: 0; }
+    .wk-title { font-family: 'Pretendard', sans-serif; font-size: 30px; font-weight: 700; color: rgba(0,0,0,0.86); letter-spacing: -0.5px; }
+    .wk-range { font-family: 'Pretendard', sans-serif; font-size: 16px; font-weight: 500; color: rgba(0,0,0,0.4); }
+    .wk-days { flex: 1; display: flex; flex-direction: column; }
+    .wk-day { flex: 1; display: flex; align-items: stretch; gap: 16px; border-top: 1px solid rgba(0,0,0,0.09); padding: 8px 0; }
+    .wk-day:last-child { border-bottom: 1px solid rgba(0,0,0,0.09); }
+    .wk-day-head { width: 54px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
+    .wk-dow { font-family: 'Pretendard', sans-serif; font-size: 15px; font-weight: 700; color: rgba(0,0,0,0.7); }
+    .wk-date { font-family: 'Pretendard', sans-serif; font-size: 13px; font-weight: 500; color: rgba(0,0,0,0.35); }
+    .wk-day:nth-child(6) .wk-dow { color: #3b7fd6; }
+    .wk-day:nth-child(7) .wk-dow { color: #e05a5a; }
+
+    /* ─── 월 카드 (먼슬리 캘린더) ───────────── */
+    .mo-inner { flex: 1; display: flex; flex-direction: column; padding: 40px 40px 32px; gap: 18px; }
+    .mo-title { font-family: 'Pretendard', sans-serif; font-size: 30px; font-weight: 700; color: rgba(0,0,0,0.86); letter-spacing: -0.5px; flex-shrink: 0; }
+    .mo-dow-row { display: grid; grid-template-columns: repeat(7, 1fr); flex-shrink: 0; }
+    .mo-dow-row span { text-align: center; font-family: 'Pretendard', sans-serif; font-size: 13px; font-weight: 600; color: rgba(0,0,0,0.4); padding-bottom: 6px; }
+    .mo-dow-row span:nth-child(6) { color: #3b7fd6; }
+    .mo-dow-row span:nth-child(7) { color: #e05a5a; }
+    .mo-grid { flex: 1; display: grid; grid-template-columns: repeat(7, 1fr); grid-auto-rows: 1fr; border-top: 1px solid rgba(0,0,0,0.09); border-left: 1px solid rgba(0,0,0,0.09); }
+    .mo-cell { border-right: 1px solid rgba(0,0,0,0.09); border-bottom: 1px solid rgba(0,0,0,0.09); padding: 5px 7px; }
+    .mo-cell.mo-empty { background: rgba(0,0,0,0.015); }
+    .mo-daynum { font-family: 'Pretendard', sans-serif; font-size: 13px; font-weight: 500; color: rgba(0,0,0,0.6); }
 
     /* ─── CARD  (600×800px) ──────────────────────── */
     .card {
@@ -2597,6 +2641,12 @@
       <div class="tb-btn" id="panelToggleBtn">
         <i data-lucide="panel-left" style="width:18px;height:18px;"></i>
       </div>
+      <!-- 일/주/월 뷰 세그먼트 — 플래너 노트에서만 표시. 누르면 캔버스·패널이 해당 뷰로 바뀐다 -->
+      <div class="view-seg" id="viewSeg" style="display:none;">
+        <button class="view-seg-btn active" data-view="day" type="button">일</button>
+        <button class="view-seg-btn" data-view="week" type="button">주</button>
+        <button class="view-seg-btn" data-view="month" type="button">월</button>
+      </div>
     </div>
     <div class="tb-center">
       <div class="tb-btn" id="toolPencil"><i data-lucide="pencil"         style="width:22px;height:22px;"></i></div>
@@ -3212,9 +3262,89 @@
   PAGES.forEach((page) => {
     canvasZoomWrap.insertAdjacentHTML('beforeend', buildCardHTML(page));
     const card = canvasZoomWrap.lastElementChild;
+    card.dataset.view = 'day'; // 시드 페이지는 일(day) 뷰
     buildGrid(card, page.today ? TODAY_FILLS : null);
     initEmojiPicker(card);
   });
+
+  // ── 일/주/월 뷰 상태 ──────────────────────────────
+  // 플래너 노트는 캔버스를 일/주/월 세 뷰로 나눠 보여준다. 카드마다 dataset.view(day/week/month),
+  // 활성 탭의 dataset.noteView가 현재 뷰. sortPages/rebuildPanel이 현재 뷰 카드만 그린다.
+  function currentView() {
+    return document.querySelector('.tab.active')?.dataset.noteView || 'day';
+  }
+
+  // 주/월 카드 빌더 + 뷰별 페이지 준비
+  function _mondayOf(date) { const d = new Date(date); const wd = (d.getDay() + 6) % 7; d.setDate(d.getDate() - wd); d.setHours(0, 0, 0, 0); return d; }
+  function _fmtYYMMDD(d) { return `${String(d.getFullYear()).slice(2)}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`; }
+
+  function buildWeekCard(mondayDate) {
+    const mon = _mondayOf(mondayDate);
+    const weekOfMonth = Math.ceil(mon.getDate() / 7);
+    const sun = new Date(mon); sun.setDate(sun.getDate() + 6);
+    const DOW = ['월', '화', '수', '목', '금', '토', '일'];
+    let rows = '';
+    for (let i = 0; i < 7; i++) { const d = new Date(mon); d.setDate(d.getDate() + i);
+      rows += `<div class="wk-day"><div class="wk-day-head"><span class="wk-dow">${DOW[i]}</span><span class="wk-date">${d.getDate()}</span></div><div class="wk-note"></div></div>`; }
+    const el = document.createElement('div');
+    el.className = 'card'; el.dataset.canvasState = 'with-date'; el.dataset.view = 'week'; el.dataset.dateText = _fmtYYMMDD(mon);
+    el.innerHTML = `<canvas class="card-draw-canvas" width="600" height="800"></canvas>
+      <div class="card-inner wk-inner">
+        <div class="wk-header"><span class="wk-title">${mon.getMonth() + 1}월 ${weekOfMonth}주</span><span class="wk-range">${mon.getMonth() + 1}.${mon.getDate()} – ${sun.getMonth() + 1}.${sun.getDate()}</span></div>
+        <div class="wk-days">${rows}</div>
+      </div>`;
+    canvasZoomWrap.appendChild(el);
+    return el;
+  }
+  function buildMonthCard(year, month) {
+    const first = new Date(year, month - 1, 1);
+    const startOffset = (first.getDay() + 6) % 7;
+    const daysInMonth = new Date(year, month, 0).getDate();
+    const DOW = ['월', '화', '수', '목', '금', '토', '일'];
+    let cells = ''; const total = Math.ceil((startOffset + daysInMonth) / 7) * 7;
+    for (let i = 0; i < total; i++) { const day = i - startOffset + 1; const valid = day >= 1 && day <= daysInMonth;
+      cells += `<div class="mo-cell${valid ? '' : ' mo-empty'}">${valid ? `<span class="mo-daynum">${day}</span>` : ''}</div>`; }
+    const el = document.createElement('div');
+    el.className = 'card'; el.dataset.canvasState = 'with-date'; el.dataset.view = 'month'; el.dataset.dateText = `${String(year).slice(2)}.${String(month).padStart(2, '0')}.01`;
+    el.innerHTML = `<canvas class="card-draw-canvas" width="600" height="800"></canvas>
+      <div class="card-inner mo-inner">
+        <div class="mo-title">${year}년 ${month}월</div>
+        <div class="mo-dow-row">${DOW.map(d => `<span>${d}</span>`).join('')}</div>
+        <div class="mo-grid">${cells}</div>
+      </div>`;
+    canvasZoomWrap.appendChild(el);
+    return el;
+  }
+
+  // 주/월 뷰에 처음 진입할 때만 데모용 페이지들을 만들어둔다 (이번 주 포함 4주 / 이번 달 포함 3달)
+  const _viewPagesBuilt = { week: false, month: false };
+  function ensureViewPages(view) {
+    if (view === 'week' && !_viewPagesBuilt.week) {
+      _viewPagesBuilt.week = true;
+      const base = _mondayOf(new Date());
+      for (let i = 3; i >= 0; i--) { const m = new Date(base); m.setDate(m.getDate() - i * 7); buildWeekCard(m); }
+    } else if (view === 'month' && !_viewPagesBuilt.month) {
+      _viewPagesBuilt.month = true;
+      const now = new Date();
+      for (let i = 2; i >= 0; i--) { const d = new Date(now.getFullYear(), now.getMonth() - i, 1); buildMonthCard(d.getFullYear(), d.getMonth() + 1); }
+    }
+  }
+
+  const VIEW_TITLE = { day: '일 플래너', week: '주 플래너', month: '월 플래너' };
+  function applyViewSeg() {
+    const view = currentView();
+    document.querySelectorAll('.view-seg-btn').forEach(b => b.classList.toggle('active', b.dataset.view === view));
+    document.getElementById('spHeaderTitle').textContent = VIEW_TITLE[view] || '페이지';
+  }
+  function setNoteView(view) {
+    const t = document.querySelector('.tab.active');
+    if (t) t.dataset.noteView = view;
+    ensureViewPages(view);
+    applyViewSeg();
+    sortPages();
+    lucide.createIcons({ nodes: [canvasZoomWrap] });
+  }
+  document.querySelectorAll('.view-seg-btn').forEach(btn => btn.addEventListener('click', () => setNoteView(btn.dataset.view)));
 
   lucide.createIcons();
 
@@ -3274,14 +3404,23 @@
   }
 
   function sortPages(selectedCard, revealBanners) {
+    // 현재 뷰(일/주/월) 카드만 캔버스에 표시하고, 다른 뷰 카드는 .card-other-view로 숨긴다.
+    const view = currentView();
     const allCards = Array.from(canvasScroll.querySelectorAll('.card'));
-    const datedCards = allCards.filter(c => c.dataset.canvasState === 'with-date');
+    allCards.forEach(c => {
+      if (c.dataset.canvasState !== 'with-date') return;
+      c.classList.toggle('card-other-view', (c.dataset.view || 'day') !== view);
+    });
+    const datedCards = allCards.filter(c => c.dataset.canvasState === 'with-date' && (c.dataset.view || 'day') === view);
     datedCards.sort((a, b) => parseCardDate(a) - parseCardDate(b));
     canvasZoomWrap.querySelectorAll('.canvas-ad-banner').forEach(b => b.remove());
 
     const ghostCard = canvasZoomWrap.querySelector('.card.card-ghost');
-    const ghostEl = ghostCard ? (ghostCard.closest('.ghost-frame') || ghostCard) : null;
-    addPageBtn.style.display = ghostCard ? 'none' : ''; // 오늘자 미리보기 카드가 있으면 페이지 추가 버튼은 숨김
+    let ghostEl = ghostCard ? (ghostCard.closest('.ghost-frame') || ghostCard) : null;
+    // 오늘자 미리보기(ghost)는 일(day) 뷰에서만 보인다 — 주/월 뷰에선 숨기고 배치에서 제외
+    if (ghostEl) ghostEl.style.display = (view === 'day') ? '' : 'none';
+    if (view !== 'day') ghostEl = null;
+    addPageBtn.style.display = (ghostCard && view === 'day') ? 'none' : ''; // 오늘자 미리보기가 있으면 페이지 추가 버튼은 숨김
 
     // 오늘자 미리보기는 항상 맨 끝이 아니라, 실제 페이지들 사이에서 날짜순 제자리에 끼워 넣는다
     // (예: 미래 날짜 페이지가 이미 있으면 그보다 앞쪽에 와야 함)
@@ -4915,6 +5054,7 @@
     const activeTab = tabLabels.querySelector('.tab.active');
     const isQuick   = activeTab?.dataset.tabType === 'quick';
     const isCalendar = !isQuick && activeTab?.dataset.noteType === 'calendar';
+    const isPlanner = !isQuick && !isCalendar && (activeTab?.dataset.noteKind || 'planner') === 'planner';
     const tabName   = activeTab?.dataset.tabName  || '';
 
     toolbar.style.display        = isQuick ? 'none' : '';
@@ -4922,7 +5062,15 @@
     viewPlaceholder.style.display = isQuick ? 'flex' : 'none';
     viewPlaceholderLabel.textContent = isQuick ? tabName : '';
 
+    // 일/주/월 세그먼트는 플래너 노트에서만 표시한다
+    document.getElementById('viewSeg').style.display = isPlanner ? '' : 'none';
+    if (isPlanner) ensureViewPages(currentView());
+
     if (!isQuick) setCanvasMode(isCalendar ? 'calendar' : 'scroll', activeTab);
+
+    // 세그먼트 활성/패널 타이틀 갱신 (setCanvasMode의 sortPages 이후)
+    if (isPlanner) applyViewSeg();
+    else document.getElementById('spHeaderTitle').textContent = '페이지';
   }
 
   function openTabFromHome(name, icon, type, noteType, kind) {
