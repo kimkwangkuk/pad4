@@ -3022,14 +3022,34 @@
     { id: 'p4', dateText: _ydText,    label: _ydLabel, today: false, studyTime: '3:50:40' },
   ];
 
-  // 날짜별 공부시간 맵 ("YYYY-M-D" → "H:MM:SS") — 캘린더/카드가 공유한다. createPage로 새 페이지를
-  // 만들면 여기에도 반영된다.
+  // 날짜별 공부시간 맵 ("YYYY-M-D" → "H:MM:SS") — 캘린더/카드가 공유한다.
+  // 공부는 했지만 페이지를 추가하지 않은 날도 있으므로, 5·6·7월 어제까지의 날짜에 더미
+  // 공부시간을 채워 캘린더(직접 선택)에서 볼 수 있게 한다. 페이지가 있는 날은 그 카드의
+  // 실제 공부시간으로 덮어써 일치시킨다(공부 없는 페이지 날은 마크 제거).
   const STUDY_TIMES = {};
-  PAGES.forEach(p => {
-    if (!p.studyTime) return;
-    const [yy, mm, dd] = p.dateText.split('.');
-    STUDY_TIMES[`${2000 + parseInt(yy, 10)}-${parseInt(mm, 10)}-${parseInt(dd, 10)}`] = p.studyTime;
-  });
+  (function seedStudyTimes() {
+    const now = new Date();
+    const ty = now.getFullYear(), tm = now.getMonth() + 1, td = now.getDate();
+    [5, 6, 7].forEach(month => {
+      const daysInMonth = new Date(ty, month, 0).getDate();
+      for (let day = 1; day <= daysInMonth; day++) {
+        if (month > tm || (month === tm && day >= td)) continue; // 오늘·미래 제외 (어제까지만)
+        const h = (month * 37 + day * 13) % 100;                 // 날짜별 결정적 유사난수
+        if (h < 20) continue;                                    // ~20%는 공부 안 한 날
+        const mins = 65 + (h * 3) % 320;                         // 약 1시간 ~ 6시간
+        const secs = (h * 7) % 60;
+        STUDY_TIMES[`${ty}-${month}-${day}`] =
+          `${Math.floor(mins / 60)}:${String(mins % 60).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+      }
+    });
+    PAGES.forEach(p => {
+      if (!p.dateText) return;
+      const [yy, mm, dd] = p.dateText.split('.');
+      const key = `${2000 + parseInt(yy, 10)}-${parseInt(mm, 10)}-${parseInt(dd, 10)}`;
+      if (p.studyTime) STUDY_TIMES[key] = p.studyTime;
+      else delete STUDY_TIMES[key];
+    });
+  })();
 
   const GRID_LABELS = [
     '5','6','7','8','9','10','11',
@@ -3714,20 +3734,15 @@
     const d = String(day).padStart(2, '0');
     const dateText = `${y}.${m}.${d}`;
 
-    const newPage = { id: 'p' + pageCount++, dateText, today: false };
+    // 캔버스에 기본으로 깔린 속지(데일리)를 그대로 사용한다. 그날 캘린더에 공부기록이 있으면
+    // 그 시간을 반영해 타임라인/과목시간이 채워진 채로 추가된다.
+    const newPage = { id: 'p' + pageCount++, dateText, today: false, studyTime: STUDY_TIMES[`${year}-${month}-${day}`] };
     canvasZoomWrap.insertAdjacentHTML('beforeend', buildCardHTML(newPage));
     const newCard = canvasZoomWrap.lastElementChild;
     newCard.classList.add('card-creating'); // 스크롤이 도착하기 전까지는 보이지 않게 숨겨둔다
-
-    const oldInner = newCard.querySelector('.card-inner');
-    if (oldInner) oldInner.remove();
-    const studyInner = buildStudyCardEl(false, `| ${dateText}`);
-    studyInner.className = 'study-card-inner';
-    studyInner.style.cssText = 'flex:1;min-height:0;display:flex;flex-direction:column;padding:22px;box-sizing:border-box;overflow:hidden;';
-    newCard.appendChild(studyInner);
-    newCard.dataset.pageType = 'study';
+    buildGrid(newCard, studyBreakdown(newPage).fills);
+    newCard.dataset.pageType = 'daily';
     newCard.dataset.dateText = dateText;
-    if (window.ipApplyTint) window.ipApplyTint(newCard);
 
     initEmojiPicker(newCard);
     lucide.createIcons({ nodes: [newCard] });
