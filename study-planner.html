@@ -3408,7 +3408,7 @@
   function setNoteView(view) {
     const t = document.querySelector('.tab.active');
     if (t) t.dataset.noteView = view;
-    ensureViewPages(view);
+    // 페이지는 자동으로 깔지 않는다 — 각 뷰는 빈 상태로 시작하고 "페이지 추가"로만 채운다
     applyViewSeg();
     sortPages();
     if (window.__todayFabReady) window.watchTodayFab(); // 뷰가 바뀌면 오늘 카드도 바뀐다
@@ -3428,10 +3428,21 @@
   function rebuildPanel(datedCards, selectedIdx) {
     const spContent = document.querySelector('.sp-content');
     spContent.innerHTML = '';
+    // 뷰별로 레이블 단위가 다르다 — 일=M/D, 주=M월 N주, 월=M월
+    const view = currentView();
     const items = datedCards.map((card, idx) => {
       const txt = card.dataset.dateText || card.querySelector('.hd-date-val').textContent;
-      const [, mm, dd] = txt.split('.');
-      return { idx, label: `${parseInt(mm, 10)}/${parseInt(dd, 10)}` };
+      const [yy, mm, dd] = txt.split('.');
+      let label;
+      if (view === 'week') {
+        const d = new Date(2000 + parseInt(yy, 10), parseInt(mm, 10) - 1, parseInt(dd, 10));
+        label = `${parseInt(mm, 10)}월 ${Math.ceil(d.getDate() / 7)}주`;
+      } else if (view === 'month') {
+        label = `${parseInt(mm, 10)}월`;
+      } else {
+        label = `${parseInt(mm, 10)}/${parseInt(dd, 10)}`;
+      }
+      return { idx, label };
     });
     items.push({ idx: datedCards.length, isAdd: true });
 
@@ -3488,8 +3499,12 @@
     datedCards.sort((a, b) => parseCardDate(a) - parseCardDate(b));
     canvasZoomWrap.querySelectorAll('.canvas-ad-banner').forEach(b => b.remove());
 
-    const ghostCard = canvasZoomWrap.querySelector('.card.card-ghost');
+    // 오늘 미리보기(ghost)는 자기 탭에서만 인식한다 — 다른 탭의 ghost가 이 탭의 추가 버튼을 숨기지 않게
+    const _gCard = canvasZoomWrap.querySelector('.card.card-ghost');
+    const ghostCard = (_gCard && _gCard.dataset.ownerTab === tabId) ? _gCard : null;
     let ghostEl = ghostCard ? (ghostCard.closest('.ghost-frame') || ghostCard) : null;
+    // 다른 탭 ghost 프레임은 이 탭에선 숨긴다
+    if (_gCard && _gCard !== ghostCard) { const f = _gCard.closest('.ghost-frame') || _gCard; f.style.display = 'none'; }
     // 오늘자 미리보기(ghost)는 일(day) 뷰에서만 보인다 — 주/월 뷰에선 숨기고 배치에서 제외
     if (ghostEl) ghostEl.style.display = (view === 'day') ? '' : 'none';
     if (view !== 'day') ghostEl = null;
@@ -3725,6 +3740,8 @@
 
     canvasZoomWrap.insertAdjacentHTML('beforeend', buildCardHTML({ id: 'ghost-today', dateText: todayText, today: true }));
     const ghostCard = canvasZoomWrap.lastElementChild;
+    ghostCard.dataset.view = 'day';
+    if (activeTabId()) ghostCard.dataset.ownerTab = activeTabId();
 
     // 점선 프레임(일반 카드 슬롯과 동일한 600×800)으로 감싸고, 카드는 그 안에서 91.667%로
     // 축소되어 가운데에 뜬다 (Figma 4981:262394)
@@ -3926,11 +3943,16 @@
 
   // 새 페이지를 캔버스에 생성 (속지 설정에서 구성한 템플릿 + 컬러를 그대로 반영)
   function createPage(year, month, day) {
-    if (datePicker.takenDates.has(`${year}-${month}-${day}`)) return;
     const y = String(year).slice(2);
     const m = String(month).padStart(2, '0');
     const d = String(day).padStart(2, '0');
     const dateText = `${y}.${m}.${d}`;
+    // 중복은 탭별로 판정한다 — 이 탭 일(day) 뷰에 이미 그 날짜 카드가 있으면 그 카드로 이동만.
+    // (전역 takenDates는 ghost가 오늘을 미리 점유해 새 노트에서 오늘 추가가 막히던 문제가 있었다)
+    const tabId = activeTabId();
+    const dup = Array.from(canvasZoomWrap.querySelectorAll('.card[data-view="day"][data-canvas-state="with-date"]'))
+      .find(c => c.dataset.ownerTab === tabId && c.dataset.dateText === dateText);
+    if (dup) { sortPages(dup); return; }
 
     const newPage = { id: 'p' + pageCount++, dateText, today: false };
     canvasZoomWrap.insertAdjacentHTML('beforeend', buildCardHTML(newPage));
@@ -5209,9 +5231,8 @@
     viewPlaceholder.style.display = isQuick ? 'flex' : 'none';
     viewPlaceholderLabel.textContent = isQuick ? tabName : '';
 
-    // 일/주/월 세그먼트는 플래너 노트에서만 표시한다
+    // 일/주/월 세그먼트는 플래너 노트에서만 표시한다 (페이지는 자동 생성하지 않는다)
     document.getElementById('viewSeg').style.display = isPlanner ? '' : 'none';
-    if (isPlanner) ensureViewPages(currentView());
 
     if (!isQuick) setCanvasMode(isCalendar ? 'calendar' : 'scroll', activeTab);
 
