@@ -5636,12 +5636,33 @@
       { color: '#f2f2f1', name: '그레이' }
     ];
     const IP_UNLOCK_COUNT = 3; // 상단 3개는 잠금 해제
-    const IP_ITEMS = Array.from({ length: 9 }, (_, i) => ({
-      id: i,
-      name: '모던 텐미닛 플래너',
-      desc: '심플하고 정돈된 레이아웃으로 하루 학습을 체계적으로 기록할 수 있는 데일리 플래너 속지입니다.',
-      unlocked: i < IP_UNLOCK_COUNT
-    }));
+    // 일/주/월 뷰마다 다른 속지 목록을 보여준다 — 현재 뷰(currentView)에 맞는 목록을 ipItems()가 반환
+    const IP_ITEMS_BY_VIEW = {
+      day: [
+        { id: 0, name: '모던 텐미닛 플래너', desc: '심플하고 정돈된 레이아웃으로 하루 학습을 체계적으로 기록할 수 있는 데일리 플래너 속지입니다.', unlocked: true },
+        { id: 1, name: '심플 데일리', desc: '군더더기 없는 여백 중심의 하루 기록 속지입니다.', unlocked: true },
+        { id: 2, name: '타임블록 플래너', desc: '시간대별 블록으로 하루 일정을 촘촘히 계획하는 속지입니다.', unlocked: true },
+        { id: 3, name: '체크 데일리', desc: '할 일 체크리스트 중심의 데일리 속지입니다.', unlocked: false },
+      ],
+      week: [
+        { id: 0, name: '위클리 그리드', desc: '한 주를 요일별로 나눠 정리하는 기본 주간 속지입니다.', unlocked: true },
+        { id: 1, name: '주간 목표 플래너', desc: '이번 주 목표와 요일별 일정을 함께 관리하는 속지입니다.', unlocked: true },
+        { id: 2, name: '위클리 타임라인', desc: '한 주의 흐름을 타임라인으로 한눈에 보는 속지입니다.', unlocked: false },
+      ],
+      month: [
+        { id: 0, name: '먼슬리 캘린더', desc: '한 달을 캘린더 격자로 보는 기본 월간 속지입니다.', unlocked: true },
+        { id: 1, name: '월간 목표 트래커', desc: '한 달 목표와 진행 상황을 함께 기록하는 속지입니다.', unlocked: true },
+        { id: 2, name: '먼슬리 해빗', desc: '한 달 습관 형성을 체크하는 월간 속지입니다.', unlocked: false },
+      ],
+    };
+    function ipItems() { return IP_ITEMS_BY_VIEW[currentView()] || IP_ITEMS_BY_VIEW.day; }
+    // 현재 뷰에 맞는 미리보기용 카드 엘리먼트(캔버스엔 붙지 않음)
+    function ipSourceForView() {
+      const view = currentView();
+      if (view === 'week') { const el = buildWeekCard(_mondayOf(new Date())); el.remove(); return el; }
+      if (view === 'month') { const now = new Date(); const el = buildMonthCard(now.getFullYear(), now.getMonth() + 1); el.remove(); return el; }
+      return buildStudyCardEl();
+    }
     const IP_FEATURES = [
       { title: '날짜 선택', desc: '오늘의 학습을 기록할 날짜를 선택하여 하루를 시작하세요' },
       { title: 'Dday', desc: '중요한 시험이나 목표까지 남은 시간을 한눈에 관리해요' },
@@ -5659,12 +5680,12 @@
       colorChipName.textContent = opt.name;
     }
 
-    function getIpItem(id) { return IP_ITEMS.find(it => it.id === id); }
+    function getIpItem(id) { return ipItems().find(it => it.id === id); }
     function isIpUnlocked(id) { const item = getIpItem(id); return !!item && item.unlocked; }
 
     // 선택된 속지가 항상 맨 앞에 오도록 정렬한 표시 순서
     function getIpDisplayItems() {
-      const items = IP_ITEMS.slice();
+      const items = ipItems().slice();
       const idx = items.findIndex(it => it.id === ipSelectedId);
       if (idx > 0) {
         const [sel] = items.splice(idx, 1);
@@ -5675,7 +5696,7 @@
 
     function renderIpGrid() {
       grid.innerHTML = '';
-      if (!ipSourceCard) ipSourceCard = buildStudyCardEl();
+      if (!ipSourceCard) ipSourceCard = ipSourceForView();
 
       getIpDisplayItems().forEach(item => {
         const isSelected = item.id === ipSelectedId;
@@ -5793,7 +5814,7 @@
 
     // 현재 확정된 템플릿+컬러를 반영한 미리보기용 카드 엘리먼트 (실제 캔버스엔 붙지 않음)
     function buildIpConfiguredCardEl() {
-      const el = buildStudyCardEl();
+      const el = ipSourceForView(); // 페이지 추가 메뉴 미리보기도 현재 뷰(일/주/월)에 맞춘다
       el.style.position = 'relative';
       el.style.overflow = 'hidden';
       const tint = document.createElement('div');
@@ -5831,7 +5852,11 @@
     }
 
     function openInsertPicker(targetCard) {
-      ipSourceCard = targetCard || null;
+      // 페이지 추가(targetCard 없음)면 현재 뷰의 미리보기 카드로, 속지 변경이면 그 카드로.
+      // 뷰가 바뀌었을 수 있으니 선택 상태도 현재 뷰의 첫 속지로 초기화한다.
+      ipSourceCard = targetCard || ipSourceForView();
+      ipSelectedId = ipItems()[0].id;
+      ipActiveId = ipSelectedId;
       slider.reset(0);
       colorSheet.style.transition = 'none';
       closeIpColorSheet();
