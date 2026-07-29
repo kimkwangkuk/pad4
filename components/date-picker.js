@@ -6,6 +6,8 @@ class DatePicker {
     this.selected = options.selected || null;
     this.onConfirm = options.onConfirm || null;
     this.instantSelect = !!options.instantSelect; // true면 확인 버튼 없이 날짜를 누르는 즉시 확정된다
+    this.multiSelect = !!options.multiSelect; // true면 여러 날짜를 하나씩 눌러 토글 선택하고 확인 시 한번에 확정
+    this.selectedDates = new Set(); // 다중 선택 모드에서 선택된 날짜 키("YYYY-M-D")
     this._overlay = null;
     this._sheet = null;
     this.takenDates = new Set(
@@ -69,6 +71,15 @@ class DatePicker {
     const confirmBtnEl = sheet.querySelector('.dp-header-confirm-btn');
     if (confirmBtnEl) {
       confirmBtnEl.addEventListener('click', () => {
+        if (this.multiSelect) {
+          if (this.selectedDates.size === 0) return;
+          const dates = Array.from(this.selectedDates)
+            .map(k => { const [y, m, d] = k.split('-').map(Number); return { year: y, month: m, day: d }; })
+            .sort((a, b) => new Date(a.year, a.month - 1, a.day) - new Date(b.year, b.month - 1, b.day));
+          if (this.onConfirm) this.onConfirm(dates);
+          this.close();
+          return;
+        }
         if (this.selected == null) return;
         if (this.onConfirm) this.onConfirm({ year: this.year, month: this.month, day: this.selected });
         this.close();
@@ -111,14 +122,23 @@ class DatePicker {
         const study = valid ? this._studyLabel(this.studyDates[dateKey]) : '';
         const cell = document.createElement('div');
         cell.className = 'dp-day-cell' + (valid ? '' : ' empty') + (taken ? ' taken' : '') + (study ? ' has-study' : '');
-        const sel = (day === this.selected && !taken) ? ' selected' : '';
-        const circleCls = `dp-day-circle${sel}${taken ? ' taken' : ''}`;
+        const isSel = this.multiSelect
+          ? (valid && !taken && this.selectedDates.has(dateKey))
+          : (day === this.selected && !taken);
+        const circleCls = `dp-day-circle${isSel ? ' selected' : ''}${taken ? ' taken' : ''}`;
         // 공부시간 마크는 항상 자리를 차지하게 두어(빈 셀은 공백) 날짜 동그라미의 세로 위치가 일정하다
         cell.innerHTML =
           `<div class="${circleCls}"><span class="dp-day-num">${valid ? day : ''}</span></div>` +
           `<span class="dp-study-mark">${study}</span>`;
         if (valid && !taken) {
           cell.addEventListener('click', () => {
+            if (this.multiSelect) {
+              // 하나씩 눌러 토글 — 확인을 눌러야 모두 확정
+              if (this.selectedDates.has(dateKey)) this.selectedDates.delete(dateKey);
+              else this.selectedDates.add(dateKey);
+              this._renderGrid(sheet);
+              return;
+            }
             this.selected = day;
             if (this.instantSelect) {
               // 확인 버튼 없이 날짜를 누르는 즉시 확정 — 캘린더 노트처럼 바로 이동하는 용도
@@ -134,7 +154,12 @@ class DatePicker {
     }
 
     const confirmBtn = sheet.querySelector('.dp-header-confirm-btn');
-    if (confirmBtn) confirmBtn.disabled = this.selected == null;
+    if (confirmBtn) confirmBtn.disabled = this.multiSelect ? this.selectedDates.size === 0 : this.selected == null;
+    // 다중 선택 모드에서는 선택 개수를 타이틀에 보여준다
+    if (this.multiSelect) {
+      const titleEl = sheet.querySelector('.dp-title');
+      if (titleEl) titleEl.textContent = this.selectedDates.size ? `${this.selectedDates.size}개 선택` : '날짜 선택';
+    }
   }
 
   open() {
@@ -149,6 +174,9 @@ class DatePicker {
         if (e.target === this._overlay) this.close();
       });
     }
+    // 열 때마다 이전 선택은 초기화
+    this.selected = null;
+    this.selectedDates.clear();
     this._renderGrid(this._sheet);
     this._overlay.classList.remove('dp-hidden');
   }
