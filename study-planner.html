@@ -2345,6 +2345,11 @@
 
     .home-body { flex:1; display:flex; flex-direction:column; }
     .note-grid { display:grid; grid-template-columns:repeat(5,170px); justify-content:space-between; row-gap:40px; padding:0 20px 40px; }
+    /* 홈 빈 상태 안내 */
+    .home-empty { display:flex; flex-direction:column; align-items:center; gap:10px; padding:120px 20px; }
+    .home-empty[hidden] { display:none; }
+    .home-empty-title { font-family:'Pretendard',sans-serif; font-size:18px; font-weight:700; color:rgba(0,0,0,0.5); letter-spacing:-0.3px; }
+    .home-empty-sub { font-family:'Pretendard',sans-serif; font-size:14px; font-weight:500; color:rgba(0,0,0,0.35); }
 
     .fab-add-btn {
       position:fixed; right:20px; bottom:20px; width:60px; height:60px; border-radius:50%;
@@ -3095,6 +3100,12 @@
     </div>
     <div class="home-body">
       <div class="note-grid" id="hsNotes"></div>
+      <!-- 노트가 하나도 없을 때 안내 -->
+      <div class="home-empty" id="homeEmpty" hidden>
+        <i data-lucide="notebook-pen" style="width:44px;height:44px;color:rgba(0,0,0,0.2);"></i>
+        <div class="home-empty-title">아직 노트가 없어요</div>
+        <div class="home-empty-sub">오른쪽 아래 + 버튼으로 노트를 추가해 주세요</div>
+      </div>
     </div>
     <button class="fab-add-btn" id="hsAddBtn" aria-label="새 노트">
       <i data-lucide="plus" style="width:30px;height:30px;color:#fff;"></i>
@@ -3518,10 +3529,16 @@
   }
 
   function updateAllThumbs() {
-    const allCards = Array.from(canvasZoomWrap.querySelectorAll('.card[data-canvas-state="with-date"]'));
+    // 패널 pageIdx는 활성 탭+현재 뷰로 필터·정렬된 목록 기준이므로, 여기서도 같은 필터로 맞춰야
+    // 인덱스가 일치한다 (전체 카드로 인덱싱하면 엉뚱한/없는 카드를 잡아 썸네일이 회색으로 비어 보임).
+    const view = currentView();
+    const tabId = activeTabId();
+    const cards = Array.from(canvasZoomWrap.querySelectorAll('.card[data-canvas-state="with-date"]'))
+      .filter(c => c.dataset.ownerTab === tabId && (c.dataset.view || 'day') === view)
+      .sort((a, b) => parseCardDate(a) - parseCardDate(b));
     document.querySelectorAll('.sp-card[data-page-idx]').forEach(spCard => {
       const idx    = parseInt(spCard.dataset.pageIdx);
-      const card   = allCards[idx];
+      const card   = cards[idx];
       const thumbEl = spCard.querySelector('.sp-thumb');
       if (card && thumbEl) renderThumb(card, thumbEl);
     });
@@ -3836,10 +3853,39 @@
     takenDates,
     onConfirm({ year, month, day }) {
       if (!day) return;
-      if (activeCard) applyDate(activeCard, year, month, day);
+      if (activeCard) { applyDate(activeCard, year, month, day); return; }
+      // 현재 뷰에 맞춰 일/주/월 페이지를 추가한다 — 주는 고른 날짜의 주, 월은 고른 날짜의 달
+      const view = currentView();
+      if (view === 'week') addWeekPage(new Date(year, month - 1, day));
+      else if (view === 'month') addMonthPage(year, month);
       else createPage(year, month, day);
     }
   });
+
+  // 주/월 페이지 추가 — 이미 그 주/달 카드가 이 탭에 있으면 그 카드로 이동만 한다
+  function addWeekPage(date) {
+    const mon = _mondayOf(date);
+    const dateText = _fmtYYMMDD(mon);
+    const tabId = activeTabId();
+    const exists = Array.from(canvasZoomWrap.querySelectorAll('.card[data-view="week"]'))
+      .find(c => c.dataset.ownerTab === tabId && c.dataset.dateText === dateText);
+    if (exists) { sortPages(exists); pageToast.show('이미 있는 주입니다'); return; }
+    const el = buildWeekCard(mon);
+    lucide.createIcons({ nodes: [el] });
+    sortPages(el, true);
+    pageToast.show(`${mon.getMonth() + 1}월 ${Math.ceil(mon.getDate() / 7)}주 페이지가 추가되었습니다`);
+  }
+  function addMonthPage(year, month) {
+    const dateText = `${String(year).slice(2)}.${String(month).padStart(2, '0')}.01`;
+    const tabId = activeTabId();
+    const exists = Array.from(canvasZoomWrap.querySelectorAll('.card[data-view="month"]'))
+      .find(c => c.dataset.ownerTab === tabId && c.dataset.dateText === dateText);
+    if (exists) { sortPages(exists); pageToast.show('이미 있는 달입니다'); return; }
+    const el = buildMonthCard(year, month);
+    lucide.createIcons({ nodes: [el] });
+    sortPages(el, true);
+    pageToast.show(`${year}년 ${month}월 페이지가 추가되었습니다`);
+  }
 
   // ── Date selection mini-menu ───────────────────────────────
   const _td = new Date();
@@ -3926,24 +3972,44 @@
 
   function openAddPageMenu(x, y, opts) {
     activeCard = null;
-    const todayTaken = datePicker.takenDates.has(`${_todayY}-${_todayM}-${_todayD}`);
-    if (todayTaken) {
-      const sugg = getSuggestedNextDate();
-      if (sugg) {
-        dateSelectMenu.updateItem(0, {
-          lucideIcon: 'calendar-check',
-          label: `${sugg.month}/${sugg.day}`,
-          onClick() { createPage(sugg.year, sugg.month, sugg.day); }
-        });
-      }
-    } else {
+    const view = currentView();
+    if (view === 'week') {
+      // 주 뷰: "이번 주" 바로 추가 + "직접 선택"(캘린더에서 고른 날짜의 주)
+      const mon = _mondayOf(new Date());
       dateSelectMenu.updateItem(0, {
         lucideIcon: 'calendar-check',
-        label: `오늘 (${_todayM}/${_todayD})`,
-        onClick() { createPage(_todayY, _todayM, _todayD); }
+        label: `이번 주 (${mon.getMonth() + 1}월 ${Math.ceil(mon.getDate() / 7)}주)`,
+        onClick() { addWeekPage(new Date()); }
       });
+      dateSelectMenu.setTitle('주 선택');
+    } else if (view === 'month') {
+      // 월 뷰: "이번 달" 바로 추가 + "직접 선택"(캘린더에서 고른 날짜의 달)
+      dateSelectMenu.updateItem(0, {
+        lucideIcon: 'calendar-check',
+        label: `이번 달 (${_todayM}월)`,
+        onClick() { addMonthPage(_todayY, _todayM); }
+      });
+      dateSelectMenu.setTitle('월 선택');
+    } else {
+      const todayTaken = datePicker.takenDates.has(`${_todayY}-${_todayM}-${_todayD}`);
+      if (todayTaken) {
+        const sugg = getSuggestedNextDate();
+        if (sugg) {
+          dateSelectMenu.updateItem(0, {
+            lucideIcon: 'calendar-check',
+            label: `${sugg.month}/${sugg.day}`,
+            onClick() { createPage(sugg.year, sugg.month, sugg.day); }
+          });
+        }
+      } else {
+        dateSelectMenu.updateItem(0, {
+          lucideIcon: 'calendar-check',
+          label: `오늘 (${_todayM}/${_todayD})`,
+          onClick() { createPage(_todayY, _todayM, _todayD); }
+        });
+      }
+      dateSelectMenu.setTitle('페이지 날짜 선택');
     }
-    dateSelectMenu.setTitle('페이지 날짜 선택');
     _lastDateMenuPos = { x, y, opts };
     dateSelectMenu.open(x, y, opts);
   }
@@ -4313,6 +4379,7 @@
     HOME_NOTES.unshift(note);
     hsNotesEl.insertBefore(cardEl, hsNotesEl.firstChild);
     lucide.createIcons({ nodes: [cardEl] });
+    if (typeof updateHomeEmpty === 'function') updateHomeEmpty();
     openTabFromHome(note.name, note.icon, 'note', note.noteType, note.kind);
   });
   function ncCloseScreen() {
@@ -4982,9 +5049,15 @@
     return card;
   }
 
+  // 노트 유무에 따라 빈 상태 안내를 토글한다
+  function updateHomeEmpty() {
+    document.getElementById('homeEmpty').hidden = hsNotesEl.children.length > 0;
+  }
+
   HOME_NOTES.forEach(note => {
     hsNotesEl.appendChild(buildNoteCardEl(note));
   });
+  updateHomeEmpty();
 
   lucide.createIcons({ nodes: [homeScreen] });
 
