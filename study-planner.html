@@ -3999,22 +3999,28 @@
   function openAddPageMenu(x, y, opts) {
     activeCard = null;
     const view = currentView();
+    const tabId = activeTabId();
     if (view === 'week') {
-      // 주 뷰: "이번 주" 바로 추가 + "직접 선택"(캘린더에서 고른 날짜의 주)
-      const mon = _mondayOf(new Date());
-      dateSelectMenu.updateItem(0, {
-        lucideIcon: 'calendar-check',
-        label: `이번 주 (${mon.getMonth() + 1}월 ${Math.ceil(mon.getDate() / 7)}주)`,
-        onClick() { addWeekPage(new Date()); }
-      });
+      // 주 뷰: 이번 주부터 시작해 아직 없는 첫 주를 추천한다(일 뷰가 다음 날짜를 제안하는 것과 같은 룰)
+      const hasWeek = (m) => Array.from(canvasZoomWrap.querySelectorAll('.card[data-view="week"]'))
+        .some(c => c.dataset.ownerTab === tabId && c.dataset.dateText === _fmtYYMMDD(m));
+      let mon = _mondayOf(new Date());
+      let isThis = true;
+      while (hasWeek(mon)) { const n = new Date(mon); n.setDate(n.getDate() + 7); mon = n; isThis = false; }
+      const label = isThis
+        ? `이번 주 (${mon.getMonth() + 1}월 ${Math.ceil(mon.getDate() / 7)}주)`
+        : `${mon.getMonth() + 1}월 ${Math.ceil(mon.getDate() / 7)}주`;
+      const target = new Date(mon);
+      dateSelectMenu.updateItem(0, { lucideIcon: 'calendar-check', label, onClick() { addWeekPage(target); } });
       dateSelectMenu.setTitle('주 선택');
     } else if (view === 'month') {
-      // 월 뷰: "이번 달" 바로 추가 + "직접 선택"(캘린더에서 고른 날짜의 달)
-      dateSelectMenu.updateItem(0, {
-        lucideIcon: 'calendar-check',
-        label: `이번 달 (${_todayM}월)`,
-        onClick() { addMonthPage(_todayY, _todayM); }
-      });
+      // 월 뷰: 이번 달부터 시작해 아직 없는 첫 달을 추천한다
+      const hasMonth = (yy, mm) => Array.from(canvasZoomWrap.querySelectorAll('.card[data-view="month"]'))
+        .some(c => c.dataset.ownerTab === tabId && c.dataset.dateText === `${String(yy).slice(2)}.${String(mm).padStart(2, '0')}.01`);
+      let yr = _todayY, mo = _todayM, isThis = true;
+      while (hasMonth(yr, mo)) { mo++; if (mo > 12) { mo = 1; yr++; } isThis = false; }
+      const label = isThis ? `이번 달 (${mo}월)` : `${yr === _todayY ? '' : yr + '년 '}${mo}월`;
+      dateSelectMenu.updateItem(0, { lucideIcon: 'calendar-check', label, onClick() { addMonthPage(yr, mo); } });
       dateSelectMenu.setTitle('월 선택');
     } else {
       const todayTaken = datePicker.takenDates.has(`${_todayY}-${_todayM}-${_todayD}`);

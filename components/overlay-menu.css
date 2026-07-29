@@ -58,16 +58,18 @@
   margin-bottom: 8px;
 }
 .om-preview:active { opacity: 0.6; }
-/* "변경" 버튼이 있는 미리보기: 썸네일 좌측, 변경 버튼 우측 (Figma 5463:1401586) */
+/* "변경" 버튼이 있는 미리보기: 썸네일은 중앙, 변경 버튼은 우상단에 겹쳐 배치 (Figma 5463:1401586) */
 .om-preview.om-preview-has-change {
-  justify-content: space-between;
-  padding: 4px 6px 4px 4px;
+  position: relative;
+  justify-content: center;
+  padding: 8px 0;
   cursor: default;
   filter: none;
 }
 .om-preview.om-preview-has-change:active { opacity: 1; }
 .om-preview-change {
-  flex-shrink: 0;
+  position: absolute;
+  top: 6px; right: 6px;
   height: 30px; padding: 0 14px;
   background: rgba(255,255,255,0.7);
   border: 1px solid rgba(255,255,255,0.9);
