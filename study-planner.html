@@ -1202,6 +1202,49 @@
     }
     #changeTypeBackdrop { z-index: 5000; }
 
+    /* ─── 새 노트 팝업 (표지 + 이름) ─────────────── */
+    #newNoteBackdrop { z-index: 5000; }
+    #newNotePopup {
+      position: fixed; z-index: 5001;
+      left: 50%; top: 50%;
+      transform: translateX(-50%) translateY(calc(-50% + 20px));
+      width: 400px; max-width: calc(100vw - 32px);
+      background: white; border-radius: 36px;
+      box-shadow: 0px 15px 75px rgba(0,0,0,0.18);
+      overflow: hidden;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.22s ease, transform 0.22s cubic-bezier(0.34,1.1,0.64,1);
+      padding-bottom: 28px;
+    }
+    #newNotePopup.visible { opacity: 1; pointer-events: auto; transform: translateX(-50%) translateY(-50%); }
+    .nnp-body { padding: 0 24px; display: flex; flex-direction: column; gap: 14px; }
+    .nnp-preview { display: flex; justify-content: center; padding: 4px 0 8px; }
+    /* 미리보기 북 — 홈 카드 .nb와 같은 비율, 조금 크게 */
+    .nnp-preview .nb { width: 132px; }
+    .nnp-name-input {
+      width: 100%; height: 46px; padding: 0 16px;
+      background: rgba(0,0,0,0.05); border: none; border-radius: 12px;
+      font-family: 'Pretendard', sans-serif; font-size: 15px; font-weight: 600;
+      color: rgba(0,0,0,0.86); box-sizing: border-box;
+    }
+    .nnp-name-input:focus { outline: 2px solid rgba(0,0,0,0.15); }
+    .nnp-section-label { font-family: 'Pretendard', sans-serif; font-size: 13px; font-weight: 700; color: #8e8e93; }
+    .nnp-cover-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+    .nnp-cover-cell {
+      aspect-ratio: 1; border-radius: 10px; cursor: pointer;
+      border: 2px solid transparent; box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,0.08);
+    }
+    .nnp-cover-cell.selected { border-color: rgba(0,0,0,0.86); }
+    .nnp-create-btn {
+      width: 100%; height: 48px; margin-top: 4px;
+      background: rgba(0,0,0,0.86); color: #fff; border: none; border-radius: 14px;
+      font-family: 'Pretendard', sans-serif; font-size: 16px; font-weight: 600; cursor: pointer;
+      transition: background 0.12s;
+    }
+    .nnp-create-btn:hover { background: rgba(0,0,0,0.72); }
+
     .ctp-body { padding: 0 16px 0; display: flex; flex-direction: column; gap: 0; }
     .ctp-section-label {
       font-family: 'Pretendard', sans-serif;
@@ -2734,31 +2777,15 @@
   <!-- 새 노트 타입 선택 드롭다운 (Figma 4310:34619 이식) -->
   <div class="pop-scrim" id="popScrim" onclick="closeMenus()"></div>
   <div class="nn-menu" id="nnMenu" onclick="event.stopPropagation()">
-    <button class="nn-row" onclick="chooseNewNote('데일리','#34c78a','#e6f7f0')">
+    <button class="nn-row" onclick="chooseNewNote('planner')">
       <div class="nn-thumb">
         <div class="pg back"><img src="assets/newnote-page.png" alt=""></div>
         <div class="pg front"><img src="assets/newnote-page.png" alt=""></div>
         <div class="fade"></div>
       </div>
-      <div class="nn-txt"><div class="nn-t">데일리 플래너</div><div class="nn-s">집중 시간 관리 및 기록</div></div>
+      <div class="nn-txt"><div class="nn-t">플래너 노트</div><div class="nn-s">일·주·월로 일정과 기록을 관리</div></div>
     </button>
-    <button class="nn-row" onclick="chooseNewNote('위클리','#5a8dee','#e8f0fe')">
-      <div class="nn-thumb">
-        <div class="pg back"><img src="assets/newnote-page.png" alt=""></div>
-        <div class="pg front"><img src="assets/newnote-page.png" alt=""></div>
-        <div class="fade"></div>
-      </div>
-      <div class="nn-txt"><div class="nn-t">위클리 플래너</div><div class="nn-s">주간 목표와 일정을 한눈에 확인</div></div>
-    </button>
-    <button class="nn-row" onclick="chooseNewNote('먼슬리','#b48be8','#f3ecfd')">
-      <div class="nn-thumb">
-        <div class="pg back"><img src="assets/newnote-page.png" alt=""></div>
-        <div class="pg front"><img src="assets/newnote-page.png" alt=""></div>
-        <div class="fade"></div>
-      </div>
-      <div class="nn-txt"><div class="nn-t">먼슬리 플래너</div><div class="nn-s">달 단위 일정 관리</div></div>
-    </button>
-    <button class="nn-row" onclick="chooseNewNote('데일리','#8e8e93','#eeeeef')">
+    <button class="nn-row" onclick="chooseNewNote('blank')">
       <div class="nn-thumb">
         <div class="pg back"><img src="assets/newnote-page.png" alt=""></div>
         <div class="pg front"><img src="assets/newnote-page.png" alt=""></div>
@@ -2916,6 +2943,32 @@
           <button class="mp2-confirm-btn" id="mp2ConfirmBtn">추가하기</button>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- NEW NOTE POPUP (표지 + 이름만 설정하는 팝업 — 전체화면 생성 화면 대체) -->
+  <div id="newNoteBackdrop" class="bsm-backdrop"></div>
+  <div id="newNotePopup">
+    <div class="bsm-grabber-row"></div>
+    <div class="bsm-header">
+      <div class="bsm-spacer"></div>
+      <span class="bsm-title" id="nnpTitle">새 노트</span>
+      <button class="bsm-close-btn" id="nnpClose">✕</button>
+    </div>
+    <div class="nnp-body">
+      <!-- 선택한 표지가 입혀진 미리보기 북 -->
+      <div class="nnp-preview">
+        <div class="nb" id="nnpBook">
+          <div class="nb-cover" id="nnpCover"></div>
+          <div class="nb-band1"></div><div class="nb-band2"></div>
+          <div class="nb-spine" id="nnpSpine"><i></i><i></i><i></i><i></i><i></i></div>
+          <div class="nb-inset"></div>
+        </div>
+      </div>
+      <input class="nnp-name-input" id="nnpNameInput" type="text" placeholder="노트 이름" maxlength="40">
+      <div class="nnp-section-label">표지</div>
+      <div class="nnp-cover-grid" id="nnpCoverGrid"></div>
+      <button class="nnp-create-btn" id="nnpCreateBtn">만들기</button>
     </div>
   </div>
 
@@ -4036,18 +4089,59 @@
     };
   }
 
-  function chooseNewNote(type) {
-    closeMenus();
-    ncResetState(type);
-    document.getElementById('ncSubtitle').textContent = type + ' 플래너';
-    document.getElementById('ncSubtitleInput').value = type + ' 플래너';
-    ncRenderPreviewTabs();
-    ncRenderPreviewThumbs();
-    ncRenderBody();
-    document.getElementById('ncFormatPop').classList.remove('show');
-    document.getElementById('noteCreateScreen').classList.add('visible');
-    lucide.createIcons({ nodes: [document.getElementById('noteCreateScreen')] });
+  // ── 새 노트 팝업 (표지 + 이름만) — 전체화면 생성 화면 대체 ──
+  // kind: 'planner'(일·주·월 뷰) | 'blank'(무지, 빈 페이지). 속지 선택 없이 표지·이름만 정한다.
+  let nnpKind = 'planner';
+  let nnpCoverId = NW_COVERS[0].id;
+  const nnpBackdrop = document.getElementById('newNoteBackdrop');
+  const nnpPopup = document.getElementById('newNotePopup');
+  function nnpRenderCoverGrid() {
+    const grid = document.getElementById('nnpCoverGrid');
+    grid.innerHTML = '';
+    NW_COVERS.forEach(cov => {
+      const cell = document.createElement('button');
+      cell.type = 'button';
+      cell.className = 'nnp-cover-cell' + (cov.id === nnpCoverId ? ' selected' : '');
+      cell.style.background = cov.bg;
+      cell.addEventListener('click', () => { nnpCoverId = cov.id; nnpRenderCoverGrid(); nnpUpdatePreview(); });
+      grid.appendChild(cell);
+    });
   }
+  function nnpUpdatePreview() {
+    const cov = NW_COVERS.find(c => c.id === nnpCoverId);
+    document.getElementById('nnpCover').style.background = cov.bg;
+    document.getElementById('nnpSpine').style.background = darkenHex(cov.bg, 0.32);
+  }
+  function nnpDefaultName() { return nnpKind === 'blank' ? '무지 노트' : '플래너 노트'; }
+  function chooseNewNote(kind) {
+    closeMenus();
+    nnpKind = kind === 'blank' ? 'blank' : 'planner';
+    nnpCoverId = NW_COVERS[0].id;
+    document.getElementById('nnpTitle').textContent = nnpDefaultName();
+    document.getElementById('nnpNameInput').value = nnpDefaultName();
+    nnpRenderCoverGrid();
+    nnpUpdatePreview();
+    nnpBackdrop.classList.add('visible');
+    nnpPopup.classList.add('visible');
+  }
+  function nnpClose() {
+    nnpBackdrop.classList.remove('visible');
+    nnpPopup.classList.remove('visible');
+  }
+  document.getElementById('nnpClose').addEventListener('click', nnpClose);
+  nnpBackdrop.addEventListener('click', nnpClose);
+  document.getElementById('nnpCreateBtn').addEventListener('click', () => {
+    const cov = NW_COVERS.find(c => c.id === nnpCoverId);
+    const name = document.getElementById('nnpNameInput').value.trim() || nnpDefaultName();
+    const icon = nnpKind === 'blank' ? 'file-text' : 'calendar-range';
+    nnpClose();
+    const note = { name, date: '방금 전', icon, color: cov.bg, pattern: null, kind: nnpKind, noteType: 'scroll' };
+    const cardEl = buildNoteCardEl(note);
+    HOME_NOTES.unshift(note);
+    hsNotesEl.insertBefore(cardEl, hsNotesEl.firstChild);
+    lucide.createIcons({ nodes: [cardEl] });
+    openTabFromHome(note.name, note.icon, 'note', note.noteType, note.kind);
+  });
   function ncCloseScreen() {
     document.getElementById('noteCreateScreen').classList.remove('visible');
     document.getElementById('ncFormatPop').classList.remove('show');
@@ -4718,7 +4812,7 @@
         <div class="chev">⌄</div>
       </div>
     `;
-    card.addEventListener('click', () => openTabFromHome(note.name, note.icon || 'file-text', 'note', note.noteType || 'scroll'));
+    card.addEventListener('click', () => openTabFromHome(note.name, note.icon || 'file-text', 'note', note.noteType || 'scroll', note.kind || 'planner'));
     return card;
   }
 
@@ -4831,12 +4925,12 @@
     if (!isQuick) setCanvasMode(isCalendar ? 'calendar' : 'scroll', activeTab);
   }
 
-  function openTabFromHome(name, icon, type, noteType) {
+  function openTabFromHome(name, icon, type, noteType, kind) {
     closeHomeScreen();
-    addHomeTab(name, icon, type || 'note', noteType);
+    addHomeTab(name, icon, type || 'note', noteType, kind);
   }
 
-  function addHomeTab(name, icon, type, noteType) {
+  function addHomeTab(name, icon, type, noteType, kind) {
     // Deactivate current active tab
     const prevActive = tabLabels.querySelector('.tab.active');
     if (prevActive) setTabActive(null); // clear all active states first
@@ -4847,6 +4941,7 @@
     newTab.dataset.tabType = type;
     newTab.dataset.tabName = name;
     newTab.dataset.noteType = noteType || 'scroll';
+    newTab.dataset.noteKind = kind || 'planner'; // planner(일·주·월) | blank(무지)
     if (newTab.dataset.noteType === 'calendar') {
       const t = new Date();
       newTab._calState = {
