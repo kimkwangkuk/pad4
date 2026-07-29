@@ -8,6 +8,7 @@ class DatePicker {
     this.instantSelect = !!options.instantSelect; // true면 확인 버튼 없이 날짜를 누르는 즉시 확정된다
     this.multiSelect = !!options.multiSelect; // true면 여러 날짜를 하나씩 눌러 토글 선택하고 확인 시 한번에 확정
     this.selectedDates = new Set(); // 다중 선택 모드에서 선택된 날짜 키("YYYY-M-D")
+    this.landOnCurrentMonth = !!options.landOnCurrentMonth; // true면 열 때마다 이번달로 이동
     this._overlay = null;
     this._sheet = null;
     this.takenDates = new Set(
@@ -177,6 +178,12 @@ class DatePicker {
     // 열 때마다 이전 선택은 초기화
     this.selected = null;
     this.selectedDates.clear();
+    // 직접 선택 등: 열 때마다 이번달로 이동
+    if (this.landOnCurrentMonth) {
+      const t = new Date();
+      this.year = t.getFullYear();
+      this.month = t.getMonth() + 1;
+    }
     this._renderGrid(this._sheet);
     this._overlay.classList.remove('dp-hidden');
   }

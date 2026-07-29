@@ -3701,11 +3701,13 @@
       return { year: 2000 + parseInt(yy, 10), month: parseInt(mm, 10), day: parseInt(dd, 10) };
     });
 
+  const _dpNow = new Date();
   const datePicker = new DatePicker({
-    year: 2026, month: 6,
+    year: _dpNow.getFullYear(), month: _dpNow.getMonth() + 1,
     takenDates,
-    studyDates: STUDY_TIMES, // 공부한 날짜는 캘린더 셀 아래에 공부시간을 작게 표시
-    multiSelect: true,       // 날짜를 하나씩 눌러 여러 개를 한번에 선택 → 확인 시 모두 페이지 추가
+    studyDates: STUDY_TIMES,   // 공부한 날짜는 캘린더 셀 아래에 공부시간을 작게 표시
+    landOnCurrentMonth: true,  // 직접 선택으로 열 때마다 이번달이 바로 보이게
+    multiSelect: true,         // 날짜를 하나씩 눌러 여러 개를 한번에 선택 → 확인 시 모두 페이지 추가
     onConfirm(result) {
       const dates = (Array.isArray(result) ? result : [result]).filter(d => d && d.day);
       if (!dates.length) return;
