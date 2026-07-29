@@ -3853,7 +3853,6 @@
     takenDates,
     onConfirm({ year, month, day }) {
       if (!day) return;
-      if (activeCard) { applyDate(activeCard, year, month, day); return; }
       // 현재 뷰에 맞춰 일/주/월 페이지를 추가한다 — 주는 고른 날짜의 주, 월은 고른 날짜의 달
       const view = currentView();
       if (view === 'week') addWeekPage(new Date(year, month - 1, day));
@@ -3892,31 +3891,6 @@
   const _todayY = _td.getFullYear();
   const _todayM = _td.getMonth() + 1;
   const _todayD = _td.getDate();
-
-  function applyDate(card, year, month, day) {
-    if (datePicker.takenDates.has(`${year}-${month}-${day}`)) return;
-    const y = String(year).slice(2);
-    const m = String(month).padStart(2, '0');
-    const d = String(day).padStart(2, '0');
-
-    if (card.dataset.pageType === 'study') {
-      const tab = card.querySelector('.page-type-tab');
-      const oldInner = card.querySelector('.study-card-inner');
-      if (oldInner) oldInner.remove();
-      const newInner = buildStudyCardEl(false, `| ${y}.${m}.${d}`);
-      newInner.className = 'study-card-inner';
-      newInner.style.cssText = 'flex:1;min-height:0;display:flex;flex-direction:column;padding:22px;box-sizing:border-box;overflow:hidden;';
-      tab ? card.insertBefore(newInner, tab) : card.appendChild(newInner);
-    } else {
-      const dateEl = card.querySelector('.hd-date-val');
-      dateEl.textContent = `${y}.${m}.${d}`;
-      dateEl.classList.remove('placeholder');
-    }
-
-    card.dataset.canvasState = 'with-date';
-    card.dataset.dateText = `${y}.${m}.${d}`;
-    datePicker.takenDates.add(`${year}-${month}-${day}`);
-  }
 
   const pageToast = window.toast;
 
@@ -4158,11 +4132,7 @@
       return;
     }
 
-    const dateEl = e.target.closest('.hd-date-val, .study-date-val');
-    if (!dateEl) return;
-    // 이미 날짜가 있는 기존 페이지의 날짜 변경: 바로 캘린더 열기
-    activeCard = dateEl.closest('.card');
-    datePicker.open();
+    // 페이지 내 날짜 클릭으로 날짜를 수정하는 기능은 제거됨
   });
 
   // ── Toolbar side panel toggle ──────────────────────────────
