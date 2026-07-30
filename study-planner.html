@@ -321,85 +321,6 @@
     .add-page-btn:hover { background: rgba(0,0,0,0.03); }
     .add-page-btn:active { background: rgba(0,0,0,0.07); }
 
-    /* ─── 오늘자 속지 미리보기(고스트) 카드 (Figma 4981:262394) ───────── */
-    /* 점선 프레임이 일반 카드 슬롯과 같은 600×800을 차지하고, 그 안에 오늘자 카드를
-       91.667%로 축소해 가운데 띄워둔다. 버튼을 누르면 카드가 프레임 크기(100%)까지
-       커지면서 오퍼시티도 원래대로 돌아오고, 점선/그라데이션/버튼/점은 페이드아웃된다. */
-    .ghost-frame {
-      position: relative;
-      width: 600px; height: 800px; flex-shrink: 0;
-      box-sizing: border-box; padding: 8px;
-      border: 1px dashed rgba(0,0,0,0.2); border-radius: 16px;
-      overflow: hidden;
-      transition: border-color 0.4s ease;
-    }
-    .ghost-frame.growing { border-color: transparent; }
-    .ghost-frame > .card.card-ghost {
-      position: absolute; top: 50%; left: 50%;
-      transform: translate(-50%, -50%) scale(0.91667);
-      opacity: 0.85;
-      pointer-events: none;
-      transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s ease;
-    }
-    .ghost-frame.growing > .card.card-ghost {
-      transform: translate(-50%, -50%) scale(1);
-      opacity: 1;
-    }
-    /* 닫힐 때(성장 해제) 순서: 1) 페이지가 뒤로 빠짐(카드 축소 + 테두리 복귀, 지연 없음)
-       → 2) 그라데이션 딤이 깔림(0.35s 지연) → 3) 버튼/점이 아래에서 위로 올라옴(0.55s 지연).
-       커질 때(.growing 진입)는 반대로 전부 지연 없이 즉시 사라진다. */
-    .ghost-frame-gradient {
-      position: absolute; left: 0; right: 0; bottom: 0; height: 65%;
-      background: linear-gradient(to bottom, rgba(224,224,224,0) 0%, var(--bg) 80%);
-      pointer-events: none; z-index: 60;
-      transition: opacity 0.3s ease 0.35s;
-    }
-    /* Figma: node-id 4981-262397 — 실선 흰 배경의 필 형태 버튼 */
-    .ghost-frame-btn {
-      position: absolute; left: 50%; top: 673px; transform: translateX(-50%) translateY(0);
-      display: inline-flex; align-items: center; justify-content: center;
-      padding: 12px 20px;
-      border: none; border-radius: 40px;
-      background: #fff; color: #000;
-      font-family: 'Pretendard', sans-serif;
-      font-size: 16px; font-weight: 600; line-height: 1.4; letter-spacing: -0.048px;
-      cursor: pointer; white-space: nowrap;
-      z-index: 61;
-      transition: background 0.12s, opacity 0.3s ease 0.55s, transform 0.35s cubic-bezier(0.4, 0, 0.2, 1) 0.55s;
-    }
-    .ghost-frame-btn:hover { background: #f2f2f2; }
-    /* 점 3개 = "더보기" 버튼 (탭 영역 확보를 위해 8px 패딩을 두르고, 점 자체 위치는 Figma 그대로 유지되게 top을 그만큼 당김) */
-    .ghost-frame-dots {
-      position: absolute; left: 50%; top: 737px; transform: translateX(-50%) translateY(0);
-      display: flex; align-items: center; gap: 3px;
-      padding: 8px 12px; border: none; border-radius: 20px;
-      background: transparent; cursor: pointer;
-      z-index: 61;
-      transition: background 0.12s, opacity 0.3s ease 0.55s, transform 0.35s cubic-bezier(0.4, 0, 0.2, 1) 0.55s;
-    }
-    .ghost-frame-dots:hover { background: rgba(0,0,0,0.05); }
-    .ghost-frame-dots span { width: 4px; height: 4px; border-radius: 30px; background: rgba(0,0,0,0.4); }
-    .ghost-frame.growing .ghost-frame-gradient {
-      opacity: 0;
-      transition-delay: 0s;
-      pointer-events: none;
-    }
-    .ghost-frame.growing .ghost-frame-btn,
-    .ghost-frame.growing .ghost-frame-dots {
-      opacity: 0;
-      transform: translateX(-50%) translateY(16px);
-      transition: background 0.12s, opacity 0.3s ease, transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      pointer-events: none;
-    }
-    /* 최초 진입 시 스냅용 — 그라데이션 딤은 이미 표시된 상태로 시작하고(애니메이션 없음),
-       버튼만 트랜지션 없이 숨겨뒀다가 다음 프레임에 클래스를 떼면 기본 상태(.ghost-frame-btn의
-       0.55s 지연 트랜지션)를 타고 아래에서 위로 올라오며 나타난다 */
-    .ghost-frame.entering .ghost-frame-btn {
-      opacity: 0;
-      transform: translateX(-50%) translateY(16px);
-      transition: none;
-    }
-
     /* ─── 날짜 선택으로 새 페이지가 추가될 때: 스크롤이 도착한 뒤에 카드(+광고 배너)가 나타나는 생성 트랜지션 ─── */
     .card.card-creating,
     .canvas-ad-banner.card-creating {
@@ -2630,8 +2551,10 @@
       </div>
       <!-- Tab labels -->
       <div class="tab-labels">
-        <!-- Active tab: 나의 하루 기록 노트 -->
-        <div class="tab active" style="z-index:7;margin-right:0;">
+        <!-- Active tab: 홈의 기본 노트(HOME_NOTES의 n0)와 1:1로 이어진 랜딩 탭 -->
+        <div class="tab active" style="z-index:7;margin-right:0;"
+             data-tab-type="note" data-tab-name="나의 하루 기록 노트"
+             data-note-id="n0" data-note-type="scroll" data-note-kind="planner">
           <img class="tab-curve" src="assets/tab-active-left.svg" style="width:29px;height:36px;flex-shrink:0;display:block;">
           <div class="tab-inner">
             <i data-lucide="notebook-pen" style="width:16px;height:16px;flex-shrink:0;color:rgba(0,0,0,0.86);"></i>
@@ -3499,26 +3422,9 @@
     datedCards.sort((a, b) => parseCardDate(a) - parseCardDate(b));
     canvasZoomWrap.querySelectorAll('.canvas-ad-banner').forEach(b => b.remove());
 
-    // 오늘 미리보기(ghost)는 자기 탭에서만 인식한다 — 다른 탭의 ghost가 이 탭의 추가 버튼을 숨기지 않게
-    const _gCard = canvasZoomWrap.querySelector('.card.card-ghost');
-    const ghostCard = (_gCard && _gCard.dataset.ownerTab === tabId) ? _gCard : null;
-    let ghostEl = ghostCard ? (ghostCard.closest('.ghost-frame') || ghostCard) : null;
-    // 다른 탭 ghost 프레임은 이 탭에선 숨긴다
-    if (_gCard && _gCard !== ghostCard) { const f = _gCard.closest('.ghost-frame') || _gCard; f.style.display = 'none'; }
-    // 오늘자 미리보기(ghost)는 일(day) 뷰에서만 보인다 — 주/월 뷰에선 숨기고 배치에서 제외
-    if (ghostEl) ghostEl.style.display = (view === 'day') ? '' : 'none';
-    if (view !== 'day') ghostEl = null;
-    addPageBtn.style.display = (ghostCard && view === 'day') ? 'none' : ''; // 오늘자 미리보기가 있으면 페이지 추가 버튼은 숨김
+    addPageBtn.style.display = '';
 
-    // 오늘자 미리보기는 항상 맨 끝이 아니라, 실제 페이지들 사이에서 날짜순 제자리에 끼워 넣는다
-    // (예: 미래 날짜 페이지가 이미 있으면 그보다 앞쪽에 와야 함)
     const orderedEls = datedCards.slice();
-    if (ghostEl) {
-      const ghostDate = parseCardDate(ghostCard);
-      const insertAt = orderedEls.findIndex(c => parseCardDate(c) > ghostDate);
-      if (insertAt === -1) orderedEls.push(ghostEl);
-      else orderedEls.splice(insertAt, 0, ghostEl);
-    }
 
     // revealBanners가 true면(날짜 선택으로 새 페이지가 막 추가된 경우) 새로 만든 배너를
     // 여기서 즉시 card-creating으로 태어나게 한다 — scrollToCard의 offsetTop 리플로우가 일어나기
@@ -3701,137 +3607,6 @@
   // Initial panel build
   sortPages();
   setTimeout(updateAllThumbs, 50);
-
-  // ── 오늘자 속지 미리보기(고스트) 카드 ────────────────────────
-  // "오늘' 페이지 추가" 화면의 더보기(점 3개) 메뉴 — 날짜를 직접 고르거나 속지를 바꿀 수 있게 함
-  const ghostMoreMenu = new OverlayMenu({
-    items: [
-      {
-        lucideIcon: 'calendar-days',
-        label: '날짜 직접 선택',
-        onClick() { datePicker.open(); }
-      },
-      {
-        lucideIcon: 'file-stack',
-        label: '속지 변경',
-        onClick() {
-          const gc = document.querySelector('.card.card-ghost');
-          if (gc && window.openGhostSettingsPanel) window.openGhostSettingsPanel(gc);
-        }
-      }
-    ]
-  });
-
-  function todayDateText() {
-    const t = new Date();
-    return `${String(t.getFullYear()).slice(2)}.${String(t.getMonth() + 1).padStart(2, '0')}.${String(t.getDate()).padStart(2, '0')}`;
-  }
-
-  function insertGhostTodayCard() {
-    const todayText = todayDateText();
-    const hasToday = Array.from(canvasZoomWrap.querySelectorAll('.card[data-canvas-state="with-date"]'))
-      .some(c => parseCardDate(c).toDateString() === new Date().toDateString());
-    if (hasToday) return;
-
-    // 아직 활성화(추가) 전이라도 오늘자 미리보기가 이미 그 날짜를 대표하고 있으므로,
-    // 날짜 선택 팝업에서 오늘 날짜를 또 골라 중복 페이지를 만들 수 없도록 바로 taken 처리한다
-    const t = new Date();
-    datePicker.takenDates.add(`${t.getFullYear()}-${t.getMonth() + 1}-${t.getDate()}`);
-
-    canvasZoomWrap.insertAdjacentHTML('beforeend', buildCardHTML({ id: 'ghost-today', dateText: todayText, today: true }));
-    const ghostCard = canvasZoomWrap.lastElementChild;
-    ghostCard.dataset.view = 'day';
-    if (activeTabId()) ghostCard.dataset.ownerTab = activeTabId();
-
-    // 점선 프레임(일반 카드 슬롯과 동일한 600×800)으로 감싸고, 카드는 그 안에서 91.667%로
-    // 축소되어 가운데에 뜬다 (Figma 4981:262394)
-    const ghostFrame = document.createElement('div');
-    ghostFrame.className = 'ghost-frame';
-    ghostFrame.id = 'ghostFrame';
-    ghostCard.replaceWith(ghostFrame);
-    ghostFrame.appendChild(ghostCard);
-
-    buildGrid(ghostCard, null); // 아직 시작 전이므로 타임라인 블록 없음
-    initEmojiPicker(ghostCard);
-    ghostCard.dataset.canvasState = 'ghost';
-    ghostCard.dataset.dateText = todayText;
-    ghostCard.classList.add('card-ghost');
-
-    // 아직 공부 기록이 없으므로 과목별 시간·총 시간 모두 0:00:00
-    const timeVal = ghostCard.querySelector('.hd-time-val');
-    if (timeVal) timeVal.textContent = '0:00:00';
-    ghostCard.querySelectorAll('.subj-time').forEach(el => { el.textContent = '0:00:00'; });
-
-    addPageBtn.style.display = 'none'; // 오늘자 미리보기 카드가 있는 동안 페이지 추가 버튼은 숨김
-    lucide.createIcons({ nodes: [ghostCard] });
-
-    // 축소된 카드 하단을 캔버스 배경색으로 흐리는 그라데이션 + 흰 배경 CTA 버튼 + 더보기(점 3개)를
-    // 프레임 안에 겹쳐 놓는다 (카드 자체가 아니라 프레임의 형제 요소)
-    ghostFrame.insertAdjacentHTML('beforeend', `
-      <div class="ghost-frame-gradient"></div>
-      <button class="ghost-frame-btn" id="ghostTeaserBtn">'오늘' 페이지 추가</button>
-      <button class="ghost-frame-dots" id="ghostMoreBtn" aria-label="더보기"><span></span><span></span><span></span></button>`);
-
-    // 버튼뿐 아니라 점선 프레임 영역 전체를 눌러도 바로 오늘 페이지가 추가되게 함
-    // (카드 자신은 pointer-events:none이라 클릭이 그대로 프레임까지 버블링된다).
-    // 더보기(점 3개) 버튼만 stopPropagation으로 제외해 다른 메뉴가 열리게 한다.
-    ghostFrame.addEventListener('click', () => activateGhostCard(ghostFrame, ghostCard, todayText));
-    document.getElementById('ghostMoreBtn').addEventListener('click', (e) => {
-      e.stopPropagation();
-      const rect = document.getElementById('ghostMoreBtn').getBoundingClientRect();
-      ghostMoreMenu.open(rect.left + rect.width / 2, rect.top, { above: true });
-    });
-
-    // 최초 진입 시에도 그라데이션/버튼/점이 (설정 패널을 닫을 때와 동일하게) 순서대로 나타나도록:
-    // 트랜지션 없이 숨긴 상태로 스냅해뒀다가, 다음 프레임에 .entering을 떼어 기본 상태(0.35s/0.55s
-    // 지연이 걸린 트랜지션)로 되돌리면 아래에서 위로 올라오며 나타나는 애니메이션이 재생된다
-    ghostFrame.classList.add('entering');
-    requestAnimationFrame(() => requestAnimationFrame(() => ghostFrame.classList.remove('entering')));
-
-    sortPages(); // 실제 페이지-오늘자 미리보기 사이 광고 배너 삽입 + 맨 끝 재배치를 한 번에 반영
-
-    // 최초 진입 시: 오늘보다 과거인 페이지 중 가장 가까운 페이지에 먼저 도착해 있다가,
-    // 잠시 뒤 오늘자 임시 페이지로 부드럽게 자동 스크롤한다. 과거 페이지가 하나도 없으면
-    // (오늘이 가장 이른 페이지인 경우) 바로 오늘 페이지로 이동한다.
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-      const now = new Date();
-      const pastCards = Array.from(canvasZoomWrap.querySelectorAll('.card[data-canvas-state="with-date"]'))
-        .filter(c => parseCardDate(c) < now)
-        .sort((a, b) => parseCardDate(b) - parseCardDate(a)); // 최신순 정렬 → 첫 번째가 가장 가까운 과거
-      const nearestPast = pastCards[0];
-      if (nearestPast) {
-        const idx = Array.from(canvasScroll.querySelectorAll('.card')).indexOf(nearestPast);
-        scrollToCard(idx, false); // 가장 가까운 과거 페이지에 즉시 랜딩
-        setTimeout(() => scrollToGhostCard(ghostFrame, true), 800); // 잠시 뒤 오늘 페이지로 부드럽게 스크롤
-      } else {
-        scrollToGhostCard(ghostFrame); // 과거 페이지가 없으면 바로 오늘 페이지로
-      }
-    }));
-  }
-
-  function scrollToGhostCard(ghostFrame, smooth) {
-    if (!mainArea.clientHeight) { requestAnimationFrame(() => scrollToGhostCard(ghostFrame, smooth)); return; }
-    const target = ghostFrame.offsetTop - CENTER_OFFSET();
-    mainArea.scrollTo({ top: Math.max(0, target), behavior: smooth ? 'smooth' : 'instant' });
-  }
-
-  function activateGhostCard(ghostFrame, ghostCard, dateText) {
-    // 카드가 점선 프레임 크기(100%)까지 커지며 오퍼시티도 원래대로, 점선/그라데이션/버튼/점은 페이드아웃
-    ghostFrame.classList.add('growing');
-
-    setTimeout(() => {
-      ghostCard.classList.remove('card-ghost');
-      ghostCard.dataset.canvasState = 'with-date';
-
-      const [y, m, d] = dateText.split('.');
-      datePicker.takenDates.add(`${2000 + parseInt(y, 10)}-${parseInt(m, 10)}-${parseInt(d, 10)}`);
-
-      ghostFrame.replaceWith(ghostCard); // 프레임을 벗기고 다른 페이지와 동일하게 카드만 남긴다
-
-      sortPages(ghostCard);
-      pageToast.show(`'오늘' 페이지가 추가되었습니다`);
-    }, 400); // .ghost-frame.growing 트랜지션(0.4s)이 끝난 뒤 처리 — sortPages의 reparent가 도중에 끼어들지 않도록
-  }
 
   // ── Scroll to center a card ────────────────────────────────
   const mainArea = document.querySelector('.main-area');
@@ -4409,7 +4184,7 @@
     hsNotesEl.insertBefore(cardEl, hsNotesEl.firstChild);
     lucide.createIcons({ nodes: [cardEl] });
     if (typeof updateHomeEmpty === 'function') updateHomeEmpty();
-    openTabFromHome(note.name, note.icon, 'note', note.noteType, note.kind);
+    openNoteFromHome(note);
   });
   function ncCloseScreen() {
     document.getElementById('noteCreateScreen').classList.remove('visible');
@@ -4612,7 +4387,7 @@
     lucide.createIcons({ nodes: [cardEl] });
 
     nwShowNoteCreated(name, { bg: cover.bg, pattern: ncState.coverPattern !== 'none' ? ncState.coverPattern : null });
-    openTabFromHome(note.name, note.icon, 'note', note.noteType);
+    openNoteFromHome(note);
   });
 
   function nwDetailPreviewHTML(ins, color) {
@@ -5045,8 +4820,20 @@
   const tabLabels  = document.querySelector('.tab-labels');
   const tabsSection = document.querySelector('.tabs-section');
 
-  // 더미 노트 제거 — 사용자가 만든 노트만 홈에 나열된다
-  const HOME_NOTES = [];
+  // 홈에는 기본 노트 하나가 미리 깔려 있다 — 처음 랜딩할 때 열려 있는 탭(HTML의 정적 탭,
+  // data-note-id="n0")이 바로 이 노트의 탭이다. 그 밖의 노트는 사용자가 만든 것만 나열된다.
+  const HOME_NOTES = [
+    {
+      id: 'n0',
+      name: '나의 하루 기록 노트',
+      date: '어제',
+      icon: 'notebook-pen',
+      color: '#f5efe0',
+      pattern: null,
+      kind: 'planner',
+      noteType: 'scroll'
+    }
+  ];
 
   // rgb() 문자열로 커버색을 어둡게 만들어 책등(spine) 색을 계산 (참고: note-creation-ipad-v5.html darkenHex)
   function darkenHex(hex, f) {
@@ -5074,7 +4861,7 @@
         <div class="chev">⌄</div>
       </div>
     `;
-    card.addEventListener('click', () => openTabFromHome(note.name, note.icon || 'file-text', 'note', note.noteType || 'scroll', note.kind || 'planner'));
+    card.addEventListener('click', () => openNoteFromHome(note));
     // 화살표(⌄) 클릭 → 노트 카드 메뉴(이름 변경) — 카드 열기와 구분하기 위해 전파를 막는다
     const chev = card.querySelector('.chev');
     chev.addEventListener('click', (e) => {
@@ -5248,12 +5035,26 @@
     else document.getElementById('spHeaderTitle').textContent = '페이지';
   }
 
-  function openTabFromHome(name, icon, type, noteType, kind) {
+  function openTabFromHome(name, icon, type, noteType, kind, noteId) {
     closeHomeScreen();
-    addHomeTab(name, icon, type || 'note', noteType, kind);
+    addHomeTab(name, icon, type || 'note', noteType, kind, noteId);
   }
 
-  function addHomeTab(name, icon, type, noteType, kind) {
+  // 홈 노트를 연다 — 이미 그 노트의 탭이 열려 있으면 새 탭을 만들지 않고 그 탭으로 이동한다
+  // (탭과 홈 노트가 1:1로 이어져 있어야 랜딩 탭이 "홈에 있는 노트의 탭"이 된다)
+  let noteIdCounter = 1; // 'n0'은 기본 노트가 이미 쓰고 있다
+  function openNoteFromHome(note) {
+    if (!note.id) note.id = 'n' + (noteIdCounter++);
+    const opened = tabLabels.querySelector(`.tab[data-note-id="${note.id}"]`);
+    if (opened) {
+      closeHomeScreen();
+      setTabActive(opened);
+      return;
+    }
+    openTabFromHome(note.name, note.icon || 'file-text', 'note', note.noteType || 'scroll', note.kind || 'planner', note.id);
+  }
+
+  function addHomeTab(name, icon, type, noteType, kind, noteId) {
     // Deactivate current active tab
     const prevActive = tabLabels.querySelector('.tab.active');
     if (prevActive) setTabActive(null); // clear all active states first
@@ -5266,6 +5067,7 @@
     newTab.dataset.noteType = noteType || 'scroll';
     newTab.dataset.noteKind = kind || 'planner'; // planner(일·주·월) | blank(무지)
     newTab.dataset.tabId = 't' + (tabIdCounter++); // 카드 소유 구분용 고유 id
+    if (noteId) newTab.dataset.noteId = noteId;    // 홈 노트와 1:1로 이어주는 id
     newTab.dataset.noteView = 'day';
     if (newTab.dataset.noteType === 'calendar') {
       const t = new Date();
@@ -5322,20 +5124,14 @@
   // Initialise z-index / margin on the static tabs already in HTML
   refreshTabLayout();
   updateView();
-  insertGhostTodayCard(); // updateView()의 sortPages() 재정렬이 모두 끝난 뒤에 삽입해야 배너 위치·피크 스크롤이 흔들리지 않음
 
-  // ── 오늘로 이동 플로팅 버튼: 오늘자 페이지(고스트 또는 활성화된 실카드)가
-  //    캔버스 스크롤 영역 밖으로 나가면 나타나고, 누르면 그 위치로 스크롤한다 ──
+  // ── 오늘로 이동 플로팅 버튼: 오늘자 페이지가 캔버스 스크롤 영역 밖으로
+  //    나가면 나타나고, 누르면 그 위치로 스크롤한다 ──
   const todayFabBtn = document.getElementById('todayFabBtn');
   function getTodayCardEl() {
     // 캘린더 노트는 스크롤 캔버스와 별개의 네비게이션(좌상단 인라인 캘린더)을 쓰므로 대상에서 제외
     if (canvasZoomWrap.dataset.mode === 'calendar') return null;
     const view = currentView();
-    // 오늘 미리보기(ghost)는 일(day) 뷰에서만 유효
-    if (view === 'day') {
-      const ghost = canvasZoomWrap.querySelector('[data-page-id="ghost-today"]');
-      if (ghost) return ghost;
-    }
     // 활성 탭 소유이고 현재 뷰에 보이는 카드 중, 오늘이 포함되는 것:
     // 일=오늘 날짜, 주=오늘이 속한 주(월요일), 월=이번 달
     const t = new Date(); t.setHours(0, 0, 0, 0);
@@ -5352,8 +5148,7 @@
   todayFabBtn.addEventListener('click', () => {
     const el = getTodayCardEl();
     if (!el) return;
-    const frame = el.closest('.ghost-frame') || el;
-    const target = frame.offsetTop - CENTER_OFFSET();
+    const target = el.offsetTop - CENTER_OFFSET();
     mainArea.scrollTo({ top: Math.max(0, target), behavior: 'smooth' });
   });
   let todayFabObserver = null;
@@ -5371,7 +5166,7 @@
   }
   window.watchTodayFab = watchTodayFab; // setCanvasMode(탭 전환)에서 재호출할 수 있도록 노출
   window.__todayFabReady = true; // 함수 선언은 호이스팅되어 이 지점 이전에도 typeof가 'function'이므로, 준비 여부는 별도 플래그로 판단한다
-  // insertGhostTodayCard()의 스크롤 이동(더블 rAF로 지연)이 끝난 뒤에 연결해야
+  // 최초 랜딩 스크롤(더블 rAF로 지연)이 끝난 뒤에 연결해야
   // 최초 관찰 시점에 아직 이동 전인 스크롤 위치를 기준으로 잘못 판정하지 않는다
   requestAnimationFrame(() => requestAnimationFrame(watchTodayFab));
 
@@ -6240,18 +6035,10 @@
       applyInsertToCard(gpsTargetCard);
       backdrop.classList.add('visible');
       panel.classList.add('visible');
-      // '오늘' 페이지 추가 버튼을 누른 것처럼 카드를 점선 프레임 크기까지 키운다(실제 확정은 아님) —
-      // 점선 테두리/그라데이션/버튼/점이 함께 페이드아웃되어 편집에 집중할 수 있게. 오늘 임시 페이지가
-      // 아닌 곳(페이지 추가)에서 열렸다면 .ghost-frame 조상이 없으므로 자연히 아무 일도 일어나지 않는다.
-      const frame = gpsTargetCard && gpsTargetCard.closest('.ghost-frame');
-      if (frame) frame.classList.add('growing');
     }
     function closeGhostSettingsPanel() {
       backdrop.classList.remove('visible');
       panel.classList.remove('visible');
-      // 패널을 닫으면 다시 축소된 미리보기 상태로 — 점선 테두리/그라데이션/버튼/점이 다시 나타남
-      const frame = gpsTargetCard && gpsTargetCard.closest('.ghost-frame');
-      if (frame) frame.classList.remove('growing');
       if (gpsOnClose) { const cb = gpsOnClose; gpsOnClose = null; cb(); }
     }
 
