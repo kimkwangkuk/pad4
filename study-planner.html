@@ -2203,22 +2203,11 @@
   const NG_CATEGORY_ICON = {
     '스터디 데일리': 'sun', '스터디 위클리': 'calendar-range', '스터디 먼슬리': 'calendar-days',
   };
-  const NG_FORMAT_LABEL = { scroll: '스크롤형', calendar: '캘린더형', weekly: '주간 스프레드', monthly: '월간 격자' };
-
-  // 카테고리별 속지 — 캔버스의 기존 속지 디자인 하나를 그대로 쓴다 (kind로 어떤 빌더를 쓸지 결정)
-  const NG_INSERT = {
-    '스터디 데일리': {
-      kind: 'daily', name: '데일리 속지',
-      desc: '날짜·D-day·총 공부시간 헤더 아래로 과목별 타이머와 10분 단위 타임라인, 하루 리뷰까지 한 장에 담긴 속지예요.',
-    },
-    '스터디 위클리': {
-      kind: 'weekly', name: '위클리 속지',
-      desc: '월요일부터 일요일까지 7일을 한 장에 세로로 펼쳐, 요일별 일정과 메모를 나란히 적는 속지예요.',
-    },
-    '스터디 먼슬리': {
-      kind: 'monthly', name: '먼슬리 속지',
-      desc: '한 달 날짜를 요일별 격자로 펼쳐 한눈에 보는 속지예요. 주말은 색을 달리해 구분해요.',
-    },
+  // 카테고리별 속지 종류 — 캔버스의 기존 속지 디자인을 그대로 쓴다(어떤 빌더로 그릴지만 결정)
+  const NG_INSERT_KIND = {
+    '스터디 데일리': 'daily',
+    '스터디 위클리': 'weekly',
+    '스터디 먼슬리': 'monthly',
   };
 
   // ── 표지 카탈로그 ─────────────────────────────────────────────
@@ -2368,7 +2357,7 @@
     // 각 카드 썸네일에 그 노트의 실제 속지 디자인을 축소해 넣는다
     list.forEach(t => {
       const host = ngGridEl.querySelector(`[data-tpl="${t.id}"] .stc-preview`);
-      ngRenderInsertThumb(NG_INSERT[t.category].kind, host);
+      ngRenderInsertThumb(NG_INSERT_KIND[t.category], host);
     });
   }
 
@@ -2418,7 +2407,7 @@
     ndTemplate = t;
 
     const cat = t.category;
-    const insert = NG_INSERT[cat];
+    const insertKind = NG_INSERT_KIND[cat];
     const cover = coverOf(t.coverId);
 
     document.getElementById('ndTopTitle').textContent = '';
@@ -2428,8 +2417,6 @@
     document.getElementById('ndDesc').textContent = t.about || t.desc;
     document.getElementById('ndMeta').innerHTML = [
       ['지원', '공부 기록, 할일 일정 데이터 자동 연동, 펜슬, 스티커'],
-      ['속지', `${insert.name} 1종 (고정) · ${NG_FORMAT_LABEL[t.format]}`],
-      ['이용', t.badge],
     ].map(([k, v]) => `<div class="nd-meta-row"><span class="nd-meta-key">${k}</span><span class="nd-meta-val">${v}</span></div>`).join('');
 
     document.getElementById('ndColorGrid').innerHTML = ND_INSERT_COLORS.map(c => `
@@ -2443,9 +2430,9 @@
     lucide.createIcons({ nodes: [ndScreen] });
 
     // 히어로·컬러 예시·다크모드·사용방법 모두 같은 속지 디자인을 축소해 채운다
-    ngRenderInsertThumb(insert.kind, ndScreen.querySelector('.nd-hero-preview'));
+    ngRenderInsertThumb(insertKind, ndScreen.querySelector('.nd-hero-preview'));
     ndScreen.querySelectorAll('.nd-color-page, .nd-dark-page, .nd-usage-page')
-      .forEach(el => ngRenderInsertThumb(insert.kind, el));
+      .forEach(el => ngRenderInsertThumb(insertKind, el));
   }
 
   function closeNoteDetail() {
@@ -2474,7 +2461,7 @@
     hsNotesEl.insertBefore(cardEl, hsNotesEl.firstChild);
     lucide.createIcons({ nodes: [cardEl] });
 
-    nwShowNoteCreated(note.name, coverOf(note.coverId), NG_INSERT[cat].kind);
+    nwShowNoteCreated(note.name, coverOf(note.coverId), NG_INSERT_KIND[cat]);
     openTabFromHome(note.name, note.icon, 'note', note.noteType);
   });
 
