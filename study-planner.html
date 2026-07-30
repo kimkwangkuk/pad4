@@ -982,53 +982,87 @@
     /* ── 노트 상세 ── */
     .nd-body { flex:1; overflow-y:auto; background:#fff; scrollbar-width:none; }
     .nd-body::-webkit-scrollbar { display:none; }
-    .nd-hero { position:relative; padding:44px 0 40px; display:flex; align-items:center; justify-content:center; gap:34px; overflow:hidden; }
-    .nd-hero-bg { position:absolute; inset:0; opacity:.5; }
-    .nd-hero-cover, .nd-hero-sheets { position:relative; }
-    .nd-hero-sheet {
-      position:relative; width:186px; aspect-ratio:3/4; background:#fff; border-radius:4px; overflow:hidden;
-      box-shadow:0 0 1px rgba(0,0,0,.5), 0 12px 26px rgba(0,0,0,.14);
+    /* 본문은 원본(700폭 시트)과 같은 비율이 되도록 700px 컬럼을 가운데 두고, 좌우 16px 여백 안에서
+       콘텐츠 폭 668px을 쓴다 — Figma의 x=16 / width=668과 그대로 일치한다. */
+    .nd-inner {
+      width:min(700px, 100%); margin:0 auto; padding:0 16px 60px;
+      display:flex; flex-direction:column; font-family:'Pretendard',sans-serif;
     }
-    .nd-inner { width:min(760px, calc(100% - 48px)); margin:0 auto; padding:30px 0 40px; display:flex; flex-direction:column; gap:30px; }
-    .nd-headline { display:flex; flex-direction:column; gap:8px; }
-    .nd-tagrow { display:flex; align-items:center; gap:6px; }
-    .ng-tag {
-      font-family:'Pretendard',sans-serif; font-size:11px; font-weight:600; letter-spacing:-.02em;
-      padding:3px 8px; border-radius:6px; background:rgba(0,0,0,.06); color:rgba(0,0,0,.6);
+
+    /* 히어로 — 668×375.5, 배경은 표지 tint, 가운데에 실제 속지 미리보기 */
+    .nd-hero {
+      position:relative; width:100%; aspect-ratio:668/375.5; border-radius:16px; overflow:hidden;
+      display:flex; align-items:center; justify-content:center;
     }
-    .nd-name { font-family:'Pretendard',sans-serif; font-size:24px; font-weight:700; color:rgba(0,0,0,.86); letter-spacing:-.072px; }
-    .nd-desc { font-family:'Pretendard',sans-serif; font-size:14.5px; font-weight:400; color:#6a6a6f; line-height:1.6; }
-    .nd-section-title { font-family:'Pretendard',sans-serif; font-size:17px; font-weight:700; color:rgba(0,0,0,.86); letter-spacing:-.051px; margin-bottom:-14px; }
-    .nd-insert-list { display:flex; flex-direction:column; gap:12px; }
-    .nd-insert-row {
-      display:flex; align-items:center; gap:16px; padding:14px; border-radius:16px;
-      background:#fafafa; border:1px solid rgba(0,0,0,.05);
+    .nd-hero-preview {
+      position:relative; height:84%; aspect-ratio:3/4; background:#fff; border-radius:4px; overflow:hidden;
+      box-shadow:0 0 1px rgba(0,0,0,.45), 0 14px 30px rgba(0,0,0,.14);
     }
-    .nd-insert-thumb {
-      position:relative; width:78px; aspect-ratio:3/4; flex:0 0 auto; background:#fff; border-radius:4px; overflow:hidden;
-      box-shadow:0 0 1px rgba(0,0,0,.5), 0 4px 8px rgba(0,0,0,.05);
-    }
-    .nd-insert-txt { flex:1; min-width:0; display:flex; flex-direction:column; gap:4px; }
-    .nd-insert-name { font-family:'Pretendard',sans-serif; font-size:14.5px; font-weight:600; color:rgba(0,0,0,.86); }
-    .nd-insert-desc { font-family:'Pretendard',sans-serif; font-size:12.5px; font-weight:400; color:rgba(0,0,0,.55); line-height:1.5; }
-    .nd-fixed-note {
-      display:flex; align-items:center; gap:8px; padding:12px 14px; border-radius:12px;
-      background:rgba(0,0,0,.04); font-family:'Pretendard',sans-serif; font-size:12.5px; color:rgba(0,0,0,.55);
-    }
-    .nd-spec { display:flex; flex-direction:column; }
-    .nd-spec-row { display:flex; gap:16px; padding:13px 2px; border-bottom:1px solid rgba(0,0,0,.06); font-family:'Pretendard',sans-serif; font-size:14px; }
-    .nd-spec-row:last-child { border-bottom:none; }
-    .nd-spec-key { width:110px; flex:0 0 auto; color:rgba(0,0,0,.45); font-weight:500; }
-    .nd-spec-val { flex:1; color:rgba(0,0,0,.8); font-weight:500; }
-    .nd-footer {
-      flex:0 0 auto; padding:14px 24px 22px; border-top:1px solid rgba(0,0,0,.08); background:#fff;
-      display:flex; justify-content:center;
-    }
+
+    /* 제목 행 — 제목/부제 + 오른쪽 "+ 추가" 버튼 (Figma Frame 1010110979, 84 높이) */
+    .nd-titlerow { display:flex; align-items:flex-start; gap:10px; padding:18px 0; }
+    .nd-titletxt { flex:1; min-width:0; }
+    .nd-name { font-size:20px; font-weight:700; line-height:1.25; color:rgba(0,0,0,.86); letter-spacing:-.06px; }
+    .nd-sub { font-size:14px; font-weight:400; line-height:1.5; color:rgba(0,0,0,.59); letter-spacing:-.042px; margin-top:2px; }
     .nd-add-btn {
-      width:min(420px, 100%); height:54px; border:none; border-radius:16px; cursor:pointer;
-      background:rgba(0,0,0,.86); color:#fff; font-family:'Pretendard',sans-serif; font-size:16px; font-weight:600; letter-spacing:-.048px;
+      flex:0 0 auto; width:80px; height:48px; border:none; border-radius:100px; cursor:pointer;
+      background:rgba(0,0,0,.86); color:#fff; font-family:inherit; font-size:15px; font-weight:600; letter-spacing:-.045px;
+      display:inline-flex; align-items:center; justify-content:center; gap:2px;
     }
     .nd-add-btn:active { background:rgba(0,0,0,.72); }
+
+    /* 설명 + 라벨 행 (지원 / 속지) */
+    .nd-about { padding-bottom:6px; }
+    .nd-desc { font-size:14px; font-weight:400; line-height:1.57; color:#5a5a5f; letter-spacing:-.042px; }
+    .nd-meta { margin-top:24px; display:flex; flex-direction:column; gap:8px; }
+    .nd-meta-row { display:flex; align-items:flex-start; gap:16px; font-size:14px; line-height:1.57; }
+    .nd-meta-key { flex:0 0 auto; min-width:28px; font-weight:600; color:rgba(0,0,0,.86); }
+    .nd-meta-val { flex:1; font-weight:400; color:rgba(0,0,0,.59); }
+
+    /* 상세 설명 — 카드 3장 (652×400, 간격 30) */
+    .nd-section-title { font-size:20px; font-weight:700; color:rgba(0,0,0,.86); letter-spacing:-.06px; margin-top:30px; }
+    .nd-cards { margin-top:45px; display:flex; flex-direction:column; gap:30px; }
+    .nd-card {
+      position:relative; border-radius:16px; background:#f7f7f7; overflow:hidden;
+      aspect-ratio:652/400; padding:26px;
+    }
+    .nd-card-label { font-size:15px; font-weight:600; color:rgba(0,0,0,.86); letter-spacing:-.045px; }
+
+    /* 다양한 컬러 지원 — 173.9×130.4 썸네일 3×2, 간격 16 */
+    .nd-colorgrid {
+      position:absolute; left:43px; top:75px;
+      display:grid; grid-template-columns:repeat(3, 173.9px); gap:16px;
+    }
+    .nd-color-thumb {
+      position:relative; width:173.9px; height:130.44px; border-radius:6px; overflow:hidden;
+      background:#fff; box-shadow:0 0 1px rgba(0,0,0,.35), 0 4px 10px rgba(0,0,0,.06);
+      display:flex; align-items:center; justify-content:center;
+    }
+    /* 속지는 세로 비율이라 가운데에 맞춰 넣고, 컬러는 곱연산 틴트로 얹는다 */
+    .nd-color-page { position:relative; height:100%; aspect-ratio:3/4; overflow:hidden; }
+    .nd-color-tint { position:absolute; inset:0; mix-blend-mode:multiply; opacity:.55; pointer-events:none; }
+
+    /* 다크모드 지원 — 라이트/다크 두 장을 어긋나게 겹쳐 놓는다.
+       속지가 세로 비율이라 원본의 가로 스크린 대신 3:4 카드 두 장으로 옮겼다. */
+    .nd-dark-stack { position:absolute; left:200px; top:76px; }
+    .nd-dark-thumb {
+      position:absolute; width:161px; height:215px; border-radius:8px; overflow:hidden; background:#fff;
+      box-shadow:0 0 1px rgba(0,0,0,.35), 0 12px 26px rgba(0,0,0,.12);
+    }
+    .nd-dark-thumb.light { left:0; top:0; z-index:1; }
+    .nd-dark-thumb.dark  { left:92px; top:56px; z-index:2; background:#2a2530; }
+    .nd-dark-page { position:absolute; inset:0; overflow:hidden; }
+    .nd-dark-thumb.dark .nd-dark-page { filter:invert(1) hue-rotate(180deg) saturate(.85); }
+
+    /* 플래너 사용방법 — 왼쪽 캡션 3줄(오른쪽 정렬 + 점) / 오른쪽에 큰 속지가 카드 아래로 걸쳐 나간다 */
+    .nd-usage-caps { position:absolute; left:26px; top:112px; width:289px; display:flex; flex-direction:column; gap:41px; }
+    .nd-usage-cap { display:flex; align-items:center; justify-content:flex-end; gap:9px; }
+    .nd-usage-cap span { font-size:13px; line-height:1.35; color:rgba(0,0,0,.59); text-align:right; }
+    .nd-usage-dot { flex:0 0 auto; width:9px; height:9px; border-radius:50%; background:rgba(0,0,0,.32); }
+    .nd-usage-page {
+      position:absolute; left:348px; top:36px; width:296px; aspect-ratio:3/4; overflow:hidden;
+      background:#fff; border-radius:10px; box-shadow:0 0 1px rgba(0,0,0,.3), 0 14px 30px rgba(0,0,0,.12);
+    }
 
   </style>
 </head>
@@ -1158,29 +1192,45 @@
       <div class="bsm-spacer"></div>
     </div>
     <div class="nd-body" id="ndBody">
-      <div class="nd-hero">
-        <div class="nd-hero-bg" id="ndHeroBg"></div>
-        <div class="nd-hero-cover" id="ndHeroCover"></div>
-        <div class="nd-hero-sheets" id="ndHeroSheets"></div>
-      </div>
       <div class="nd-inner">
-        <div class="nd-headline">
-          <div class="nd-tagrow" id="ndTags"></div>
-          <div class="nd-name" id="ndName"></div>
+        <div class="nd-hero" id="ndHero">
+          <div class="nd-hero-preview"></div>
+        </div>
+        <div class="nd-titlerow">
+          <div class="nd-titletxt">
+            <div class="nd-name" id="ndName"></div>
+            <div class="nd-sub" id="ndSub"></div>
+          </div>
+          <button class="nd-add-btn" id="ndAddBtn">+ 추가</button>
+        </div>
+        <div class="nd-about">
           <div class="nd-desc" id="ndDesc"></div>
+          <div class="nd-meta" id="ndMeta"></div>
         </div>
-        <div class="nd-section-title">이 노트의 속지</div>
-        <div class="nd-insert-list" id="ndInsertList"></div>
-        <div class="nd-fixed-note">
-          <i data-lucide="lock" style="width:14px;height:14px;flex-shrink:0;"></i>
-          <span>노트마다 속지는 한 종류로 고정이라 추가한 뒤에 바꿀 수 없어요.</span>
+        <div class="nd-section-title">상세 설명</div>
+        <div class="nd-cards">
+          <div class="nd-card">
+            <div class="nd-card-label">다양한 컬러 지원</div>
+            <div class="nd-colorgrid" id="ndColorGrid"></div>
+          </div>
+          <div class="nd-card">
+            <div class="nd-card-label">다크모드 지원</div>
+            <div class="nd-dark-stack">
+              <div class="nd-dark-thumb light"><div class="nd-dark-page"></div></div>
+              <div class="nd-dark-thumb dark"><div class="nd-dark-page"></div></div>
+            </div>
+          </div>
+          <div class="nd-card">
+            <div class="nd-card-label">플래너 사용방법</div>
+            <div class="nd-usage-caps">
+              <div class="nd-usage-cap"><span>중요한 시험이나 목표까지 남은 시간을 한눈에 관리해요.</span><span class="nd-usage-dot"></span></div>
+              <div class="nd-usage-cap"><span>오늘 내가 몰입한 총 시간을 직관적으로 확인하세요.</span><span class="nd-usage-dot"></span></div>
+              <div class="nd-usage-cap"><span>오늘의 다짐, 기억하고 싶은 아이디어를 자유롭게 채워보세요.</span><span class="nd-usage-dot"></span></div>
+            </div>
+            <div class="nd-usage-page"></div>
+          </div>
         </div>
-        <div class="nd-section-title">노트 정보</div>
-        <div class="nd-spec" id="ndSpec"></div>
       </div>
-    </div>
-    <div class="nd-footer">
-      <button class="nd-add-btn" id="ndAddBtn">내 홈에 추가하기</button>
     </div>
   </div>
 
@@ -2351,7 +2401,17 @@
     if (card) openNoteDetail(card.dataset.tpl);
   });
 
-  // ── 상세 ──────────────────────────────────────────────
+  // ── 상세 (Figma 964:43895) ──────────────────────────────
+  // 속지 컬러 예시 — 같은 속지에 곱연산 틴트만 다르게 얹어 "다양한 컬러 지원"을 보여준다
+  const ND_INSERT_COLORS = [
+    { color: '#eee0e5', name: '핑크' },
+    { color: '#e2e4df', name: '세이지' },
+    { color: '#e4ebb3', name: '라임' },
+    { color: '#ede4cb', name: '옐로우' },
+    { color: '#d5d0dc', name: '라벤더' },
+    { color: '#f2f2f1', name: '그레이' },
+  ];
+
   function openNoteDetail(id) {
     const t = ngFindTemplate(id);
     if (!t) return;
@@ -2359,42 +2419,33 @@
 
     const cat = t.category;
     const insert = NG_INSERT[cat];
-
     const cover = coverOf(t.coverId);
-    document.getElementById('ndTopTitle').textContent = t.name;
-    document.getElementById('ndHeroBg').style.background = cover.tint;
-    document.getElementById('ndHeroCover').innerHTML = NoteCover.html({ width: 210, ...cover });
-    document.getElementById('ndHeroSheets').innerHTML = '<div class="nd-hero-sheet"></div>';
 
-    document.getElementById('ndTags').innerHTML =
-      [cat, NG_FORMAT_LABEL[t.format], t.badge]
-        .map(x => `<span class="ng-tag">${x}</span>`).join('');
+    document.getElementById('ndTopTitle').textContent = '';
+    document.getElementById('ndHero').style.background = cover.tint;
     document.getElementById('ndName').textContent = t.name;
+    document.getElementById('ndSub').textContent = cat;
     document.getElementById('ndDesc').textContent = t.about || t.desc;
-
-    document.getElementById('ndInsertList').innerHTML = `
-      <div class="nd-insert-row">
-        <div class="nd-insert-thumb"></div>
-        <div class="nd-insert-txt">
-          <div class="nd-insert-name">${insert.name}</div>
-          <div class="nd-insert-desc">${insert.desc}</div>
-        </div>
-      </div>`;
-
-    document.getElementById('ndSpec').innerHTML = [
-      ['카테고리', cat],
-      ['노트 형식', NG_FORMAT_LABEL[t.format]],
-      ['속지', `${insert.name} 1종 (고정)`],
+    document.getElementById('ndMeta').innerHTML = [
+      ['지원', '공부 기록, 할일 일정 데이터 자동 연동, 펜슬, 스티커'],
+      ['속지', `${insert.name} 1종 (고정) · ${NG_FORMAT_LABEL[t.format]}`],
       ['이용', t.badge],
-      ['지원 기능', '펜슬, 스티커, 타이머 연동, 할일 관리'],
-    ].map(([k, v]) => `<div class="nd-spec-row"><div class="nd-spec-key">${k}</div><div class="nd-spec-val">${v}</div></div>`).join('');
+    ].map(([k, v]) => `<div class="nd-meta-row"><span class="nd-meta-key">${k}</span><span class="nd-meta-val">${v}</span></div>`).join('');
+
+    document.getElementById('ndColorGrid').innerHTML = ND_INSERT_COLORS.map(c => `
+      <div class="nd-color-thumb">
+        <div class="nd-color-page"></div>
+        <div class="nd-color-tint" style="background:${c.color};"></div>
+      </div>`).join('');
 
     document.getElementById('ndBody').scrollTop = 0;
     ndScreen.classList.add('visible');
     lucide.createIcons({ nodes: [ndScreen] });
-    // 히어로와 목록 썸네일 모두 실제 속지 디자인을 축소해 채운다
-    ngRenderInsertThumb(insert.kind, ndScreen.querySelector('.nd-hero-sheet'));
-    ngRenderInsertThumb(insert.kind, ndScreen.querySelector('.nd-insert-thumb'));
+
+    // 히어로·컬러 예시·다크모드·사용방법 모두 같은 속지 디자인을 축소해 채운다
+    ngRenderInsertThumb(insert.kind, ndScreen.querySelector('.nd-hero-preview'));
+    ndScreen.querySelectorAll('.nd-color-page, .nd-dark-page, .nd-usage-page')
+      .forEach(el => ngRenderInsertThumb(insert.kind, el));
   }
 
   function closeNoteDetail() {
