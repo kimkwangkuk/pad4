@@ -866,6 +866,53 @@
     .rn-cancel { background:rgba(0,0,0,0.06); color:rgba(0,0,0,0.7); }
     .rn-confirm { background:#242424; color:#fff; }
 
+    /* ─── 홈 노트 표지 변경 팝업 ───────────────────────────── */
+    .cv-backdrop { position:fixed; inset:0; background:rgba(0,0,0,0.35); opacity:0; pointer-events:none; transition:opacity .2s; z-index:6000; }
+    .cv-backdrop.visible { opacity:1; pointer-events:auto; }
+    .cv-popup {
+      position:fixed; left:50%; top:50%; transform:translate(-50%,-46%);
+      width:560px; max-height:82vh; background:#fff; border-radius:24px; padding:24px 24px 18px;
+      box-shadow:0 12px 40px rgba(0,0,0,0.18); opacity:0; pointer-events:none;
+      transition:opacity .2s, transform .2s; z-index:6001;
+      font-family:'Pretendard',sans-serif; display:flex; flex-direction:column;
+    }
+    .cv-popup.visible { opacity:1; pointer-events:auto; transform:translate(-50%,-50%); }
+    .cv-title { font-size:17px; font-weight:700; color:rgba(0,0,0,0.86); text-align:center; }
+    .cv-sub { font-size:12.5px; font-weight:400; color:rgba(0,0,0,0.5); text-align:center; margin-top:5px; }
+    /* 표지 종류 태그 (컬러 / 그라데이션 / 패턴 / 내가 만든) */
+    .cv-pills { display:flex; gap:6px; justify-content:center; flex-wrap:wrap; margin-top:18px; flex:0 0 auto; }
+    .cv-pill {
+      font-family:inherit; font-size:13px; font-weight:600; padding:7px 14px; border-radius:100px; cursor:pointer;
+      background:#fff; border:1px solid rgba(0,0,0,0.1); color:rgba(0,0,0,0.7);
+    }
+    .cv-pill:hover { background:rgba(0,0,0,0.03); }
+    .cv-pill.on { background:rgba(0,0,0,0.86); border-color:transparent; color:#fff; }
+    .cv-grid {
+      flex:1; min-height:120px; overflow-y:auto; scrollbar-width:none; margin-top:16px; padding:4px;
+      display:grid; grid-template-columns:repeat(4, 1fr); column-gap:14px; row-gap:18px; align-content:start;
+    }
+    .cv-grid::-webkit-scrollbar { display:none; }
+    .cv-grid-empty { display:flex; align-items:center; justify-content:center; }
+    .cv-placeholder { font-size:13.5px; color:rgba(0,0,0,0.35); text-align:center; padding:40px 0; }
+    .cv-cell { display:flex; flex-direction:column; align-items:center; gap:8px; cursor:pointer; }
+    .cv-cell-face { position:relative; }
+    /* 선택 표시: 표지 밖으로 테두리 링 + 우상단 체크 배지 */
+    .cv-cell.on .cv-cell-face::after {
+      content:''; position:absolute; inset:-5px; border-radius:10px;
+      border:2.5px solid rgba(0,0,0,0.86); pointer-events:none;
+    }
+    .cv-check {
+      position:absolute; top:-8px; right:-8px; width:22px; height:22px; border-radius:50%;
+      background:rgba(0,0,0,0.86); border:2px solid #fff; z-index:2;
+      display:none; align-items:center; justify-content:center;
+    }
+    .cv-cell.on .cv-check { display:flex; }
+    .cv-name { font-size:12px; font-weight:500; color:rgba(0,0,0,0.7); text-align:center; letter-spacing:-.02em; }
+    .cv-actions { display:flex; gap:8px; margin-top:20px; flex:0 0 auto; }
+    .cv-btn { flex:1; height:44px; border:none; border-radius:12px; font-size:15px; font-weight:600; font-family:inherit; cursor:pointer; }
+    .cv-cancel { background:rgba(0,0,0,0.06); color:rgba(0,0,0,0.7); }
+    .cv-confirm { background:#242424; color:#fff; }
+
     /* ─── VIEW PLACEHOLDER (non-note tabs) ────────────────── */
     .view-placeholder {
       position: absolute;
@@ -2167,56 +2214,70 @@
     },
   };
 
+  // ── 표지 카탈로그 ─────────────────────────────────────────────
+  // 스토어 노트와 홈의 "표지 변경"이 같은 목록을 쓴다. image/band는 NoteCover에 그대로 넘어가고
+  // (image는 색·그라디언트·패턴·이미지 경로 아무거나), tint는 표지를 올려놓는 배경 워시 색이다.
+  // tag는 표지 선택 팝업의 필터(컬러 / 그라데이션 / 패턴 / 내가 만든)에 쓰인다.
+  const NOTE_COVERS = [
+    { id: 'coral',    name: '코랄',    tag: '컬러', image: '#f34c18',                        tint: '#fdece5' },
+    { id: 'blue',     name: '블루',    tag: '컬러', image: '#5a8dee',                        tint: '#e9f0fd' },
+    { id: 'purple',   name: '퍼플',    tag: '컬러', image: '#452c83',                        tint: '#eeeaf7' },
+    { id: 'green',    name: '그린',    tag: '컬러', image: '#1e7f00',                        tint: '#e9f2e5' },
+    { id: 'ivory',    name: '아이보리', tag: '컬러', image: '#f5efe0',   band: '#a9997c',     tint: '#faf7f0' },
+    { id: 'stone',    name: '스톤',    tag: '컬러', image: '#e6e2dc',    band: '#8b8579',     tint: '#f4f2ef' },
+    { id: 'midnight', name: '미드나잇', tag: '그라데이션', image: 'linear-gradient(160deg,#2b3a67,#1c2440)', band: '#101726', tint: '#e8ebf3' },
+    { id: 'forest',   name: '포레스트', tag: '그라데이션', image: 'linear-gradient(150deg,#cfe6d4,#8fc39c)', band: '#3f6b4a', tint: '#edf6ef' },
+    { id: 'charcoal', name: '차콜',    tag: '그라데이션', image: 'linear-gradient(155deg,#d8dbe2,#9aa0ac)', band: '#3a3f49', tint: '#f0f1f4' },
+    { id: 'creamDot', name: '크림 도트',    tag: '패턴', image: patternCSS('dot',  '#f5efe0'), band: '#b9a98b', tint: '#faf6ec' },
+    { id: 'coralDot', name: '코랄 도트',    tag: '패턴', image: patternCSS('dot',  '#f7d9c4'), band: '#b5734b', tint: '#fdf1e9' },
+    { id: 'lavLine',  name: '라벤더 스트라이프', tag: '패턴', image: patternCSS('line', '#ddd6f8'), band: '#6f61a8', tint: '#f4f1fd' },
+    { id: 'skyLine',  name: '스카이 스트라이프', tag: '패턴', image: patternCSS('line', '#cfe0fb'), band: '#4a6c9b', tint: '#eef4fd' },
+  ];
+  // 표지 선택 팝업의 필터 탭 — '내가 만든'은 아직 준비 중(빈 상태)
+  const NOTE_COVER_TAGS = ['컬러', '그라데이션', '패턴', '내가 만든'];
+  function coverOf(id) { return NOTE_COVERS.find(c => c.id === id) || NOTE_COVERS[0]; }
+
   const NOTE_TEMPLATES = {
     '데일리': [
       {
-        id: 'd1', name: '모던 텐미닛 플래너', format: 'scroll',
+        id: 'd1', name: '모던 텐미닛 플래너', format: 'scroll', coverId: 'coral',
         desc: '스크롤로 날짜를 이어 넘기며 하루하루를 쌓아가는 기본 데일리 노트예요. 선명한 오렌지 표지로 책장에서 바로 눈에 띄어요.',
-        cover: { image: '#f34c18' }, tint: '#fdece5',
       },
       {
-        id: 'd2', name: '소프트 크림 데일리', format: 'scroll',
+        id: 'd2', name: '소프트 크림 데일리', format: 'scroll', coverId: 'creamDot',
         desc: '도트 패턴을 얹은 크림색 표지의 데일리 노트예요. 차분한 톤을 좋아하는 분께 잘 맞아요.',
-        cover: { image: patternCSS('dot', '#f5efe0'), band: '#b9a98b' }, tint: '#faf6ec',
       },
       {
-        id: 'd3', name: '미드나잇 포커스', format: 'calendar',
+        id: 'd3', name: '미드나잇 포커스', format: 'calendar', coverId: 'midnight',
         desc: '날짜를 캘린더에서 골라 그 페이지로 바로 이동하는 캘린더형 데일리 노트예요. 딥한 네이비 표지를 담았어요.',
-        cover: { image: 'linear-gradient(160deg,#2b3a67,#1c2440)', band: '#101726' }, tint: '#e8ebf3',
       },
     ],
     '위클리': [
       {
-        id: 'w1', name: '위클리 그리드', format: 'weekly',
+        id: 'w1', name: '위클리 그리드', format: 'weekly', coverId: 'blue',
         desc: '한 주를 한 장에 펼쳐 요일별로 계획을 채우는 기본 위클리 노트예요. 깔끔한 블루 표지로 구성했어요.',
-        cover: { image: '#5a8dee' }, tint: '#e9f0fd',
       },
       {
-        id: 'w2', name: '파스텔 위클리', format: 'weekly',
+        id: 'w2', name: '파스텔 위클리', format: 'weekly', coverId: 'lavLine',
         desc: '사선 패턴을 얹은 라벤더 표지의 위클리 노트예요. 부드러운 톤으로 주간 계획을 관리해요.',
-        cover: { image: patternCSS('line', '#ddd6f8'), band: '#6f61a8' }, tint: '#f4f1fd',
       },
       {
-        id: 'w3', name: '포레스트 위클리', format: 'weekly',
+        id: 'w3', name: '포레스트 위클리', format: 'weekly', coverId: 'forest',
         desc: '그린 그라데이션 표지의 위클리 노트예요. 눈이 편한 색으로 한 주를 계획해요.',
-        cover: { image: 'linear-gradient(150deg,#cfe6d4,#8fc39c)', band: '#3f6b4a' }, tint: '#edf6ef',
       },
     ],
     '먼슬리': [
       {
-        id: 'm1', name: '먼슬리 캘린더', format: 'monthly',
+        id: 'm1', name: '먼슬리 캘린더', format: 'monthly', coverId: 'purple',
         desc: '한 달 일정을 격자로 펼쳐 배치하는 기본 먼슬리 노트예요. 딥 퍼플 표지로 구성했어요.',
-        cover: { image: '#452c83' }, tint: '#eeeaf7',
       },
       {
-        id: 'm2', name: '코랄 먼슬리', format: 'monthly',
+        id: 'm2', name: '코랄 먼슬리', format: 'monthly', coverId: 'coralDot',
         desc: '도트 패턴의 따뜻한 코랄 표지를 얹은 먼슬리 노트예요. 한 달을 부드러운 분위기로 관리해요.',
-        cover: { image: patternCSS('dot', '#f7d9c4'), band: '#b5734b' }, tint: '#fdf1e9',
       },
       {
-        id: 'm3', name: '차콜 먼슬리', format: 'monthly',
+        id: 'm3', name: '차콜 먼슬리', format: 'monthly', coverId: 'charcoal',
         desc: '차분한 회색 그라데이션 표지의 먼슬리 노트예요. 담백하게 한 달 일정을 정리해요.',
-        cover: { image: 'linear-gradient(155deg,#d8dbe2,#9aa0ac)', band: '#3a3f49' }, tint: '#f0f1f4',
       },
     ],
   };
@@ -2274,9 +2335,9 @@
     const insert = NG_INSERT[ngCategory];
     ngGridEl.innerHTML = NOTE_TEMPLATES[ngCategory].map(t =>
       `<div class="ng-card" data-tpl="${t.id}">
-        <div class="ng-card-stage" style="background:${t.tint};">
+        <div class="ng-card-stage" style="background:${coverOf(t.coverId).tint};">
           <div class="ng-card-sheet"></div>
-          ${NoteCover.html({ width: 118, ...t.cover })}
+          ${NoteCover.html({ width: 118, ...coverOf(t.coverId) })}
         </div>
         <div class="ng-card-meta">
           <div class="ng-card-tagrow">
@@ -2328,9 +2389,10 @@
     const cat = NG_CATEGORIES.find(c => NOTE_TEMPLATES[c].includes(t));
     const insert = NG_INSERT[cat];
 
+    const cover = coverOf(t.coverId);
     document.getElementById('ndTopTitle').textContent = t.name;
-    document.getElementById('ndHeroBg').style.background = t.tint;
-    document.getElementById('ndHeroCover').innerHTML = NoteCover.html({ width: 210, ...t.cover });
+    document.getElementById('ndHeroBg').style.background = cover.tint;
+    document.getElementById('ndHeroCover').innerHTML = NoteCover.html({ width: 210, ...cover });
     document.getElementById('ndHeroSheets').innerHTML = '<div class="nd-hero-sheet"></div>';
 
     document.getElementById('ndTags').innerHTML =
@@ -2377,7 +2439,7 @@
       name: t.name,
       date: '방금 전',
       icon: NG_CATEGORY_META[cat].icon,
-      cover: t.cover,
+      coverId: t.coverId,
       noteType: t.format,
     };
 
@@ -2389,7 +2451,7 @@
     hsNotesEl.insertBefore(cardEl, hsNotesEl.firstChild);
     lucide.createIcons({ nodes: [cardEl] });
 
-    nwShowNoteCreated(note.name, t.cover, NG_INSERT[cat].kind);
+    nwShowNoteCreated(note.name, coverOf(note.coverId), NG_INSERT[cat].kind);
     openTabFromHome(note.name, note.icon, 'note', note.noteType);
   });
 
@@ -2399,12 +2461,11 @@
   const tabLabels  = document.querySelector('.tab-labels');
   const tabsSection = document.querySelector('.tabs-section');
 
-  // cover는 NoteCover(components/note-cover.js)에 그대로 넘어간다 —
-  // image에는 색·그라디언트·이미지 경로 아무거나, band에는 띠 색을 준다(생략하면 image 색에서 자동 계산)
+  // coverId는 위 NOTE_COVERS의 표지를 가리킨다 — 홈의 "표지 변경"으로 언제든 바꿀 수 있다
   const HOME_NOTES = [
-    { name: '데일리 플래너', date: '2일 전', icon: 'sun',            cover: { image: '#f34c18' }, noteType: 'scroll'  },
-    { name: '위클리 플래너', date: '2일 전', icon: 'calendar-range', cover: { image: '#452c83' }, noteType: 'weekly'  },
-    { name: '먼슬리 플래너', date: '2일 전', icon: 'calendar-days',  cover: { image: '#1e7f00' }, noteType: 'monthly' },
+    { name: '데일리 플래너', date: '2일 전', icon: 'sun',            coverId: 'coral',  noteType: 'scroll'  },
+    { name: '위클리 플래너', date: '2일 전', icon: 'calendar-range', coverId: 'purple', noteType: 'weekly'  },
+    { name: '먼슬리 플래너', date: '2일 전', icon: 'calendar-days',  coverId: 'green',  noteType: 'monthly' },
   ];
 
   // Build note cards
@@ -2414,7 +2475,7 @@
     const card = document.createElement('div');
     card.className = 'note-card';
     card.innerHTML = `
-      ${NoteCover.html({ width: 170, ...(note.cover || {}) })}
+      ${NoteCover.html({ width: 170, ...coverOf(note.coverId) })}
       <div class="note-info">
         <div class="txt"><div class="nname">${note.name}</div><div class="ntime">${note.date}</div></div>
         <div class="chev">⌄</div>
@@ -2425,7 +2486,7 @@
     const nameEl = card.querySelector('.nname');
     chevEl.addEventListener('click', (e) => {
       e.stopPropagation(); // 카드 클릭(노트 열기)과 분리 — 화살표는 메뉴만 연다
-      openHomeNoteMenu(chevEl, note, nameEl);
+      openHomeNoteMenu(chevEl, note, nameEl, card.querySelector('.ncv'));
     });
     return card;
   }
@@ -2436,18 +2497,21 @@
 
   lucide.createIcons({ nodes: [homeScreen] });
 
-  // ── 홈 노트 이름 변경 (화살표 → 이름 변경 메뉴 → 팝업) ──────────
-  let homeNoteMenuTarget = null; // { note, nameEl }
+  // ── 홈 노트 메뉴 (화살표 → 이름 변경 / 표지 변경) ──────────
+  let homeNoteMenuTarget = null; // { note, nameEl, coverEl }
   const homeNoteMenu = new OverlayMenu({
     items: [
       { lucideIcon: 'pencil', label: '이름 변경', onClick() {
           if (homeNoteMenuTarget) openRenamePopup(homeNoteMenuTarget.note, homeNoteMenuTarget.nameEl);
+      } },
+      { lucideIcon: 'palette', label: '표지 변경', onClick() {
+          if (homeNoteMenuTarget) openCoverPopup(homeNoteMenuTarget.note, homeNoteMenuTarget.coverEl);
       } }
     ]
   });
 
-  function openHomeNoteMenu(chevEl, note, nameEl) {
-    homeNoteMenuTarget = { note, nameEl };
+  function openHomeNoteMenu(chevEl, note, nameEl, coverEl) {
+    homeNoteMenuTarget = { note, nameEl, coverEl };
     const r = chevEl.getBoundingClientRect();
     homeNoteMenu.open(r.left + r.width / 2, r.bottom + 4);
   }
@@ -2496,6 +2560,101 @@
     if (e.key === 'Enter') confirmRename();
     else if (e.key === 'Escape') closeRenamePopup();
   });
+
+  // ── 표지 변경 팝업 (동적 생성) ─────────────────────────────
+  // 표지는 NoteCover의 CSS 변수만 갈아끼우면 바뀌므로, 고르는 즉시 홈 카드에 바로 반영해
+  // 실물로 확인하고 확인/취소로 확정하거나 되돌린다.
+  const coverBackdrop = document.createElement('div');
+  coverBackdrop.className = 'cv-backdrop';
+  const coverPopup = document.createElement('div');
+  coverPopup.className = 'cv-popup';
+  coverPopup.innerHTML = `
+    <div class="cv-title">표지 변경</div>
+    <div class="cv-sub">속지는 그대로 두고 표지만 바꿔요.</div>
+    <div class="cv-pills"></div>
+    <div class="cv-grid"></div>
+    <div class="cv-actions">
+      <button class="cv-btn cv-cancel">취소</button>
+      <button class="cv-btn cv-confirm">확인</button>
+    </div>`;
+  document.body.appendChild(coverBackdrop);
+  document.body.appendChild(coverPopup);
+  const coverPills = coverPopup.querySelector('.cv-pills');
+  const coverGrid = coverPopup.querySelector('.cv-grid');
+  let coverTarget = null; // { note, coverEl, originalId }
+  let coverTag = NOTE_COVER_TAGS[0];
+
+  function applyCoverToCard(coverEl, coverId) {
+    if (coverEl) coverEl.setAttribute('style', NoteCover.vars({ width: 170, ...coverOf(coverId) }));
+  }
+
+  function renderCoverPills() {
+    coverPills.innerHTML = NOTE_COVER_TAGS.map(tag =>
+      `<button class="cv-pill ${tag === coverTag ? 'on' : ''}" data-tag="${tag}">${tag}</button>`).join('');
+  }
+
+  function renderCoverGrid(selectedId) {
+    const list = NOTE_COVERS.filter(c => c.tag === coverTag);
+    coverGrid.classList.toggle('cv-grid-empty', !list.length);
+    if (!list.length) {
+      coverGrid.innerHTML = `<div class="cv-placeholder">아직 만든 표지가 없어요</div>`;
+      return;
+    }
+    coverGrid.innerHTML = list.map(c => `
+      <div class="cv-cell ${c.id === selectedId ? 'on' : ''}" data-cover="${c.id}">
+        <div class="cv-cell-face">
+          ${NoteCover.html({ width: 96, ...c })}
+          <div class="cv-check"><i data-lucide="check" style="width:13px;height:13px;color:#fff;"></i></div>
+        </div>
+        <div class="cv-name">${c.name}</div>
+      </div>`).join('');
+    lucide.createIcons({ nodes: [coverGrid] });
+  }
+
+  function openCoverPopup(note, coverEl) {
+    coverTarget = { note, coverEl, originalId: note.coverId };
+    coverTag = coverOf(note.coverId).tag || NOTE_COVER_TAGS[0]; // 현재 표지가 있는 탭으로 열어준다
+    renderCoverPills();
+    renderCoverGrid(note.coverId);
+    coverGrid.scrollTop = 0;
+    coverBackdrop.classList.add('visible');
+    coverPopup.classList.add('visible');
+  }
+  function closeCoverPopup() {
+    coverBackdrop.classList.remove('visible');
+    coverPopup.classList.remove('visible');
+    coverTarget = null;
+  }
+  function cancelCoverPopup() {
+    if (coverTarget) {
+      coverTarget.note.coverId = coverTarget.originalId; // 미리보기로 바꿔둔 값을 원래대로
+      applyCoverToCard(coverTarget.coverEl, coverTarget.originalId);
+    }
+    closeCoverPopup();
+  }
+
+  coverPills.addEventListener('click', e => {
+    const pill = e.target.closest('.cv-pill');
+    if (!pill || !coverTarget) return;
+    coverTag = pill.dataset.tag;
+    renderCoverPills();
+    renderCoverGrid(coverTarget.note.coverId);
+    coverGrid.scrollTop = 0;
+  });
+
+  coverGrid.addEventListener('click', e => {
+    const cell = e.target.closest('.cv-cell');
+    if (!cell || !coverTarget) return;
+    coverTarget.note.coverId = cell.dataset.cover;
+    applyCoverToCard(coverTarget.coverEl, cell.dataset.cover); // 홈 카드에 즉시 미리보기
+    renderCoverGrid(cell.dataset.cover);
+  });
+  coverPopup.querySelector('.cv-confirm').addEventListener('click', () => {
+    if (coverTarget) pageToast.show('표지가 변경되었습니다');
+    closeCoverPopup();
+  });
+  coverPopup.querySelector('.cv-cancel').addEventListener('click', cancelCoverPopup);
+  coverBackdrop.addEventListener('click', cancelCoverPopup);
 
   // ── Home screen show / hide ────────────────────────────
   studyBtn.addEventListener('click', () => {
