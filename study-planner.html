@@ -380,6 +380,8 @@
     }
     /* 노트 기간 밖의 페이지 — 캔버스에서 완전히 숨긴다(삭제는 아님, 기간을 넓히면 다시 보인다) */
     .card.card-out-of-period { display: none; }
+    /* 다른 노트(탭)가 소유한 페이지 — 이 탭에선 보이지 않는다 */
+    .card.card-other-note { display: none; }
 
     /* Card has 16px padding; the two panels sit side by side */
     .card-inner {
@@ -2525,8 +2527,9 @@
       </div>
       <!-- Tab labels -->
       <div class="tab-labels">
-        <!-- Active tab: 나의 하루 기록 노트 -->
-        <div class="tab active" style="z-index:7;margin-right:0;">
+        <!-- Active tab: 나의 하루 기록 노트. data-tab-id는 이 탭이 소유한 캔버스 페이지를
+             가려내는 키 — 최초 탭이라 t0을 고정으로 박아두고, 새 탭은 t1부터 발급받는다 -->
+        <div class="tab active" data-tab-id="t0" style="z-index:7;margin-right:0;">
           <img class="tab-curve" src="assets/tab-active-left.svg" style="width:29px;height:36px;flex-shrink:0;display:block;">
           <div class="tab-inner">
             <i data-lucide="notebook-pen" style="width:16px;height:16px;flex-shrink:0;color:rgba(0,0,0,0.86);"></i>
@@ -3212,6 +3215,26 @@
     });
   }
 
+  // ── 노트(탭)별 콘텐츠 소유권 ─────────────────────────────────
+  // 캔버스 페이지는 전부 한 래퍼(#canvasZoomWrap) 안에 살지만, 자기를 만든 탭의 id를
+  // data-owner-tab에 달고 다닌다. sortPages는 활성 탭이 소유한 페이지만 배치하고 나머지는
+  // .card-other-note로 숨기므로, 노트(탭)마다 보이는 콘텐츠가 완전히 갈린다.
+  let _tabSeq = 1; // t0은 HTML에 박혀 있는 최초 탭이 이미 쓰고 있다
+  function tabIdOf(tab) {
+    if (!tab) return null;
+    if (!tab.dataset.tabId) tab.dataset.tabId = 't' + (_tabSeq++);
+    return tab.dataset.tabId;
+  }
+  // rebuildPanel/sortPages는 tabLabels(const)가 정의되기 전에도 불리므로 document에서 직접 찾는다
+  function activeTabId() { return tabIdOf(document.querySelector('.tab.active')); }
+
+  // 활성 탭이 소유한, 날짜가 정해진 캔버스 페이지들
+  function ownDatedCards() {
+    const tabId = activeTabId();
+    return Array.from(canvasZoomWrap.querySelectorAll('.card[data-canvas-state="with-date"]'))
+      .filter(c => c.dataset.ownerTab === tabId);
+  }
+
   // ── Build all cards ────────────────────────────────────────
   const canvasScroll = document.getElementById('canvasScroll');
   const canvasZoomWrap = document.getElementById('canvasZoomWrap');
@@ -3220,6 +3243,7 @@
   PAGES.forEach((page) => {
     canvasZoomWrap.insertAdjacentHTML('beforeend', buildCardHTML(page));
     const card = canvasZoomWrap.lastElementChild;
+    card.dataset.ownerTab = activeTabId(); // 샘플 페이지는 최초 탭(t0)의 것
     buildGrid(card, page.fills || null);
     initEmojiPicker(card);
   });
@@ -3447,10 +3471,23 @@
   }
 
   function sortPages(selectedCard, revealBanners) {
-    const allCards = Array.from(canvasScroll.querySelectorAll('.card'));
-    const datedCards = allCards.filter(c => c.dataset.canvasState === 'with-date');
+    // 다른 노트(탭)의 페이지는 이 탭에서 통째로 숨긴다 — 탭마다 보이는 콘텐츠가 달라지는 지점.
+    // 숨긴 카드도 지우지는 않으므로, 그 탭으로 돌아가면 그대로 다시 나타난다.
+    const tabId = activeTabId();
+    const allCards = Array.from(canvasZoomWrap.querySelectorAll('.card'));
+    const otherNoteCards = [];
+    const datedCards = [];
+    allCards.forEach(c => {
+      const isOwn = c.dataset.ownerTab === tabId;
+      c.classList.toggle('card-other-note', !isOwn);
+      if (!isOwn) otherNoteCards.push(c);
+      else if (c.dataset.canvasState === 'with-date') datedCards.push(c);
+    });
     datedCards.sort((a, b) => parseCardDate(a) - parseCardDate(b));
     canvasZoomWrap.querySelectorAll('.canvas-ad-banner').forEach(b => b.remove());
+    // 다른 노트의 카드는 맨 앞으로 몰아둔다 — 뒤에 놓이는 이 탭 페이지들의 순서·offsetTop에
+    // 영향을 주지 않게 (기간 밖 카드와 같은 이유)
+    otherNoteCards.forEach(c => canvasZoomWrap.appendChild(c));
 
     // 노트 기간 밖의 페이지는 캔버스에서도 숨긴다(display:none) — 삭제하지는 않으므로 기간을
     // 다시 늘리면 그대로 되돌아온다. 숨긴 카드는 먼저 배치해 이후 보이는 카드들의 순서·오프셋에
@@ -3540,7 +3577,16 @@
 
   function setCanvasMode() {
     document.getElementById('spHeaderTitle').textContent = '페이지';
+    // 이 노트가 쓰는 날짜 중복 집합으로 갈아끼운 뒤에 목록을 그린다 — 캘린더의 "이미 쓴 날짜"
+    // 표시가 다른 노트 것과 섞이지 않게. (datePicker는 아래에서 const로 선언되지만,
+    // setCanvasMode의 첫 호출은 그보다 뒤인 updateView()이므로 TDZ 문제는 없다)
+    datePicker.takenDates = takenDatesFor(activeTabId());
     sortPages();
+    // 노트를 바꾸면 캔버스 내용이 통째로 갈리므로, 스크롤도 그 노트의 마지막 페이지로 옮긴다
+    // (그대로 두면 이전 노트 기준 위치에 남아 빈 곳을 보게 된다)
+    const ownCards = ownDatedCards();
+    if (ownCards.length) scrollToCard(ownCards[ownCards.length - 1], false);
+    else mainArea.scrollTo({ top: 0, behavior: 'instant' });
     // 노트 전환 시 "오늘로 이동" 플로팅 버튼이 감시하는 대상도 새로 고른다. 전역 함수 선언은
     // 호이스팅으로 인해 정의 이전에도 window.watchTodayFab이 이미 존재하는 것처럼 보이므로
     // (TDZ 오류 유발), 별도의 준비완료 플래그로 안전하게 가드한다 — 최초 페이지 로드 시점엔
@@ -3589,13 +3635,14 @@
     }
   }
 
-  // Start centered on the last (most recent) page
-  scrollToCard(canvasScroll.querySelectorAll('.card').length - 1, false);
+  // Start centered on the last (most recent) page — 다른 노트 카드가 앞에 섞이므로
+  // 인덱스가 아니라 이 노트가 소유한 마지막 페이지 엘리먼트로 직접 이동한다
+  const _firstLanding = ownDatedCards();
+  if (_firstLanding.length) scrollToCard(_firstLanding[_firstLanding.length - 1], false);
 
   // ── Side panel: single delegation handler (works for dynamic cards too) ──
   function findCardByDateKey(key) {
-    return Array.from(canvasScroll.querySelectorAll('.card[data-canvas-state="with-date"]'))
-      .find(c => dateKey(parseCardDate(c)) === key);
+    return ownDatedCards().find(c => dateKey(parseCardDate(c)) === key);
   }
 
   document.querySelector('.sp-content').addEventListener('click', e => {
@@ -3648,6 +3695,14 @@
       else createPage(year, month, day);
     }
   });
+
+  // 날짜 중복 방지 집합(takenDates)도 노트(탭)별로 따로 둔다 — 다른 노트에서 이미 쓴 날짜가
+  // 이 노트의 캘린더까지 막으면 안 된다. 탭을 바꿀 때 setCanvasMode가 해당 탭 집합으로 갈아끼운다.
+  const tabTakenDates = new Map([[activeTabId(), datePicker.takenDates]]);
+  function takenDatesFor(tabId) {
+    if (!tabTakenDates.has(tabId)) tabTakenDates.set(tabId, new Set());
+    return tabTakenDates.get(tabId);
+  }
 
   // 페이지 날짜 캘린더는 항상 활성 노트의 기간 안에서만 고를 수 있다 — 열기 직전마다
   // 현재 기간으로 갱신해서, 기간을 수정한 뒤에도 제한이 어긋나지 않게 한다.
@@ -3714,6 +3769,7 @@
     const newPage = { id: 'p' + pageCount++, dateText, today: false };
     canvasZoomWrap.insertAdjacentHTML('beforeend', buildCardHTML(newPage));
     const newCard = canvasZoomWrap.lastElementChild;
+    newCard.dataset.ownerTab = activeTabId(); // 지금 보고 있는 노트(탭)의 페이지로 귀속
     newCard.classList.add('card-creating'); // 스크롤이 도착하기 전까지는 보이지 않게 숨겨둔다
 
     const oldInner = newCard.querySelector('.card-inner');
@@ -4961,6 +5017,7 @@
     // Build new active tab element
     const newTab = document.createElement('div');
     newTab.className = 'tab active';
+    tabIdOf(newTab); // 새 노트 = 새 소유 id → 캔버스가 빈 상태로 시작한다
     newTab.dataset.tabType = type;
     newTab.dataset.coverColor = cover?.color || '#d8dbe2';
     if (cover?.pattern) newTab.dataset.coverPattern = cover.pattern;
@@ -5013,8 +5070,7 @@
   const todayFabBtn = document.getElementById('todayFabBtn');
   function getTodayCardEl() {
     const t = new Date();
-    return Array.from(canvasZoomWrap.querySelectorAll('.card[data-canvas-state="with-date"]'))
-      .find(c => parseCardDate(c).toDateString() === t.toDateString()) || null;
+    return ownDatedCards().find(c => parseCardDate(c).toDateString() === t.toDateString()) || null;
   }
   todayFabBtn.addEventListener('click', () => {
     const el = getTodayCardEl();
