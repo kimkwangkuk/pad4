@@ -1,0 +1,46 @@
+/* ─────────────────────────────────────────────────────────────────────────
+   Filter pills — 가로로 늘어놓는 필터/태그 행
+   (Figma: 패드 UI 개편 5533:435556 노트 스토어 필터 행 / 5439:544652 표지 태그 행)
+
+   버튼 높이 38, 좌우 패딩 16, 간격 8, 좌우 여백 16. 넘치면 가로 스크롤된다.
+   선택된 필은 .on을 붙여 어둡게 채운다.
+
+     <div class="fp-row">
+       <button class="fp-pill on">전체</button>
+       <button class="fp-pill">스터디 데일리</button>
+       …
+     </div>
+   ───────────────────────────────────────────────────────────────────────── */
+
+.fp-row {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 16px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.fp-row::-webkit-scrollbar { display: none; }
+
+.fp-pill {
+  flex: 0 0 auto;
+  height: 38px;
+  padding: 0 16px;
+  border-radius: 100px;
+  cursor: pointer;
+  font-family: 'Pretendard', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  color: rgba(0, 0, 0, 0.86);
+}
+.fp-pill:hover { background: rgba(0, 0, 0, 0.03); }
+.fp-pill.on {
+  background: rgba(0, 0, 0, 0.86);
+  border-color: transparent;
+  color: #fff;
+}

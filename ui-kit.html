@@ -13,7 +13,10 @@
   <link rel="stylesheet" href="components/modal-header.css">
   <link rel="stylesheet" href="components/glass-pill-button.css">
   <link rel="stylesheet" href="components/note-cover.css">
+  <link rel="stylesheet" href="components/store-card.css">
+  <link rel="stylesheet" href="components/filter-pills.css">
   <script src="components/note-cover.js"></script>
+  <script src="components/store-card.js"></script>
   <script src="components/date-picker.js"></script>
   <script src="components/overlay-menu.js"></script>
   <script src="components/dialog.js"></script>
@@ -76,6 +79,26 @@
   <div class="section">
     <div class="section-title">Note Cover</div>
     <div class="component-row" id="ncvDemo"></div>
+  </div>
+
+  <!-- FILTER PILLS -->
+  <div class="section">
+    <div class="section-title">Filter Pills</div>
+    <div class="component-card" style="width:700px; padding:0; overflow:hidden;">
+      <div class="fp-row">
+        <button class="fp-pill on">전체</button>
+        <button class="fp-pill">스터디 데일리</button>
+        <button class="fp-pill">스터디 위클리</button>
+        <button class="fp-pill">무지 노트</button>
+        <button class="fp-pill">가계부</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- STORE CARD -->
+  <div class="section">
+    <div class="section-title">Store Card (listItem)</div>
+    <div class="component-row" id="stcDemo"></div>
   </div>
 
   <!-- DATE PICKER -->
@@ -255,6 +278,18 @@
     card.className = 'component-card';
     card.innerHTML = `<div class="component-label">${label}</div>${NoteCover.html({ width: 140, ...opts })}`;
     document.getElementById('ncvDemo').appendChild(card);
+  });
+
+  // Store Card — 썸네일 배경(bg) + 배지 + 이름/설명. .stc-preview 슬롯은 호출부가 채운다
+  [
+    { bg: '#f8d5cd', badge: '무료',     name: '모던 텐미닛 플래너', desc: '모던한 스타일의 하루를 관리하는 데일리 플래너' },
+    { bg: '#c6d5fb', badge: '프리미엄', name: '곰돌이 위클리 플래너', desc: '귀여운 곰돌이 캐릭터가 있는 위클리 템플릿' },
+    { bg: '#dcdee4', badge: null,       name: '가계부',              desc: '수입, 지출 관리' },
+  ].forEach(opts => {
+    const wrap = document.createElement('div');
+    wrap.style.width = '318px';
+    wrap.innerHTML = StoreCard.html(opts);
+    document.getElementById('stcDemo').appendChild(wrap);
   });
 
   const picker = new DatePicker({ year: 2026, month: 6, selected: 23 });

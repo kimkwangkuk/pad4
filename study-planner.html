@@ -15,6 +15,8 @@
   <link rel="stylesheet" href="components/dialog.css">
   <link rel="stylesheet" href="components/sticker-picker.css">
   <link rel="stylesheet" href="components/note-cover.css">
+  <link rel="stylesheet" href="components/store-card.css">
+  <link rel="stylesheet" href="components/filter-pills.css">
   <link rel="stylesheet" href="components/modal-header.css">
   <link rel="stylesheet" href="components/glass-pill-button.css">
   <style>
@@ -882,19 +884,7 @@
     }
     .cv-popup.visible { opacity:1; pointer-events:auto; transform:translate(-50%,-50%); }
     .cv-popup .bsm-header { flex:0 0 auto; }
-    /* 태그 행 (컬러 / 패턴 / 스티커 / 재질 / 내가 만든) — Figma Frame 1707486344 */
-    .cv-pills {
-      flex:0 0 auto; height:70px; display:flex; align-items:center; gap:10px;
-      padding:0 16px; overflow-x:auto; scrollbar-width:none;
-    }
-    .cv-pills::-webkit-scrollbar { display:none; }
-    .cv-pill {
-      flex:0 0 auto; height:38px; padding:0 16px; border-radius:100px; cursor:pointer;
-      font-family:inherit; font-size:15px; font-weight:600; line-height:1;
-      background:#fff; border:1px solid rgba(0,0,0,0.08); color:rgba(0,0,0,0.86);
-    }
-    .cv-pill:hover { background:rgba(0,0,0,0.03); }
-    .cv-pill.on { background:rgba(0,0,0,0.86); border-color:transparent; color:#fff; }
+    /* 태그 행은 공용 컴포넌트(components/filter-pills.css) .fp-row / .fp-pill 을 쓴다 */
     /* 본문 — 3열 그리드, 셀 209.33×241.23 (표지 156px + 이름), 열 간격 16 / 행 간격 40 */
     .cv-grid {
       flex:1; min-height:0; overflow-y:auto; scrollbar-width:none; padding:20px;
@@ -963,9 +953,10 @@
     .done-footer { padding:16px 24px 28px; display:flex; justify-content:center; }
     .done-btn { width:200px; height:48px; background:rgba(0,0,0,.86); color:#fff; border:none; border-radius:16px; font-family:inherit; font-size:16px; font-weight:600; letter-spacing:-.048px; cursor:pointer; }
 
-    /* ══════════════ 노트 갤러리 (홈 + 버튼 → 미리 구성된 노트 고르기) ══════════════
-       속지는 노트마다 고정이므로 "표지+속지 구성이 이미 정해진 노트"를 골라 담는 흐름이다.
-       .ng-* = 목록 화면, .nd-* = 상세 화면. 둘 다 홈(z-index 500) 위에 올라온다. */
+    /* ══════════════ 노트 스토어 (Figma 패드 UI 개편 5533:435556) ══════════════
+       네비바(뒤로 + '노트 스토어') + 필터 행(components/filter-pills.css) +
+       4열 카드 그리드(components/store-card.css). .nd-* = 상세 화면.
+       둘 다 홈(z-index 500) 위에 올라온다. */
     .ng-screen, .nd-screen {
       position:fixed; inset:0; background:#fff; display:flex; flex-direction:column;
       transform:translateY(100%); pointer-events:none;
@@ -978,61 +969,15 @@
     .nd-screen { transform:translateX(100%); }
     .nd-screen.visible { transform:translateX(0); }
 
-    .ng-topbar {
-      flex:0 0 auto; height:60px; display:flex; align-items:center; gap:8px;
-      padding:10px 16px; position:relative; border-bottom:1px solid rgba(0,0,0,.08);
-    }
-    .ng-nav-btn {
-      width:38px; height:38px; border-radius:100px; border:none; cursor:pointer; flex:0 0 auto;
-      background:rgba(0,0,0,.05); color:rgba(0,0,0,.86);
-      display:flex; align-items:center; justify-content:center;
-    }
-    .ng-nav-btn:active { background:rgba(0,0,0,.1); }
-    .ng-topbar-title {
-      position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
-      font-family:'Pretendard',sans-serif; font-size:17px; font-weight:600;
-      color:rgba(0,0,0,.86); letter-spacing:-.3px; white-space:nowrap;
-    }
+    /* 네비바는 공용 컴포넌트(.bsm-header) — 스토어/상세 모두 같은 높이(64)로 쓴다 */
+    .ng-screen > .bsm-header, .nd-screen > .bsm-header { flex:0 0 auto; padding:16px 16px 10px; }
 
-    .ng-body { flex:1; overflow-y:auto; background:#fafafa; padding:24px 0 48px; scrollbar-width:none; }
+    /* 카드 그리드 — 4열, 열 간격 20 / 행 간격 50, 좌우 여백 16 (Figma listGroup 1334폭 기준) */
+    .ng-body { flex:1; overflow-y:auto; scrollbar-width:none; padding:20px 16px 48px; }
     .ng-body::-webkit-scrollbar { display:none; }
-    .ng-inner { width:min(1120px, calc(100% - 48px)); margin:0 auto; display:flex; flex-direction:column; gap:20px; }
-    .ng-pills { display:flex; gap:8px; }
-    .ng-pill {
-      font-family:'Pretendard',sans-serif; font-size:15px; font-weight:600; padding:9px 18px; border-radius:100px;
-      background:#fff; border:1px solid rgba(0,0,0,.08); color:rgba(0,0,0,.86); cursor:pointer;
-    }
-    .ng-pill.on { background:rgba(0,0,0,.86); color:#fff; border-color:transparent; }
-    .ng-section-title { font-family:'Pretendard',sans-serif; font-size:20px; font-weight:700; color:rgba(0,0,0,.86); letter-spacing:-.06px; }
-    .ng-section-sub { font-family:'Pretendard',sans-serif; font-size:13px; font-weight:400; color:rgba(0,0,0,.5); margin-top:-14px; }
-
-    .ng-grid { display:grid; grid-template-columns:repeat(auto-fill, 200px); justify-content:start; column-gap:24px; row-gap:34px; }
-    .ng-card { display:flex; flex-direction:column; gap:12px; cursor:pointer; }
-    /* 표지(118px)는 왼쪽에, 속지 종이는 그 뒤에서 오른쪽으로 부채처럼 삐져나오게 —
-       여러 속지로 구성된 노트라는 걸 카드에서 바로 보여준다. 위치는 200×214 스테이지 기준 고정값. */
-    .ng-card-stage {
-      position:relative; height:214px; border-radius:18px; overflow:hidden;
-      transition:transform .18s ease;
-    }
-    .ng-card:active .ng-card-stage { transform:scale(.98); }
-    .ng-card-stage .ncv { position:absolute; left:10px; top:50%; transform:translateY(-50%); z-index:3; }
-    /* aspect-ratio는 실제 카드(600×800)와 같은 3/4 — renderThumb의 축소 클론이 딱 맞게 채워진다 */
-    .ng-card-sheet {
-      position:absolute; left:96px; top:44px; width:82px; aspect-ratio:3/4; overflow:hidden;
-      background:#fff; border-radius:3px; transform:rotate(9deg); z-index:2;
-      box-shadow:0 8px 18px rgba(0,0,0,.14); border:1px solid rgba(0,0,0,.05);
-    }
-    .ng-card-meta { display:flex; flex-direction:column; gap:3px; }
-    .ng-card-tagrow { display:flex; align-items:center; gap:6px; }
-    .ng-tag {
-      font-family:'Pretendard',sans-serif; font-size:11px; font-weight:600; letter-spacing:-.02em;
-      padding:3px 8px; border-radius:6px; background:rgba(0,0,0,.06); color:rgba(0,0,0,.6);
-    }
-    .ng-card-name { font-family:'Pretendard',sans-serif; font-size:15px; font-weight:600; color:rgba(0,0,0,.86); letter-spacing:-.045px; }
-    .ng-card-desc {
-      font-family:'Pretendard',sans-serif; font-size:12.5px; font-weight:400; color:rgba(0,0,0,.55); line-height:1.45;
-      display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
-    }
+    .ng-grid { display:grid; grid-template-columns:repeat(4, 1fr); column-gap:20px; row-gap:50px; align-content:start; }
+    .ng-grid-empty { display:flex; align-items:center; justify-content:center; min-height:280px; }
+    .ng-placeholder { font-size:14px; color:#aeaeb2; text-align:center; }
 
     /* ── 노트 상세 ── */
     .nd-body { flex:1; overflow-y:auto; background:#fff; scrollbar-width:none; }
@@ -1046,6 +991,11 @@
     }
     .nd-inner { width:min(760px, calc(100% - 48px)); margin:0 auto; padding:30px 0 40px; display:flex; flex-direction:column; gap:30px; }
     .nd-headline { display:flex; flex-direction:column; gap:8px; }
+    .nd-tagrow { display:flex; align-items:center; gap:6px; }
+    .ng-tag {
+      font-family:'Pretendard',sans-serif; font-size:11px; font-weight:600; letter-spacing:-.02em;
+      padding:3px 8px; border-radius:6px; background:rgba(0,0,0,.06); color:rgba(0,0,0,.6);
+    }
     .nd-name { font-family:'Pretendard',sans-serif; font-size:24px; font-weight:700; color:rgba(0,0,0,.86); letter-spacing:-.072px; }
     .nd-desc { font-family:'Pretendard',sans-serif; font-size:14.5px; font-weight:400; color:#6a6a6f; line-height:1.6; }
     .nd-section-title { font-family:'Pretendard',sans-serif; font-size:17px; font-weight:700; color:rgba(0,0,0,.86); letter-spacing:-.051px; margin-bottom:-14px; }
@@ -1189,25 +1139,23 @@
 
   <!-- NOTE GALLERY — 홈의 + 버튼으로 들어오는 "미리 구성된 노트" 목록 -->
   <div class="ng-screen" id="noteGalleryScreen">
-    <div class="ng-topbar">
-      <button class="ng-nav-btn" id="ngCloseBtn" aria-label="닫기"><i data-lucide="x" style="width:20px;height:20px;"></i></button>
-      <div class="ng-topbar-title">새 노트</div>
+    <div class="bsm-header">
+      <button class="bsm-back-btn" id="ngCloseBtn" aria-label="뒤로"><i data-lucide="chevron-left" style="width:22px;height:22px;"></i></button>
+      <span class="bsm-title">노트 스토어</span>
+      <div class="bsm-spacer"></div>
     </div>
+    <div class="fp-row" id="ngPills"></div>
     <div class="ng-body">
-      <div class="ng-inner">
-        <div class="ng-pills" id="ngPills"></div>
-        <div class="ng-section-title" id="ngSectionTitle"></div>
-        <div class="ng-section-sub" id="ngSectionSub"></div>
-        <div class="ng-grid" id="ngGrid"></div>
-      </div>
+      <div class="ng-grid" id="ngGrid"></div>
     </div>
   </div>
 
-  <!-- NOTE GALLERY · 상세 — 표지/속지 구성을 확인하고 홈에 추가한다 -->
+  <!-- NOTE STORE · 상세 — 표지/속지를 확인하고 홈에 추가한다 -->
   <div class="nd-screen" id="noteDetailScreen">
-    <div class="ng-topbar">
-      <button class="ng-nav-btn" id="ndBackBtn" aria-label="뒤로"><i data-lucide="chevron-left" style="width:22px;height:22px;"></i></button>
-      <div class="ng-topbar-title" id="ndTopTitle"></div>
+    <div class="bsm-header">
+      <button class="bsm-back-btn" id="ndBackBtn" aria-label="뒤로"><i data-lucide="chevron-left" style="width:22px;height:22px;"></i></button>
+      <span class="bsm-title" id="ndTopTitle"></span>
+      <div class="bsm-spacer"></div>
     </div>
     <div class="nd-body" id="ndBody">
       <div class="nd-hero">
@@ -1217,7 +1165,7 @@
       </div>
       <div class="nd-inner">
         <div class="nd-headline">
-          <div class="ng-card-tagrow" id="ndTags"></div>
+          <div class="nd-tagrow" id="ndTags"></div>
           <div class="nd-name" id="ndName"></div>
           <div class="nd-desc" id="ndDesc"></div>
         </div>
@@ -1281,6 +1229,7 @@
 <script src="components/dialog.js"></script>
 <script src="components/sticker-picker.js"></script>
 <script src="components/note-cover.js"></script>
+<script src="components/store-card.js"></script>
 <script>
   // ── Page data (matches side panel thumbnails) ──────────────
   const _ydTmp = new Date(); _ydTmp.setDate(_ydTmp.getDate() - 1);
@@ -2199,25 +2148,24 @@
   // 그림과 노트를 열었을 때의 화면이 같다. 노트끼리 다른 건 표지뿐이다.
   // 표지는 NoteCover 컴포넌트에 넘길 { image, band } 그대로 — image는 색·그라디언트·패턴·
   // 이미지 경로(assets/xxx.png) 무엇이든 되고, band는 오른쪽 띠 색이다(생략하면 image 색에서 자동).
-  const NG_CATEGORIES = ['데일리', '위클리', '먼슬리'];
-  const NG_CATEGORY_META = {
-    '데일리': { icon: 'sun',            title: '데일리 노트', sub: '하루 단위로 공부 시간과 할일을 기록하는 노트예요.' },
-    '위클리': { icon: 'calendar-range', title: '위클리 노트', sub: '한 주를 한 장에 펼쳐놓고 계획하는 노트예요.' },
-    '먼슬리': { icon: 'calendar-days',  title: '먼슬리 노트', sub: '한 달 일정을 격자로 한눈에 관리하는 노트예요.' },
+  // 스토어 필터 (Figma 5533:435556) — '전체'가 기본. 아직 지원하지 않는 종류는 준비 중으로 비워둔다
+  const NG_CATEGORIES = ['전체', '스터디 데일리', '스터디 위클리', '스터디 먼슬리', '무지 노트', '할일 플래너', '가계부'];
+  const NG_CATEGORY_ICON = {
+    '스터디 데일리': 'sun', '스터디 위클리': 'calendar-range', '스터디 먼슬리': 'calendar-days',
   };
   const NG_FORMAT_LABEL = { scroll: '스크롤형', calendar: '캘린더형', weekly: '주간 스프레드', monthly: '월간 격자' };
 
   // 카테고리별 속지 — 캔버스의 기존 속지 디자인 하나를 그대로 쓴다 (kind로 어떤 빌더를 쓸지 결정)
   const NG_INSERT = {
-    '데일리': {
+    '스터디 데일리': {
       kind: 'daily', name: '데일리 속지',
       desc: '날짜·D-day·총 공부시간 헤더 아래로 과목별 타이머와 10분 단위 타임라인, 하루 리뷰까지 한 장에 담긴 속지예요.',
     },
-    '위클리': {
+    '스터디 위클리': {
       kind: 'weekly', name: '위클리 속지',
       desc: '월요일부터 일요일까지 7일을 한 장에 세로로 펼쳐, 요일별 일정과 메모를 나란히 적는 속지예요.',
     },
-    '먼슬리': {
+    '스터디 먼슬리': {
       kind: 'monthly', name: '먼슬리 속지',
       desc: '한 달 날짜를 요일별 격자로 펼쳐 한눈에 보는 속지예요. 주말은 색을 달리해 구분해요.',
     },
@@ -2228,69 +2176,83 @@
   // (image는 색·그라디언트·패턴·이미지 경로 아무거나), tint는 표지를 올려놓는 배경 워시 색이다.
   // tag는 표지 선택 팝업의 필터(컬러 / 패턴 / 스티커 / 재질 / 내가 만든)에 쓰인다.
   const NOTE_COVERS = [
-    { id: 'coral',    name: '코랄',    tag: '컬러', image: '#f34c18',                        tint: '#fdece5' },
-    { id: 'blue',     name: '블루',    tag: '컬러', image: '#5a8dee',                        tint: '#e9f0fd' },
-    { id: 'purple',   name: '퍼플',    tag: '컬러', image: '#452c83',                        tint: '#eeeaf7' },
-    { id: 'green',    name: '그린',    tag: '컬러', image: '#1e7f00',                        tint: '#e9f2e5' },
-    { id: 'ivory',    name: '아이보리', tag: '컬러', image: '#f5efe0',   band: '#a9997c',     tint: '#faf7f0' },
-    { id: 'stone',    name: '스톤',    tag: '컬러', image: '#e6e2dc',    band: '#8b8579',     tint: '#f4f2ef' },
-    { id: 'midnight', name: '미드나잇', tag: '컬러', image: 'linear-gradient(160deg,#2b3a67,#1c2440)', band: '#101726', tint: '#e8ebf3' },
-    { id: 'forest',   name: '포레스트', tag: '컬러', image: 'linear-gradient(150deg,#cfe6d4,#8fc39c)', band: '#3f6b4a', tint: '#edf6ef' },
-    { id: 'charcoal', name: '차콜',    tag: '컬러', image: 'linear-gradient(155deg,#d8dbe2,#9aa0ac)', band: '#3a3f49', tint: '#f0f1f4' },
-    { id: 'creamDot', name: '크림 도트',    tag: '패턴', image: patternCSS('dot',  '#f5efe0'), band: '#b9a98b', tint: '#faf6ec' },
-    { id: 'coralDot', name: '코랄 도트',    tag: '패턴', image: patternCSS('dot',  '#f7d9c4'), band: '#b5734b', tint: '#fdf1e9' },
-    { id: 'lavLine',  name: '라벤더 스트라이프', tag: '패턴', image: patternCSS('line', '#ddd6f8'), band: '#6f61a8', tint: '#f4f1fd' },
-    { id: 'skyLine',  name: '스카이 스트라이프', tag: '패턴', image: patternCSS('line', '#cfe0fb'), band: '#4a6c9b', tint: '#eef4fd' },
+    { id: 'coral',    name: '코랄',    tag: '컬러', image: '#f34c18',                        tint: '#f8d5cd' },
+    { id: 'blue',     name: '블루',    tag: '컬러', image: '#5a8dee',                        tint: '#c6d5fb' },
+    { id: 'purple',   name: '퍼플',    tag: '컬러', image: '#452c83',                        tint: '#ddd7f0' },
+    { id: 'green',    name: '그린',    tag: '컬러', image: '#1e7f00',                        tint: '#d7e8d0' },
+    { id: 'ivory',    name: '아이보리', tag: '컬러', image: '#f5efe0',   band: '#a9997c',     tint: '#efe7d5' },
+    { id: 'stone',    name: '스톤',    tag: '컬러', image: '#e6e2dc',    band: '#8b8579',     tint: '#e2e0da' },
+    { id: 'midnight', name: '미드나잇', tag: '컬러', image: 'linear-gradient(160deg,#2b3a67,#1c2440)', band: '#101726', tint: '#ccd4e6' },
+    { id: 'forest',   name: '포레스트', tag: '컬러', image: 'linear-gradient(150deg,#cfe6d4,#8fc39c)', band: '#3f6b4a', tint: '#d3e9d8' },
+    { id: 'charcoal', name: '차콜',    tag: '컬러', image: 'linear-gradient(155deg,#d8dbe2,#9aa0ac)', band: '#3a3f49', tint: '#dcdee4' },
+    { id: 'creamDot', name: '크림 도트',    tag: '패턴', image: patternCSS('dot',  '#f5efe0'), band: '#b9a98b', tint: '#f0e8d5' },
+    { id: 'coralDot', name: '코랄 도트',    tag: '패턴', image: patternCSS('dot',  '#f7d9c4'), band: '#b5734b', tint: '#f7dcc9' },
+    { id: 'lavLine',  name: '라벤더 스트라이프', tag: '패턴', image: patternCSS('line', '#ddd6f8'), band: '#6f61a8', tint: '#e0d8f8' },
+    { id: 'skyLine',  name: '스카이 스트라이프', tag: '패턴', image: patternCSS('line', '#cfe0fb'), band: '#4a6c9b', tint: '#d3e2fa' },
   ];
   // 표지 선택 팝업의 태그 (Figma 5439:544652) — 스티커·재질·내가 만든은 아직 준비 중
   const NOTE_COVER_TAGS = ['컬러', '패턴', '스티커', '재질', '내가 만든'];
   const NOTE_COVER_EMPTY_TEXT = { '내가 만든': '아직 만든 표지가 없어요' };
   function coverOf(id) { return NOTE_COVERS.find(c => c.id === id) || NOTE_COVERS[0]; }
 
-  const NOTE_TEMPLATES = {
-    '데일리': [
-      {
-        id: 'd1', name: '모던 텐미닛 플래너', format: 'scroll', coverId: 'coral',
-        desc: '스크롤로 날짜를 이어 넘기며 하루하루를 쌓아가는 기본 데일리 노트예요. 선명한 오렌지 표지로 책장에서 바로 눈에 띄어요.',
-      },
-      {
-        id: 'd2', name: '소프트 크림 데일리', format: 'scroll', coverId: 'creamDot',
-        desc: '도트 패턴을 얹은 크림색 표지의 데일리 노트예요. 차분한 톤을 좋아하는 분께 잘 맞아요.',
-      },
-      {
-        id: 'd3', name: '미드나잇 포커스', format: 'calendar', coverId: 'midnight',
-        desc: '날짜를 캘린더에서 골라 그 페이지로 바로 이동하는 캘린더형 데일리 노트예요. 딥한 네이비 표지를 담았어요.',
-      },
-    ],
-    '위클리': [
-      {
-        id: 'w1', name: '위클리 그리드', format: 'weekly', coverId: 'blue',
-        desc: '한 주를 한 장에 펼쳐 요일별로 계획을 채우는 기본 위클리 노트예요. 깔끔한 블루 표지로 구성했어요.',
-      },
-      {
-        id: 'w2', name: '파스텔 위클리', format: 'weekly', coverId: 'lavLine',
-        desc: '사선 패턴을 얹은 라벤더 표지의 위클리 노트예요. 부드러운 톤으로 주간 계획을 관리해요.',
-      },
-      {
-        id: 'w3', name: '포레스트 위클리', format: 'weekly', coverId: 'forest',
-        desc: '그린 그라데이션 표지의 위클리 노트예요. 눈이 편한 색으로 한 주를 계획해요.',
-      },
-    ],
-    '먼슬리': [
-      {
-        id: 'm1', name: '먼슬리 캘린더', format: 'monthly', coverId: 'purple',
-        desc: '한 달 일정을 격자로 펼쳐 배치하는 기본 먼슬리 노트예요. 딥 퍼플 표지로 구성했어요.',
-      },
-      {
-        id: 'm2', name: '코랄 먼슬리', format: 'monthly', coverId: 'coralDot',
-        desc: '도트 패턴의 따뜻한 코랄 표지를 얹은 먼슬리 노트예요. 한 달을 부드러운 분위기로 관리해요.',
-      },
-      {
-        id: 'm3', name: '차콜 먼슬리', format: 'monthly', coverId: 'charcoal',
-        desc: '차분한 회색 그라데이션 표지의 먼슬리 노트예요. 담백하게 한 달 일정을 정리해요.',
-      },
-    ],
-  };
+  // 스토어 목록 — 카드는 StoreCard 컴포넌트로 그리고, 썸네일 안에는 그 노트의 실제 속지 미리보기가 들어간다.
+  // thumbBg가 없으면 표지 카탈로그의 tint를 쓴다. badge는 '무료' / '프리미엄'.
+  const NOTE_TEMPLATES = [
+    {
+      id: 'd1', category: '스터디 데일리', badge: '무료',
+      name: '모던 텐미닛 플래너', format: 'scroll', coverId: 'coral',
+      desc: '모던한 스타일의 하루를 관리하는 데일리 플래너',
+      about: '스크롤로 날짜를 이어 넘기며 하루하루를 쌓아가는 기본 데일리 노트예요. 선명한 오렌지 표지로 책장에서 바로 눈에 띄어요.',
+    },
+    {
+      id: 'd2', category: '스터디 데일리', badge: '무료',
+      name: '소프트 크림 데일리', format: 'scroll', coverId: 'creamDot',
+      desc: '차분한 도트 표지의 데일리 플래너',
+      about: '도트 패턴을 얹은 크림색 표지의 데일리 노트예요. 차분한 톤을 좋아하는 분께 잘 맞아요.',
+    },
+    {
+      id: 'd3', category: '스터디 데일리', badge: '프리미엄',
+      name: '미드나잇 포커스', format: 'calendar', coverId: 'midnight',
+      desc: '캘린더로 날짜를 골라 쓰는 집중 기록 노트',
+      about: '날짜를 캘린더에서 골라 그 페이지로 바로 이동하는 캘린더형 데일리 노트예요. 딥한 네이비 표지를 담았어요.',
+    },
+    {
+      id: 'w1', category: '스터디 위클리', badge: '무료',
+      name: '위클리 그리드', format: 'weekly', coverId: 'blue',
+      desc: '한 주를 한 장에 펼쳐 보는 위클리 플래너',
+      about: '한 주를 한 장에 펼쳐 요일별로 계획을 채우는 기본 위클리 노트예요. 깔끔한 블루 표지로 구성했어요.',
+    },
+    {
+      id: 'w2', category: '스터디 위클리', badge: '무료',
+      name: '파스텔 위클리', format: 'weekly', coverId: 'lavLine',
+      desc: '사선 패턴 라벤더 표지의 위클리 플래너',
+      about: '사선 패턴을 얹은 라벤더 표지의 위클리 노트예요. 부드러운 톤으로 주간 계획을 관리해요.',
+    },
+    {
+      id: 'w3', category: '스터디 위클리', badge: '프리미엄',
+      name: '포레스트 위클리', format: 'weekly', coverId: 'forest',
+      desc: '눈이 편한 그린 톤의 위클리 플래너',
+      about: '그린 그라데이션 표지의 위클리 노트예요. 눈이 편한 색으로 한 주를 계획해요.',
+    },
+    {
+      id: 'm1', category: '스터디 먼슬리', badge: '무료',
+      name: '먼슬리 캘린더', format: 'monthly', coverId: 'purple',
+      desc: '한 달 일정을 격자로 관리하는 먼슬리 플래너',
+      about: '한 달 일정을 격자로 펼쳐 배치하는 기본 먼슬리 노트예요. 딥 퍼플 표지로 구성했어요.',
+    },
+    {
+      id: 'm2', category: '스터디 먼슬리', badge: '무료',
+      name: '코랄 먼슬리', format: 'monthly', coverId: 'coralDot',
+      desc: '따뜻한 코랄 도트 표지의 먼슬리 플래너',
+      about: '도트 패턴의 따뜻한 코랄 표지를 얹은 먼슬리 노트예요. 한 달을 부드러운 분위기로 관리해요.',
+    },
+    {
+      id: 'm3', category: '스터디 먼슬리', badge: '프리미엄',
+      name: '차콜 먼슬리', format: 'monthly', coverId: 'charcoal',
+      desc: '담백한 회색 톤의 먼슬리 플래너',
+      about: '차분한 회색 그라데이션 표지의 먼슬리 노트예요. 담백하게 한 달 일정을 정리해요.',
+    },
+  ];
 
   // 속지 미리보기: 캔버스에 실제로 올라가는 카드(600×800)를 그대로 만들어 두고,
   // 사이드패널 썸네일과 같은 renderThumb()으로 원하는 크기에 축소해 넣는다.
@@ -2329,37 +2291,35 @@
   let ngCategory  = NG_CATEGORIES[0];
   let ndTemplate  = null; // 상세 화면에 열려 있는 템플릿
 
-  function ngFindTemplate(id) {
-    return NG_CATEGORIES.map(c => NOTE_TEMPLATES[c]).flat().find(t => t.id === id);
-  }
+  function ngFindTemplate(id) { return NOTE_TEMPLATES.find(t => t.id === id); }
 
   function ngRenderPills() {
     document.getElementById('ngPills').innerHTML = NG_CATEGORIES.map(c =>
-      `<button class="ng-pill ${c === ngCategory ? 'on' : ''}" data-cat="${c}">${c}</button>`).join('');
+      `<button class="fp-pill ${c === ngCategory ? 'on' : ''}" data-cat="${c}">${c}</button>`).join('');
   }
 
   function ngRenderGrid() {
-    const meta = NG_CATEGORY_META[ngCategory];
-    document.getElementById('ngSectionTitle').textContent = meta.title;
-    document.getElementById('ngSectionSub').textContent = meta.sub;
-    const insert = NG_INSERT[ngCategory];
-    ngGridEl.innerHTML = NOTE_TEMPLATES[ngCategory].map(t =>
-      `<div class="ng-card" data-tpl="${t.id}">
-        <div class="ng-card-stage" style="background:${coverOf(t.coverId).tint};">
-          <div class="ng-card-sheet"></div>
-          ${NoteCover.html({ width: 118, ...coverOf(t.coverId) })}
-        </div>
-        <div class="ng-card-meta">
-          <div class="ng-card-tagrow">
-            <span class="ng-tag">${ngCategory}</span>
-            <span class="ng-tag">${NG_FORMAT_LABEL[t.format]}</span>
-          </div>
-          <div class="ng-card-name">${t.name}</div>
-          <div class="ng-card-desc">${t.desc}</div>
-        </div>
-      </div>`).join('');
-    // 표지 뒤로 삐져나온 종이에 실제 속지 디자인을 축소해 넣는다
-    ngGridEl.querySelectorAll('.ng-card-sheet').forEach(el => ngRenderInsertThumb(insert.kind, el));
+    const list = ngCategory === '전체'
+      ? NOTE_TEMPLATES
+      : NOTE_TEMPLATES.filter(t => t.category === ngCategory);
+
+    ngGridEl.classList.toggle('ng-grid-empty', !list.length);
+    if (!list.length) {
+      ngGridEl.innerHTML = `<div class="ng-placeholder">준비 중이에요</div>`;
+      return;
+    }
+    ngGridEl.innerHTML = list.map(t => StoreCard.html({
+      bg: coverOf(t.coverId).tint,
+      badge: t.badge,
+      name: t.name,
+      desc: t.desc,
+      attrs: { 'data-tpl': t.id },
+    })).join('');
+    // 각 카드 썸네일에 그 노트의 실제 속지 디자인을 축소해 넣는다
+    list.forEach(t => {
+      const host = ngGridEl.querySelector(`[data-tpl="${t.id}"] .stc-preview`);
+      ngRenderInsertThumb(NG_INSERT[t.category].kind, host);
+    });
   }
 
   function openNoteGallery() {
@@ -2378,15 +2338,16 @@
   document.getElementById('ngCloseBtn').addEventListener('click', closeNoteGallery);
 
   document.getElementById('ngPills').addEventListener('click', e => {
-    const pill = e.target.closest('.ng-pill');
+    const pill = e.target.closest('.fp-pill');
     if (!pill) return;
     ngCategory = pill.dataset.cat;
     ngRenderPills();
     ngRenderGrid();
+    ngScreen.querySelector('.ng-body').scrollTop = 0;
   });
 
   ngGridEl.addEventListener('click', e => {
-    const card = e.target.closest('.ng-card');
+    const card = e.target.closest('.stc');
     if (card) openNoteDetail(card.dataset.tpl);
   });
 
@@ -2396,7 +2357,7 @@
     if (!t) return;
     ndTemplate = t;
 
-    const cat = NG_CATEGORIES.find(c => NOTE_TEMPLATES[c].includes(t));
+    const cat = t.category;
     const insert = NG_INSERT[cat];
 
     const cover = coverOf(t.coverId);
@@ -2406,10 +2367,10 @@
     document.getElementById('ndHeroSheets').innerHTML = '<div class="nd-hero-sheet"></div>';
 
     document.getElementById('ndTags').innerHTML =
-      [cat, NG_FORMAT_LABEL[t.format], insert.name]
+      [cat, NG_FORMAT_LABEL[t.format], t.badge]
         .map(x => `<span class="ng-tag">${x}</span>`).join('');
     document.getElementById('ndName').textContent = t.name;
-    document.getElementById('ndDesc').textContent = t.desc;
+    document.getElementById('ndDesc').textContent = t.about || t.desc;
 
     document.getElementById('ndInsertList').innerHTML = `
       <div class="nd-insert-row">
@@ -2421,9 +2382,10 @@
       </div>`;
 
     document.getElementById('ndSpec').innerHTML = [
-      ['카테고리', cat + ' 플래너'],
+      ['카테고리', cat],
       ['노트 형식', NG_FORMAT_LABEL[t.format]],
       ['속지', `${insert.name} 1종 (고정)`],
+      ['이용', t.badge],
       ['지원 기능', '펜슬, 스티커, 타이머 연동, 할일 관리'],
     ].map(([k, v]) => `<div class="nd-spec-row"><div class="nd-spec-key">${k}</div><div class="nd-spec-val">${v}</div></div>`).join('');
 
@@ -2444,11 +2406,11 @@
   document.getElementById('ndAddBtn').addEventListener('click', () => {
     const t = ndTemplate;
     if (!t) return;
-    const cat = NG_CATEGORIES.find(c => NOTE_TEMPLATES[c].includes(t));
+    const cat = t.category;
     const note = {
       name: t.name,
       date: '방금 전',
-      icon: NG_CATEGORY_META[cat].icon,
+      icon: NG_CATEGORY_ICON[cat] || 'file-text',
       coverId: t.coverId,
       noteType: t.format,
     };
@@ -2585,7 +2547,7 @@
       <span class="bsm-title">표지 변경</span>
       <button class="bsm-confirm-btn cv-confirm" aria-label="확인"><i data-lucide="check" style="width:20px;height:20px;"></i></button>
     </div>
-    <div class="cv-pills"></div>
+    <div class="fp-row cv-pills"></div>
     <div class="cv-grid"></div>`;
   document.body.appendChild(coverBackdrop);
   document.body.appendChild(coverPopup);
@@ -2601,7 +2563,7 @@
 
   function renderCoverPills() {
     coverPills.innerHTML = NOTE_COVER_TAGS.map(tag =>
-      `<button class="cv-pill ${tag === coverTag ? 'on' : ''}" data-tag="${tag}">${tag}</button>`).join('');
+      `<button class="fp-pill ${tag === coverTag ? 'on' : ''}" data-tag="${tag}">${tag}</button>`).join('');
   }
 
   function renderCoverGrid(selectedId) {
@@ -2645,7 +2607,7 @@
   }
 
   coverPills.addEventListener('click', e => {
-    const pill = e.target.closest('.cv-pill');
+    const pill = e.target.closest('.fp-pill');
     if (!pill || !coverTarget) return;
     coverTag = pill.dataset.tag;
     renderCoverPills();

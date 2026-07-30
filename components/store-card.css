@@ -1,0 +1,105 @@
+/* ─────────────────────────────────────────────────────────────────────────
+   Store card (listItem) — 노트 스토어 목록 아이템
+   (Figma: 패드 UI 개편 node 116:17848 "listItem", 원본 361×321.75)
+
+   썸네일(361×270.75, 4:3) + 이름 + 설명. 썸네일 배경색은 --stc-bg로 주고,
+   가운데 .stc-preview 슬롯에 실제 속지 미리보기를 넣는다(호출부가 채운다).
+
+     <div class="stc" style="--stc-bg:#e5e0f5;">
+       <div class="stc-thumb">
+         <div class="stc-preview"></div>
+         <div class="stc-fade"></div>
+         <div class="stc-badge">무료</div>
+       </div>
+       <div class="stc-meta">
+         <div class="stc-name">…</div>
+         <div class="stc-desc">…</div>
+       </div>
+     </div>
+   components/store-card.js의 StoreCard.html()이 이 마크업을 만들어 준다.
+   ───────────────────────────────────────────────────────────────────────── */
+
+.stc {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  cursor: pointer;
+  font-family: 'Pretendard', sans-serif;
+}
+
+.stc-thumb {
+  position: relative;
+  width: 100%;
+  /* 361 : 270.75 */
+  aspect-ratio: 361 / 270.75;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--stc-bg, #ececec);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.18s ease;
+}
+.stc:active .stc-thumb { transform: scale(0.985); }
+
+/* 속지 미리보기가 들어가는 자리 — 실제 카드(600×800) 비율로 배경색 위에 떠 있다 */
+.stc-preview {
+  position: relative;
+  height: 84%;
+  aspect-ratio: 3 / 4;
+  border-radius: 4px;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 0 1px rgba(0, 0, 0, 0.45), 0 8px 18px rgba(0, 0, 0, 0.1);
+}
+
+/* 썸네일 하단을 살짝 어둡게 (Figma Rectangle 3828 — 89/270.75 ≈ 33%) */
+.stc-fade {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 33%;
+  pointer-events: none;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.07) 100%);
+}
+
+/* 무료 / 프리미엄 배지 — Figma Component 149 (8, 240) 33×23 */
+.stc-badge {
+  position: absolute;
+  left: 8px;
+  bottom: 8px;
+  height: 23px;
+  padding: 0 8px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.42);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.stc-meta { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.stc-name {
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.25;
+  color: rgba(0, 0, 0, 0.86);
+  letter-spacing: -0.3px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.stc-desc {
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.4;
+  color: rgba(0, 0, 0, 0.59);
+  letter-spacing: -0.042px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
