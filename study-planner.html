@@ -15,6 +15,7 @@
   <link rel="stylesheet" href="components/dialog.css">
   <link rel="stylesheet" href="components/sticker-picker.css">
   <link rel="stylesheet" href="components/note-cover.css">
+  <link rel="stylesheet" href="components/modal-header.css">
   <link rel="stylesheet" href="components/glass-pill-button.css">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -869,18 +870,20 @@
     /* ─── 홈 노트 표지 변경 팝업 ───────────────────────────── */
     .cv-backdrop { position:fixed; inset:0; background:rgba(0,0,0,0.35); opacity:0; pointer-events:none; transition:opacity .2s; z-index:6000; }
     .cv-backdrop.visible { opacity:1; pointer-events:auto; }
+    /* 태그를 바꿔도 팝업이 커지거나 줄지 않도록 위아래 크기를 고정하고, 표지 그리드만 스크롤한다 */
     .cv-popup {
       position:fixed; left:50%; top:50%; transform:translate(-50%,-46%);
-      width:560px; max-height:82vh; background:#fff; border-radius:24px; padding:24px 24px 18px;
+      width:560px; height:600px; background:#fff; border-radius:24px; overflow:hidden;
       box-shadow:0 12px 40px rgba(0,0,0,0.18); opacity:0; pointer-events:none;
       transition:opacity .2s, transform .2s; z-index:6001;
       font-family:'Pretendard',sans-serif; display:flex; flex-direction:column;
     }
     .cv-popup.visible { opacity:1; pointer-events:auto; transform:translate(-50%,-50%); }
-    .cv-title { font-size:17px; font-weight:700; color:rgba(0,0,0,0.86); text-align:center; }
-    .cv-sub { font-size:12.5px; font-weight:400; color:rgba(0,0,0,0.5); text-align:center; margin-top:5px; }
+    .cv-popup .bsm-header { flex:0 0 auto; }
+    .cv-body { flex:1; min-height:0; display:flex; flex-direction:column; padding:0 24px 24px; }
+    .cv-sub { font-size:12.5px; font-weight:400; color:rgba(0,0,0,0.5); text-align:center; flex:0 0 auto; }
     /* 표지 종류 태그 (컬러 / 그라데이션 / 패턴 / 내가 만든) */
-    .cv-pills { display:flex; gap:6px; justify-content:center; flex-wrap:wrap; margin-top:18px; flex:0 0 auto; }
+    .cv-pills { display:flex; gap:6px; justify-content:center; flex-wrap:wrap; margin-top:16px; flex:0 0 auto; }
     .cv-pill {
       font-family:inherit; font-size:13px; font-weight:600; padding:7px 14px; border-radius:100px; cursor:pointer;
       background:#fff; border:1px solid rgba(0,0,0,0.1); color:rgba(0,0,0,0.7);
@@ -893,7 +896,7 @@
     }
     .cv-grid::-webkit-scrollbar { display:none; }
     .cv-grid-empty { display:flex; align-items:center; justify-content:center; }
-    .cv-placeholder { font-size:13.5px; color:rgba(0,0,0,0.35); text-align:center; padding:40px 0; }
+    .cv-placeholder { font-size:13.5px; color:rgba(0,0,0,0.35); text-align:center; }
     .cv-cell { display:flex; flex-direction:column; align-items:center; gap:8px; cursor:pointer; }
     .cv-cell-face { position:relative; }
     /* 선택 표시: 표지 밖으로 테두리 링 + 우상단 체크 배지 */
@@ -908,10 +911,6 @@
     }
     .cv-cell.on .cv-check { display:flex; }
     .cv-name { font-size:12px; font-weight:500; color:rgba(0,0,0,0.7); text-align:center; letter-spacing:-.02em; }
-    .cv-actions { display:flex; gap:8px; margin-top:20px; flex:0 0 auto; }
-    .cv-btn { flex:1; height:44px; border:none; border-radius:12px; font-size:15px; font-weight:600; font-family:inherit; cursor:pointer; }
-    .cv-cancel { background:rgba(0,0,0,0.06); color:rgba(0,0,0,0.7); }
-    .cv-confirm { background:#242424; color:#fff; }
 
     /* ─── VIEW PLACEHOLDER (non-note tabs) ────────────────── */
     .view-placeholder {
@@ -2568,17 +2567,21 @@
   coverBackdrop.className = 'cv-backdrop';
   const coverPopup = document.createElement('div');
   coverPopup.className = 'cv-popup';
+  // 네비바는 공용 컴포넌트(components/modal-header.css) — 닫기(X) + 제목 + 확정(체크)
   coverPopup.innerHTML = `
-    <div class="cv-title">표지 변경</div>
-    <div class="cv-sub">속지는 그대로 두고 표지만 바꿔요.</div>
-    <div class="cv-pills"></div>
-    <div class="cv-grid"></div>
-    <div class="cv-actions">
-      <button class="cv-btn cv-cancel">취소</button>
-      <button class="cv-btn cv-confirm">확인</button>
+    <div class="bsm-header">
+      <button class="bsm-close-btn cv-cancel" aria-label="닫기"><i data-lucide="x" style="width:20px;height:20px;"></i></button>
+      <span class="bsm-title">표지 변경</span>
+      <button class="bsm-confirm-btn cv-confirm" aria-label="확인"><i data-lucide="check" style="width:20px;height:20px;"></i></button>
+    </div>
+    <div class="cv-body">
+      <div class="cv-sub">속지는 그대로 두고 표지만 바꿔요.</div>
+      <div class="cv-pills"></div>
+      <div class="cv-grid"></div>
     </div>`;
   document.body.appendChild(coverBackdrop);
   document.body.appendChild(coverPopup);
+  lucide.createIcons({ nodes: [coverPopup] });
   const coverPills = coverPopup.querySelector('.cv-pills');
   const coverGrid = coverPopup.querySelector('.cv-grid');
   let coverTarget = null; // { note, coverEl, originalId }
