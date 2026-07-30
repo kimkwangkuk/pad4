@@ -884,44 +884,6 @@
       letter-spacing: -0.072px;
     }
 
-
-    /* ══════════════ 새 노트 상세 미리보기 미니 카드 (nwMiniInsertHTML/nwDetailPreviewHTML에서 사용) ══════════════ */
-    .detail-preview {
-      width:238px; height:314px; border-radius:6px 14px 14px 6px; background:#fff;
-      position:relative; overflow:hidden;
-      box-shadow:0 18px 34px rgba(0,0,0,.16), 0 2px 0 rgba(0,0,0,.03);
-    }
-    .detail-preview::before{
-      content:''; position:absolute; left:0; top:0; bottom:0; width:5px;
-      background:rgba(0,0,0,.08);
-    }
-    .dp-inner { padding:20px 20px 16px 24px; height:100%; display:flex; flex-direction:column; }
-    .dp-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
-    .dp-date { font-size:12px; font-weight:800; color:#22252b; letter-spacing:-.1px; }
-    .dp-day { font-size:9.5px; font-weight:700; padding:2.5px 7px; border-radius:100px; }
-    .dp-body { flex:1; }
-    .dp-row { display:flex; align-items:center; gap:8px; margin-bottom:9px; }
-    .dp-time { font-size:8.5px; color:#a7abb2; font-weight:700; width:26px; flex:0 0 auto; }
-    .dp-bar { height:16px; border-radius:5px; opacity:.85; }
-    .dp-blank-lines { padding-top:6px; }
-    .dp-thin { height:2px; width:88%; border-radius:2px; opacity:.25; margin-bottom:20px; }
-    .dp-tl-row { display:flex; align-items:center; gap:7px; margin-bottom:12px; position:relative; }
-    .dp-tl-time { font-size:8px; color:#a7abb2; font-weight:700; width:24px; }
-    .dp-tl-dot { width:6px; height:6px; border-radius:50%; flex:0 0 auto; }
-    .dp-tl-bar { height:13px; border-radius:4px; }
-    .dp-chk-row { display:flex; align-items:center; gap:8px; margin-bottom:11px; }
-    .dp-chk-box { width:11px; height:11px; border-radius:3.5px; border:1.6px solid; flex:0 0 auto; }
-    .dp-chk-label { font-size:9px; color:#6a6d73; font-weight:600; }
-    /* 이름을 dp-grid/dp-cell로 짓지 말 것 — components/date-picker.js의 .dp-grid(요일/날짜 래퍼)와
-       클래스명이 겹쳐서 뒤에 로드되는 이 <style>이 그 레이아웃을 깨뜨렸었다(요일 헤더가 한쪽에 뭉침) */
-    .chk-preview-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:4px; }
-    .chk-preview-cell { height:16px; border-radius:3px; }
-    .dp-foot { display:flex; align-items:center; justify-content:space-between; margin-top:auto; padding-top:8px; }
-    .dp-pageinfo { font-size:7.5px; color:#c2c5ca; font-weight:700; letter-spacing:.3px; }
-    .dp-pdots { display:flex; gap:3px; }
-    .dp-pdots span { width:3.5px; height:3.5px; border-radius:50%; background:#e2e4e8; }
-    .dp-pdots span.on { background:#a7abb2; }
-
     /* 노트 생성 완료 팝업 */
     .done-scrim { position:fixed; inset:0; background:rgba(0,0,0,.34); z-index:998; display:flex; align-items:center; justify-content:center; opacity:0; pointer-events:none; transition:opacity .26s ease; }
     .done-scrim.show { opacity:1; pointer-events:auto; }
@@ -934,9 +896,12 @@
     .done-graphic { position:relative; width:340px; height:232px; margin:0 auto; }
     /* 표지는 .ncv 컴포넌트(components/note-cover.css)를 그대로 얹는다 — 위치만 잡아주는 슬롯 */
     .dg-cover-slot { position:absolute; left:64px; top:18px; z-index:3; }
-    .dg-insert { position:absolute; width:184px; height:138px; border-radius:8px; box-shadow:0 10px 24px rgba(0,0,0,.14); border:1px solid rgba(0,0,0,.05); }
-    .dg-i1 { right:12px; top:34px; transform:rotate(7deg); z-index:2; }
-    .dg-i2 { right:2px; top:52px; transform:rotate(14deg); z-index:1; }
+    /* 표지 뒤로 삐져나온 속지 한 장 (실제 속지 디자인을 축소해 채운다) */
+    .dg-sheet {
+      position:absolute; right:24px; top:36px; width:120px; aspect-ratio:3/4; overflow:hidden;
+      background:#fff; border-radius:6px; transform:rotate(12deg); z-index:1;
+      box-shadow:0 10px 24px rgba(0,0,0,.14); border:1px solid rgba(0,0,0,.05);
+    }
     .done-title { font-size:20px; font-weight:700; color:rgba(0,0,0,.86); letter-spacing:-.06px; margin-top:22px; }
     .done-name { font-size:16px; font-weight:500; color:rgba(0,0,0,.59); letter-spacing:-.048px; margin-top:8px; }
     .done-footer { padding:16px 24px 28px; display:flex; justify-content:center; }
@@ -995,13 +960,12 @@
     }
     .ng-card:active .ng-card-stage { transform:scale(.98); }
     .ng-card-stage .ncv { position:absolute; left:10px; top:50%; transform:translateY(-50%); z-index:3; }
+    /* aspect-ratio는 실제 카드(600×800)와 같은 3/4 — renderThumb의 축소 클론이 딱 맞게 채워진다 */
     .ng-card-sheet {
-      position:absolute; width:82px; aspect-ratio:238/314; overflow:hidden;
-      background:#fff; border-radius:3px;
+      position:absolute; left:96px; top:44px; width:82px; aspect-ratio:3/4; overflow:hidden;
+      background:#fff; border-radius:3px; transform:rotate(9deg); z-index:2;
       box-shadow:0 8px 18px rgba(0,0,0,.14); border:1px solid rgba(0,0,0,.05);
     }
-    .ng-card-sheet.s1 { left:96px;  top:44px; transform:rotate(8deg);  z-index:2; }
-    .ng-card-sheet.s2 { left:110px; top:58px; transform:rotate(17deg); z-index:1; }
     .ng-card-meta { display:flex; flex-direction:column; gap:3px; }
     .ng-card-tagrow { display:flex; align-items:center; gap:6px; }
     .ng-tag {
@@ -1020,13 +984,10 @@
     .nd-hero { position:relative; padding:44px 0 40px; display:flex; align-items:center; justify-content:center; gap:34px; overflow:hidden; }
     .nd-hero-bg { position:absolute; inset:0; opacity:.5; }
     .nd-hero-cover, .nd-hero-sheets { position:relative; }
-    .nd-hero-sheets { display:flex; gap:14px; }
     .nd-hero-sheet {
-      position:relative; width:150px; aspect-ratio:238/314; background:#fff; border-radius:4px; overflow:hidden;
+      position:relative; width:186px; aspect-ratio:3/4; background:#fff; border-radius:4px; overflow:hidden;
       box-shadow:0 0 1px rgba(0,0,0,.5), 0 12px 26px rgba(0,0,0,.14);
     }
-    .nd-hero-sheet:nth-child(2) { transform:translateY(14px); }
-    .nd-hero-sheet:nth-child(3) { transform:translateY(28px); }
     .nd-inner { width:min(760px, calc(100% - 48px)); margin:0 auto; padding:30px 0 40px; display:flex; flex-direction:column; gap:30px; }
     .nd-headline { display:flex; flex-direction:column; gap:8px; }
     .nd-name { font-family:'Pretendard',sans-serif; font-size:24px; font-weight:700; color:rgba(0,0,0,.86); letter-spacing:-.072px; }
@@ -1038,7 +999,7 @@
       background:#fafafa; border:1px solid rgba(0,0,0,.05);
     }
     .nd-insert-thumb {
-      position:relative; width:78px; aspect-ratio:238/314; flex:0 0 auto; background:#fff; border-radius:4px; overflow:hidden;
+      position:relative; width:78px; aspect-ratio:3/4; flex:0 0 auto; background:#fff; border-radius:4px; overflow:hidden;
       box-shadow:0 0 1px rgba(0,0,0,.5), 0 4px 8px rgba(0,0,0,.05);
     }
     .nd-insert-txt { flex:1; min-width:0; display:flex; flex-direction:column; gap:4px; }
@@ -1204,11 +1165,11 @@
           <div class="nd-name" id="ndName"></div>
           <div class="nd-desc" id="ndDesc"></div>
         </div>
-        <div class="nd-section-title">이 노트의 속지 구성</div>
+        <div class="nd-section-title">이 노트의 속지</div>
         <div class="nd-insert-list" id="ndInsertList"></div>
         <div class="nd-fixed-note">
           <i data-lucide="lock" style="width:14px;height:14px;flex-shrink:0;"></i>
-          <span>속지 구성은 노트마다 고정이라 추가한 뒤에 바뀌지 않아요.</span>
+          <span>노트마다 속지는 한 종류로 고정이라 추가한 뒤에 바꿀 수 없어요.</span>
         </div>
         <div class="nd-section-title">노트 정보</div>
         <div class="nd-spec" id="ndSpec"></div>
@@ -2163,70 +2124,12 @@
   }
 
 
-  function nwDetailPreviewHTML(ins, color) {
-    const head = `<div class="dp-head">
-        <span class="dp-date">2026.05.20</span>
-        <span class="dp-day" style="background:${color}26; color:${color};">D-19</span>
-      </div>`;
-    let body = '';
-    if (ins.kind === 'lines') {
-      const rows = [['09:00',78],['11:30',56],['14:00',70],['16:30',44],['19:00',63]];
-      body = rows.map(([t,w]) => `<div class="dp-row">
-        <span class="dp-time">${t}</span>
-        <div class="dp-bar" style="width:${w}%; background:${color};"></div>
-      </div>`).join('');
-    } else if (ins.kind === 'blank') {
-      body = `<div class="dp-blank-lines">
-        <div class="dp-thin" style="background:${color}; width:92%;"></div>
-        <div class="dp-thin" style="background:${color}; width:68%;"></div>
-        <div class="dp-thin" style="background:${color}; width:82%;"></div>
-      </div>`;
-    } else if (ins.kind === 'timeline') {
-      const rows = [['09:00',80],['11:00',55],['14:00',72],['16:00',40],['19:00',60]];
-      body = rows.map(([t,w]) => `<div class="dp-tl-row">
-        <span class="dp-tl-time">${t}</span>
-        <span class="dp-tl-dot" style="background:${color};"></span>
-        <div class="dp-tl-bar" style="width:${w}%; background:${color}2e;"></div>
-      </div>`).join('');
-    } else if (ins.kind === 'check') {
-      body = ['운동 30분','회의 자료 준비','책 20페이지 읽기','장보기'].map(t => `
-        <div class="dp-chk-row">
-          <span class="dp-chk-box" style="border-color:${color};"></span>
-          <span class="dp-chk-label">${t}</span>
-        </div>`).join('');
-    } else {
-      body = `<div class="chk-preview-grid">${Array.from({ length: 14 }).map((_,i) =>
-        `<div class="chk-preview-cell" style="background:${i % 5 === 0 ? color : color + '26'};"></div>`).join('')}</div>`;
-    }
-    const foot = `<div class="dp-foot">
-        <span class="dp-pageinfo">1 / 30</span>
-        <div class="dp-pdots"><span class="on"></span><span class="on"></span><span></span><span></span><span></span></div>
-      </div>`;
-    return head + `<div class="dp-body">${body}</div>` + foot;
-  }
-  function nwMiniInsertHTML(ins, color) {
-    return `<div class="mini-insert-wrap" style="position:absolute; inset:0; overflow:hidden;">
-      <div class="mini-insert-inner" style="width:238px; height:314px; transform-origin:top left;">
-        <div class="detail-preview" style="width:238px; height:314px; border:none; box-shadow:none; border-radius:4px;">
-          <div class="dp-inner">${nwDetailPreviewHTML(ins, color)}</div>
-        </div>
-      </div>
-    </div>`;
-  }
-  function nwFitMiniPreviews() {
-    document.querySelectorAll('.mini-insert-wrap').forEach(wrap => {
-      const w = wrap.clientWidth;
-      const inner = wrap.querySelector('.mini-insert-inner');
-      if (inner && w) inner.style.transform = `scale(${w / 238})`;
-    });
-  }
-  // cover: { image, band } — NoteCover에 그대로 넘긴다. sheets는 표지 뒤로 겹쳐 보일 속지 색 2개
-  function nwShowNoteCreated(name, cover, sheets) {
-    const paper = sheets && sheets.length ? sheets : ['#c7e0fe', '#c7e0fe'];
-    document.getElementById('doneGraphic').innerHTML = `
-      <div class="dg-insert dg-i2" style="background:${paper[1] || paper[0]};"></div>
-      <div class="dg-insert dg-i1" style="background:${paper[0]};"></div>
+  function nwShowNoteCreated(name, cover, insertKind) {
+    const graphic = document.getElementById('doneGraphic');
+    graphic.innerHTML = `
+      <div class="dg-sheet"></div>
       <div class="dg-cover-slot">${NoteCover.html({ width: 150, ...cover })}</div>`;
+    if (insertKind) ngRenderInsertThumb(insertKind, graphic.querySelector('.dg-sheet'));
     document.getElementById('doneName').textContent = name;
     document.getElementById('doneScrim').classList.add('show');
   }
@@ -2235,7 +2138,9 @@
   }
 
   // ══════════════ 노트 갤러리 ══════════════
-  // 속지는 노트마다 고정이라 "표지 + 속지 구성"이 이미 짜여 있는 노트를 골라 담는다.
+  // 노트마다 속지는 딱 한 종류로 고정이고, 그 속지는 캔버스에서 실제로 쓰는 디자인
+  // (데일리 카드 / 주간 스프레드 / 월간 격자)을 그대로 렌더해서 보여준다 — 스토어에서 본
+  // 그림과 노트를 열었을 때의 화면이 같다. 노트끼리 다른 건 표지뿐이다.
   // 표지는 NoteCover 컴포넌트에 넘길 { image, band } 그대로 — image는 색·그라디언트·패턴·
   // 이미지 경로(assets/xxx.png) 무엇이든 되고, band는 오른쪽 띠 색이다(생략하면 image 색에서 자동).
   const NG_CATEGORIES = ['데일리', '위클리', '먼슬리'];
@@ -2246,99 +2151,106 @@
   };
   const NG_FORMAT_LABEL = { scroll: '스크롤형', calendar: '캘린더형', weekly: '주간 스프레드', monthly: '월간 격자' };
 
+  // 카테고리별 속지 — 캔버스의 기존 속지 디자인 하나를 그대로 쓴다 (kind로 어떤 빌더를 쓸지 결정)
+  const NG_INSERT = {
+    '데일리': {
+      kind: 'daily', name: '데일리 속지',
+      desc: '날짜·D-day·총 공부시간 헤더 아래로 과목별 타이머와 10분 단위 타임라인, 하루 리뷰까지 한 장에 담긴 속지예요.',
+    },
+    '위클리': {
+      kind: 'weekly', name: '위클리 속지',
+      desc: '월요일부터 일요일까지 7일을 한 장에 세로로 펼쳐, 요일별 일정과 메모를 나란히 적는 속지예요.',
+    },
+    '먼슬리': {
+      kind: 'monthly', name: '먼슬리 속지',
+      desc: '한 달 날짜를 요일별 격자로 펼쳐 한눈에 보는 속지예요. 주말은 색을 달리해 구분해요.',
+    },
+  };
+
   const NOTE_TEMPLATES = {
     '데일리': [
       {
         id: 'd1', name: '모던 텐미닛 플래너', format: 'scroll',
-        desc: '10분 단위 타임라인으로 하루 공부를 촘촘하게 기록하는 노트예요. 과목별 시간이 색으로 쌓여서 하루를 얼마나 채웠는지 한눈에 보여요.',
+        desc: '스크롤로 날짜를 이어 넘기며 하루하루를 쌓아가는 기본 데일리 노트예요. 선명한 오렌지 표지로 책장에서 바로 눈에 띄어요.',
         cover: { image: '#f34c18' }, tint: '#fdece5',
-        inserts: [
-          { kind: 'lines',    color: '#7fd8be', name: '텐미닛 타임라인', desc: '10분 격자에 과목별 공부 시간을 색으로 채워요.' },
-          { kind: 'check',    color: '#f5b8c9', name: '투두 체크',       desc: '그날의 할일을 체크리스트로 관리해요.' },
-          { kind: 'blank',    color: '#f3ead9', name: '자유 메모',       desc: '수업 필기나 아이디어를 자유롭게 적어요.' },
-        ],
       },
       {
         id: 'd2', name: '소프트 크림 데일리', format: 'scroll',
-        desc: '여백을 넉넉하게 둔 도트 표지의 데일리 노트예요. 기록보다 손글씨와 드로잉을 즐기는 분께 잘 맞아요.',
+        desc: '도트 패턴을 얹은 크림색 표지의 데일리 노트예요. 차분한 톤을 좋아하는 분께 잘 맞아요.',
         cover: { image: patternCSS('dot', '#f5efe0'), band: '#b9a98b' }, tint: '#faf6ec',
-        inserts: [
-          { kind: 'blank',    color: '#f3ead9', name: '여백 데일리',     desc: '가로 라인만 옅게 깔린 여백 중심 레이아웃이에요.' },
-          { kind: 'lines',    color: '#d5d9de', name: '심플 타임라인',   desc: '시간대별 기록만 간결하게 남겨요.' },
-        ],
       },
       {
         id: 'd3', name: '미드나잇 포커스', format: 'calendar',
-        desc: '날짜를 캘린더에서 골라 이동하는 집중 기록용 노트예요. 딥한 표지에 타임라인 중심 속지를 담았어요.',
+        desc: '날짜를 캘린더에서 골라 그 페이지로 바로 이동하는 캘린더형 데일리 노트예요. 딥한 네이비 표지를 담았어요.',
         cover: { image: 'linear-gradient(160deg,#2b3a67,#1c2440)', band: '#101726' }, tint: '#e8ebf3',
-        inserts: [
-          { kind: 'timeline', color: '#c3b8f5', name: '포커스 타임라인', desc: '하루의 흐름을 타임라인으로 눌러 담아요.' },
-          { kind: 'check',    color: '#7fd8be', name: '데일리 목표',     desc: '오늘 꼭 끝낼 일 3가지를 고정해둬요.' },
-          { kind: 'blank',    color: '#d5d0dc', name: '회고 메모',       desc: '하루를 마무리하며 짧게 회고를 남겨요.' },
-        ],
       },
     ],
     '위클리': [
       {
         id: 'w1', name: '위클리 그리드', format: 'weekly',
-        desc: '월요일부터 일요일까지 한 장에 나열되는 기본 위클리 노트예요. 주간 목표와 요일별 일정을 같이 봐요.',
+        desc: '한 주를 한 장에 펼쳐 요일별로 계획을 채우는 기본 위클리 노트예요. 깔끔한 블루 표지로 구성했어요.',
         cover: { image: '#5a8dee' }, tint: '#e9f0fd',
-        inserts: [
-          { kind: 'grid',     color: '#a9d6f5', name: '주간 그리드',     desc: '월~일 7일을 격자로 나눠 계획을 채워요.' },
-          { kind: 'check',    color: '#f5b8c9', name: '주간 목표',       desc: '이번 주에 끝낼 일을 체크리스트로 관리해요.' },
-        ],
       },
       {
         id: 'w2', name: '파스텔 위클리', format: 'weekly',
-        desc: '사선 패턴 표지의 부드러운 위클리 노트예요. 주간 계획과 넉넉한 메모 공간을 함께 담았어요.',
+        desc: '사선 패턴을 얹은 라벤더 표지의 위클리 노트예요. 부드러운 톤으로 주간 계획을 관리해요.',
         cover: { image: patternCSS('line', '#ddd6f8'), band: '#6f61a8' }, tint: '#f4f1fd',
-        inserts: [
-          { kind: 'grid',     color: '#d9c8f5', name: '주간 그리드',     desc: '한 주를 격자로 펼쳐 일정을 배치해요.' },
-          { kind: 'blank',    color: '#c3b8f5', name: '위클리 메모',     desc: '주간 회고와 아이디어를 자유롭게 적어요.' },
-          { kind: 'lines',    color: '#a9d6f5', name: '시간 기록',       desc: '요일별로 쓴 시간을 간단히 기록해요.' },
-        ],
       },
       {
         id: 'w3', name: '포레스트 위클리', format: 'weekly',
-        desc: '그린 그라데이션 표지의 위클리 노트예요. 습관 체크와 주간 계획을 한 세트로 관리해요.',
+        desc: '그린 그라데이션 표지의 위클리 노트예요. 눈이 편한 색으로 한 주를 계획해요.',
         cover: { image: 'linear-gradient(150deg,#cfe6d4,#8fc39c)', band: '#3f6b4a' }, tint: '#edf6ef',
-        inserts: [
-          { kind: 'grid',     color: '#7fd8be', name: '주간 그리드',     desc: '요일별 계획을 격자에 나눠 담아요.' },
-          { kind: 'check',    color: '#7fd8be', name: '습관 체크',       desc: '매일 반복할 습관을 요일별로 체크해요.' },
-        ],
       },
     ],
     '먼슬리': [
       {
         id: 'm1', name: '먼슬리 캘린더', format: 'monthly',
-        desc: '한 달을 격자로 펼쳐 일정을 배치하는 기본 먼슬리 노트예요. 월간 목표를 같이 적어둘 수 있어요.',
+        desc: '한 달 일정을 격자로 펼쳐 배치하는 기본 먼슬리 노트예요. 딥 퍼플 표지로 구성했어요.',
         cover: { image: '#452c83' }, tint: '#eeeaf7',
-        inserts: [
-          { kind: 'grid',     color: '#d9c8f5', name: '월간 격자',       desc: '한 달 날짜를 격자로 펼쳐 일정을 적어요.' },
-          { kind: 'check',    color: '#c3b8f5', name: '월간 목표',       desc: '이번 달에 이루고 싶은 일을 정리해요.' },
-        ],
       },
       {
         id: 'm2', name: '코랄 먼슬리', format: 'monthly',
-        desc: '도트 패턴의 따뜻한 표지에 월간 격자와 회고 메모를 담은 노트예요.',
+        desc: '도트 패턴의 따뜻한 코랄 표지를 얹은 먼슬리 노트예요. 한 달을 부드러운 분위기로 관리해요.',
         cover: { image: patternCSS('dot', '#f7d9c4'), band: '#b5734b' }, tint: '#fdf1e9',
-        inserts: [
-          { kind: 'grid',     color: '#f3ead9', name: '월간 격자',       desc: '한 달 일정을 넓게 보고 계획해요.' },
-          { kind: 'blank',    color: '#f5b8c9', name: '먼슬리 회고',     desc: '한 달을 마무리하며 기록을 남겨요.' },
-        ],
       },
       {
         id: 'm3', name: '차콜 먼슬리', format: 'monthly',
-        desc: '차분한 회색 그라데이션 표지의 먼슬리 노트예요. 일정과 결산을 담백하게 관리해요.',
+        desc: '차분한 회색 그라데이션 표지의 먼슬리 노트예요. 담백하게 한 달 일정을 정리해요.',
         cover: { image: 'linear-gradient(155deg,#d8dbe2,#9aa0ac)', band: '#3a3f49' }, tint: '#f0f1f4',
-        inserts: [
-          { kind: 'grid',     color: '#a9d6f5', name: '월간 격자',       desc: '날짜별 일정을 격자에 채워요.' },
-          { kind: 'lines',    color: '#d5d9de', name: '월간 결산',       desc: '한 달 동안 쓴 시간을 정리해요.' },
-          { kind: 'check',    color: '#7fd8be', name: '월간 체크',       desc: '달 단위 할일을 체크리스트로 관리해요.' },
-        ],
       },
     ],
   };
+
+  // 속지 미리보기: 캔버스에 실제로 올라가는 카드(600×800)를 그대로 만들어 두고,
+  // 사이드패널 썸네일과 같은 renderThumb()으로 원하는 크기에 축소해 넣는다.
+  const _ngInsertCards = {};
+  function ngInsertCard(kind) {
+    if (_ngInsertCards[kind]) return _ngInsertCards[kind];
+    const t = new Date();
+    let card;
+    if (kind === 'weekly') {
+      card = buildWeekSpreadEl(t);
+    } else if (kind === 'monthly') {
+      card = buildMonthGridEl(t.getFullYear(), t.getMonth() + 1);
+    } else {
+      // 샘플 공부시간을 넣어 타임라인·과목 시간이 채워진 모습으로 보여준다
+      const page = {
+        id: 'ng-insert-preview',
+        dateText: `${String(t.getFullYear()).slice(2)}.${String(t.getMonth() + 1).padStart(2, '0')}.${String(t.getDate()).padStart(2, '0')}`,
+        studyTime: '4:12:30',
+      };
+      const holder = document.createElement('div');
+      holder.innerHTML = buildCardHTML(page);
+      card = holder.firstElementChild;
+      buildGrid(card, studyBreakdown(page).fills);
+      lucide.createIcons({ nodes: [card] });
+    }
+    _ngInsertCards[kind] = card;
+    return card;
+  }
+  function ngRenderInsertThumb(kind, hostEl) {
+    if (hostEl) renderThumb(ngInsertCard(kind), hostEl);
+  }
 
   const ngScreen  = document.getElementById('noteGalleryScreen');
   const ndScreen  = document.getElementById('noteDetailScreen');
@@ -2359,27 +2271,24 @@
     const meta = NG_CATEGORY_META[ngCategory];
     document.getElementById('ngSectionTitle').textContent = meta.title;
     document.getElementById('ngSectionSub').textContent = meta.sub;
-    ngGridEl.innerHTML = NOTE_TEMPLATES[ngCategory].map(t => {
-      // 표지 뒤로 겹쳐 보일 속지 2장 (구성이 1개면 1장만)
-      const sheets = t.inserts.slice(1, 3).map((ins, i) =>
-        `<div class="ng-card-sheet s${i + 1}">${nwMiniInsertHTML(ins, ins.color)}</div>`).join('');
-      return `<div class="ng-card" data-tpl="${t.id}">
+    const insert = NG_INSERT[ngCategory];
+    ngGridEl.innerHTML = NOTE_TEMPLATES[ngCategory].map(t =>
+      `<div class="ng-card" data-tpl="${t.id}">
         <div class="ng-card-stage" style="background:${t.tint};">
-          ${sheets}
+          <div class="ng-card-sheet"></div>
           ${NoteCover.html({ width: 118, ...t.cover })}
         </div>
         <div class="ng-card-meta">
           <div class="ng-card-tagrow">
             <span class="ng-tag">${ngCategory}</span>
             <span class="ng-tag">${NG_FORMAT_LABEL[t.format]}</span>
-            <span class="ng-tag">속지 ${t.inserts.length}종</span>
           </div>
           <div class="ng-card-name">${t.name}</div>
           <div class="ng-card-desc">${t.desc}</div>
         </div>
-      </div>`;
-    }).join('');
-    nwFitMiniPreviews();
+      </div>`).join('');
+    // 표지 뒤로 삐져나온 종이에 실제 속지 디자인을 축소해 넣는다
+    ngGridEl.querySelectorAll('.ng-card-sheet').forEach(el => ngRenderInsertThumb(insert.kind, el));
   }
 
   function openNoteGallery() {
@@ -2416,39 +2325,42 @@
     if (!t) return;
     ndTemplate = t;
 
+    const cat = NG_CATEGORIES.find(c => NOTE_TEMPLATES[c].includes(t));
+    const insert = NG_INSERT[cat];
+
     document.getElementById('ndTopTitle').textContent = t.name;
     document.getElementById('ndHeroBg').style.background = t.tint;
     document.getElementById('ndHeroCover').innerHTML = NoteCover.html({ width: 210, ...t.cover });
-    document.getElementById('ndHeroSheets').innerHTML = t.inserts.slice(0, 3).map(ins =>
-      `<div class="nd-hero-sheet">${nwMiniInsertHTML(ins, ins.color)}</div>`).join('');
+    document.getElementById('ndHeroSheets').innerHTML = '<div class="nd-hero-sheet"></div>';
 
-    const cat = NG_CATEGORIES.find(c => NOTE_TEMPLATES[c].includes(t));
     document.getElementById('ndTags').innerHTML =
-      [cat, NG_FORMAT_LABEL[t.format], `속지 ${t.inserts.length}종`]
+      [cat, NG_FORMAT_LABEL[t.format], insert.name]
         .map(x => `<span class="ng-tag">${x}</span>`).join('');
     document.getElementById('ndName').textContent = t.name;
     document.getElementById('ndDesc').textContent = t.desc;
 
-    document.getElementById('ndInsertList').innerHTML = t.inserts.map(ins => `
+    document.getElementById('ndInsertList').innerHTML = `
       <div class="nd-insert-row">
-        <div class="nd-insert-thumb">${nwMiniInsertHTML(ins, ins.color)}</div>
+        <div class="nd-insert-thumb"></div>
         <div class="nd-insert-txt">
-          <div class="nd-insert-name">${ins.name}</div>
-          <div class="nd-insert-desc">${ins.desc}</div>
+          <div class="nd-insert-name">${insert.name}</div>
+          <div class="nd-insert-desc">${insert.desc}</div>
         </div>
-      </div>`).join('');
+      </div>`;
 
     document.getElementById('ndSpec').innerHTML = [
       ['카테고리', cat + ' 플래너'],
       ['노트 형식', NG_FORMAT_LABEL[t.format]],
-      ['속지 구성', t.inserts.map(i => i.name).join(' · ')],
+      ['속지', `${insert.name} 1종 (고정)`],
       ['지원 기능', '펜슬, 스티커, 타이머 연동, 할일 관리'],
     ].map(([k, v]) => `<div class="nd-spec-row"><div class="nd-spec-key">${k}</div><div class="nd-spec-val">${v}</div></div>`).join('');
 
     document.getElementById('ndBody').scrollTop = 0;
     ndScreen.classList.add('visible');
     lucide.createIcons({ nodes: [ndScreen] });
-    nwFitMiniPreviews();
+    // 히어로와 목록 썸네일 모두 실제 속지 디자인을 축소해 채운다
+    ngRenderInsertThumb(insert.kind, ndScreen.querySelector('.nd-hero-sheet'));
+    ngRenderInsertThumb(insert.kind, ndScreen.querySelector('.nd-insert-thumb'));
   }
 
   function closeNoteDetail() {
@@ -2477,7 +2389,7 @@
     hsNotesEl.insertBefore(cardEl, hsNotesEl.firstChild);
     lucide.createIcons({ nodes: [cardEl] });
 
-    nwShowNoteCreated(note.name, t.cover, t.inserts.map(i => i.color));
+    nwShowNoteCreated(note.name, t.cover, NG_INSERT[cat].kind);
     openTabFromHome(note.name, note.icon, 'note', note.noteType);
   });
 
