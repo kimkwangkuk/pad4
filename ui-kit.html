@@ -12,6 +12,8 @@
   <link rel="stylesheet" href="components/panel-slider.css">
   <link rel="stylesheet" href="components/modal-header.css">
   <link rel="stylesheet" href="components/glass-pill-button.css">
+  <link rel="stylesheet" href="components/note-cover.css">
+  <script src="components/note-cover.js"></script>
   <script src="components/date-picker.js"></script>
   <script src="components/overlay-menu.js"></script>
   <script src="components/dialog.js"></script>
@@ -69,6 +71,12 @@
 
   <a href="study-planner.html" style="display:inline-flex;align-items:center;gap:6px;background:rgba(0,0,0,0.08);color:rgba(0,0,0,0.86);font-family:'Pretendard',sans-serif;font-size:13px;font-weight:600;padding:8px 14px;border-radius:20px;text-decoration:none;margin-bottom:24px;">← 뒤로</a>
   <div class="page-title">UI Kit</div>
+
+  <!-- NOTE COVER -->
+  <div class="section">
+    <div class="section-title">Note Cover</div>
+    <div class="component-row" id="ncvDemo"></div>
+  </div>
 
   <!-- DATE PICKER -->
   <div class="section">
@@ -224,6 +232,20 @@
 
 <script>
   lucide.createIcons();
+
+  // Note Cover — image(표지 이미지 영역)와 band(띠 색)만 바꿔 쓰는 컴포넌트
+  [
+    { label: '단색 (띠 자동)',   opts: { image: '#f34c18' } },
+    { label: '단색 + 띠 지정',   opts: { image: '#5a8dee', band: '#0f2b5c' } },
+    { label: '그라디언트',       opts: { image: 'linear-gradient(155deg,#d8dbe2,#9aa0ac)', band: '#3a3f49' } },
+    { label: '패턴',             opts: { image: 'radial-gradient(rgba(0,0,0,.13) 1.5px, transparent 1.5px) 0 0/14px 14px, #f5efe0', band: '#b9a98b' } },
+    { label: '이미지 파일',      opts: { image: 'assets/insert-cat.png', band: '#6a5a4a' } },
+  ].forEach(({ label, opts }) => {
+    const card = document.createElement('div');
+    card.className = 'component-card';
+    card.innerHTML = `<div class="component-label">${label}</div>${NoteCover.html({ width: 140, ...opts })}`;
+    document.getElementById('ncvDemo').appendChild(card);
+  });
 
   const picker = new DatePicker({ year: 2026, month: 6, selected: 23 });
   picker.mount(document.getElementById('dpMount'));

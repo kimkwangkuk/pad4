@@ -1,0 +1,124 @@
+/* ─────────────────────────────────────────────────────────────────────────
+   Note cover — 노트 표지 컴포넌트
+   (Figma: 패드 UI 개편 node 4086:106790 "cover", 원본 360×480)
+
+   원본 비율을 --ncv-w 하나로 스케일한다. 어떤 크기로 써도 띠·접힘선의 위치와
+   두께가 원본과 같은 비율로 유지되므로 홈 카드(170px), 갤러리 셀, 상세 히어로
+   처럼 크기만 다른 곳에 그대로 재사용할 수 있다.
+
+   ── 유연하게 바꿀 수 있는 값 (인라인 style 또는 상위 셀렉터에서 덮어쓰기) ──
+     --ncv-w      표지 너비. 높이는 원본 비율(480/360)로 자동 계산된다
+     --ncv-image  표지의 이미지 영역. 색·그라디언트·url(...) 등 background 값 전부
+     --ncv-band   오른쪽 띠(밴드) 색
+
+   ── 마크업 ──
+     <div class="ncv" style="--ncv-w:170px; --ncv-image:...; --ncv-band:...;">
+       <div class="ncv-image"></div>
+       <div class="ncv-crease-a"></div>
+       <div class="ncv-crease-b"></div>
+       <div class="ncv-band"><i></i><i></i><i></i><i></i><i></i></div>
+       <div class="ncv-inset"></div>
+     </div>
+   components/note-cover.js의 NoteCover.html()/el()이 이 마크업을 만들어준다.
+   ───────────────────────────────────────────────────────────────────────── */
+
+.ncv {
+  --ncv-w: 170px;
+  --ncv-image: #a2a2a2;
+  --ncv-band: rgba(0, 0, 0, 0.32);
+
+  position: relative;
+  flex: 0 0 auto;
+  width: var(--ncv-w);
+  /* 480 / 360 */
+  height: calc(var(--ncv-w) * 1.33333);
+  /* 원본 12px / 34px 라운딩 → 폭 대비 3.333% / 9.444% */
+  border-radius:
+    calc(var(--ncv-w) * 0.03333) calc(var(--ncv-w) * 0.09444)
+    calc(var(--ncv-w) * 0.09444) calc(var(--ncv-w) * 0.03333);
+  overflow: hidden;
+  box-shadow:
+    calc(var(--ncv-w) * 0.04167) calc(var(--ncv-w) * 0.04167)
+    calc(var(--ncv-w) * 0.08333) rgba(0, 0, 0, 0.15);
+  background: #a2a2a2; /* --ncv-image가 투명하거나 로딩 전일 때의 바탕 */
+}
+
+/* 표지의 이미지 영역 — image 343 (0,0,360,480)
+   background 단축 속성 하나로만 받는다: 색·그라디언트·패턴(자체 size 지정)·url() 무엇이든
+   호출부가 준 값을 그대로 쓰기 때문에 여기서 background-size 등을 덮어쓰지 않는다.
+   (이미지 경로는 NoteCover.normalizeImage가 `url(...) center/cover no-repeat`로 만들어 준다) */
+.ncv-image {
+  position: absolute;
+  inset: 0;
+  background: var(--ncv-image);
+}
+
+/* 왼쪽 접힘선 2줄 — Rectangle 4263 (x22 w8) / Rectangle 4264 (x30 w3) */
+.ncv-crease-a {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(var(--ncv-w) * 0.06111);
+  width: calc(var(--ncv-w) * 0.02222);
+  background: rgba(0, 0, 0, 0.1);
+}
+.ncv-crease-b {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(var(--ncv-w) * 0.08333);
+  width: calc(var(--ncv-w) * 0.00833);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* 오른쪽 띠 — Frame 1707486360 (x283 w34) + 2px 굵기 세로선 5줄 */
+.ncv-band {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(var(--ncv-w) * 0.78611);
+  display: flex;
+  align-items: center;
+  gap: calc(var(--ncv-w) * 0.01111);
+  padding: 0 calc(var(--ncv-w) * 0.01111);
+  background: var(--ncv-band);
+  border-right: calc(var(--ncv-w) * 0.00556) solid rgba(0, 0, 0, 0.2);
+}
+.ncv-band i {
+  width: calc(var(--ncv-w) * 0.00556);
+  height: 100%;
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.25),
+    rgba(255, 255, 255, 0.25) 20%,
+    rgba(0, 0, 0, 0.25)
+  );
+}
+
+/* 표지 두께감을 주는 안쪽 그림자 */
+.ncv-inset {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow:
+    inset calc(var(--ncv-w) * -0.00833) calc(var(--ncv-w) * -0.00833)
+    calc(var(--ncv-w) * 0.00556) rgba(0, 0, 0, 0.15);
+}
+
+/* 표지 위에 얹는 선택적 장식/제목 슬롯 (띠 왼쪽 영역에만 놓인다) */
+.ncv-deco {
+  position: absolute;
+  left: calc(var(--ncv-w) * 0.11);
+  right: calc(var(--ncv-w) * 0.24);
+  top: calc(var(--ncv-w) * 0.13);
+  pointer-events: none;
+  font-family: 'Pretendard', sans-serif;
+  font-size: calc(var(--ncv-w) * 0.088);
+  font-weight: 700;
+  line-height: 1.35;
+  letter-spacing: -0.02em;
+  color: rgba(255, 255, 255, 0.92);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+  word-break: keep-all;
+}
