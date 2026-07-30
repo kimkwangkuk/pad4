@@ -3279,46 +3279,26 @@
       cursor.setDate(cursor.getDate() + 1);
     }
 
-    // 월 단위로 묶는다 — 같은 연/월끼리 하나의 접을 수 있는 그룹으로 표시
-    const groups = [];
-    let curGroup = null;
+    // 월 구분(연·월 라벨) 없이 기간 전체를 하나의 2열 그리드로 이어서 깐다
+    const grid = document.createElement('div');
+    grid.className = 'sp-grid';
+
     items.forEach(item => {
-      const d = new Date(item.time);
-      const key = `${d.getFullYear()}-${d.getMonth() + 1}`;
-      if (!curGroup || curGroup.key !== key) {
-        curGroup = { key, year: d.getFullYear(), month: d.getMonth() + 1, items: [] };
-        groups.push(curGroup);
+      const spCard = document.createElement('div');
+      spCard.className = 'sp-card' + (item.card && item.card === selectedCard ? ' sp-selected' : '');
+      const todayBadge = item.isToday ? '<span class="sp-today-badge">오늘</span>' : '';
+      if (item.isBlank) {
+        spCard.classList.add('sp-blank');
+        spCard.dataset.y = item.y; spCard.dataset.m = item.m; spCard.dataset.d = item.d;
+        if (item.isToday) spCard.dataset.today = '1';
+        spCard.innerHTML = `<div class="sp-thumb sp-thumb-add"><span class="sp-add-icon">+</span></div><div class="sp-list-info"><div class="sp-list-title-row"><span class="sp-list-title">${item.label}</span>${todayBadge}</div></div>`;
+      } else {
+        spCard.dataset.dateKey = dateKey(parseCardDate(item.card));
+        spCard.innerHTML = `<div class="sp-thumb"></div><div class="sp-list-info"><div class="sp-list-title-row"><span class="sp-list-title">${item.label}</span>${todayBadge}<i data-lucide="more-horizontal" class="sp-more-icon"></i></div></div>`;
       }
-      curGroup.items.push(item);
+      grid.appendChild(spCard);
     });
-
-    groups.forEach(group => {
-      const header = document.createElement('div');
-      header.className = 'sp-month-header';
-      header.innerHTML = `<span class="sp-month-title">${group.year}년 ${group.month}월</span>`;
-      spContent.appendChild(header);
-
-      const body = document.createElement('div');
-      body.className = 'sp-month-body';
-
-      group.items.forEach(item => {
-        const spCard = document.createElement('div');
-        spCard.className = 'sp-card' + (item.card && item.card === selectedCard ? ' sp-selected' : '');
-        const todayBadge = item.isToday ? '<span class="sp-today-badge">오늘</span>' : '';
-        if (item.isBlank) {
-          spCard.classList.add('sp-blank');
-          spCard.dataset.y = item.y; spCard.dataset.m = item.m; spCard.dataset.d = item.d;
-          if (item.isToday) spCard.dataset.today = '1';
-          spCard.innerHTML = `<div class="sp-thumb sp-thumb-add"><span class="sp-add-icon">+</span></div><div class="sp-list-info"><div class="sp-list-title-row"><span class="sp-list-title">${item.label}</span>${todayBadge}</div></div>`;
-        } else {
-          const studyTime = item.card.querySelector('.hd-time-val')?.textContent?.trim() || '0:00:00';
-          spCard.dataset.dateKey = dateKey(parseCardDate(item.card));
-          spCard.innerHTML = `<div class="sp-thumb"></div><div class="sp-list-info"><div class="sp-list-title-row"><span class="sp-list-title">${item.label}</span>${todayBadge}<i data-lucide="more-horizontal" class="sp-more-icon"></i></div><span class="sp-list-time">${studyTime}</span></div>`;
-        }
-        body.appendChild(spCard);
-      });
-      spContent.appendChild(body);
-    });
+    spContent.appendChild(grid);
     lucide.createIcons({ nodes: [spContent] });
     // 목록을 새로 그렸으니 오늘 슬롯 DOM도 새 노드로 바뀐다 — 관찰 대상을 다시 연결해야 한다.
     // watchSpTodayFab은 이 함수보다 뒤에서 정의되지만, rebuildPanel의 첫 실행(맨 아래 "Initial
