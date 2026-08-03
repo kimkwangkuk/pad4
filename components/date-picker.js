@@ -217,7 +217,7 @@ class DatePicker {
           const dt = new Date(this.year, this.month - 1, day);
           const outCell = document.createElement('div');
           outCell.className = 'dp-day-cell dp-day-out';
-          outCell.innerHTML = `<div class="dp-day-circle"><span class="dp-day-num">${dt.getDate()}</span></div><span class="dp-study-mark"></span>`;
+          outCell.innerHTML = `<div class="dp-day-circle"><span class="dp-day-num">${dt.getDate()}</span></div>`;
           row.appendChild(outCell);
           continue;
         }
@@ -231,10 +231,12 @@ class DatePicker {
           ? (valid && !taken && this.selectedDates.has(dateKey))
           : (day === this.selected && !taken);
         const circleCls = `dp-day-circle${isSel ? ' selected' : ''}${taken ? ' taken' : ''}`;
-        // 공부시간 마크는 항상 자리를 차지하게 두어(빈 셀은 공백) 날짜 동그라미의 세로 위치가 일정하다
+        // 공부시간 마크는 항상 자리를 차지하게 두어(빈 셀은 공백) 날짜 동그라미의 세로 위치가 일정하다.
+        // 단 주 선택 모드에선 아예 그리지 않는다 — 빈 자리가 남아 선택된 주 알약 안에서
+        // 날짜가 위로 치우쳐 보인다.
         cell.innerHTML =
           `<div class="${circleCls}"><span class="dp-day-num">${valid ? day : ''}</span></div>` +
-          `<span class="dp-study-mark">${study}</span>`;
+          (this.selectMode === 'week' ? '' : `<span class="dp-study-mark">${study}</span>`);
         // 주 선택 모드에선 칸별 클릭을 달지 않는다 — 선택은 행(주) 단위로만 일어난다
         if (valid && !taken && this.selectMode !== 'week') {
           cell.addEventListener('click', () => {

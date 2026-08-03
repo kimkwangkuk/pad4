@@ -3214,14 +3214,27 @@
     return new Date(2000 + parseInt(yy, 10), parseInt(mm, 10) - 1, parseInt(dd, 10));
   }
 
+  // 썸네일 아래 레이블은 그 노트의 페이지 단위를 따라간다 —
+  //   일: 8/3   ·   주: 8/3~8/9 (주차가 아니라 그 주의 기간)   ·   월: 8월
+  function panelLabelFor(card) {
+    const kind = card.dataset.periodKind;
+    if (kind === 'weekly' && card.dataset.weekKey) {
+      const s = weekKeyToDate(card.dataset.weekKey);
+      const e = new Date(s); e.setDate(s.getDate() + 6);
+      return `${s.getMonth() + 1}/${s.getDate()}~${e.getMonth() + 1}/${e.getDate()}`;
+    }
+    if (kind === 'monthly' && card.dataset.monthKey) {
+      return `${monthKeyParts(card.dataset.monthKey).month}월`;
+    }
+    const txt = card.dataset.dateText || card.querySelector('.hd-date-val')?.textContent || '';
+    const [, mm, dd] = txt.split('.');
+    return `${parseInt(mm, 10)}/${parseInt(dd, 10)}`;
+  }
+
   function rebuildPanel(datedCards, selectedIdx) {
     const spContent = document.querySelector('.sp-content');
     spContent.innerHTML = '';
-    const items = datedCards.map((card, idx) => {
-      const txt = card.dataset.dateText || card.querySelector('.hd-date-val').textContent;
-      const [, mm, dd] = txt.split('.');
-      return { idx, label: `${parseInt(mm, 10)}/${parseInt(dd, 10)}` };
-    });
+    const items = datedCards.map((card, idx) => ({ idx, label: panelLabelFor(card) }));
     items.push({ idx: datedCards.length, isAdd: true });
 
     for (let i = 0; i < items.length; i += 2) {
@@ -3344,9 +3357,13 @@
         canvasZoomWrap.innerHTML = ''; // 다른 비스크롤 모드에서 넘어올 때 이전 화면 제거
       }
       canvasZoomWrap.dataset.mode = mode;
-      // 이 노트 유형들은 사이드바(페이지 패널)를 쓰지 않는다
-      sidePanel.close();
-      panelToggleBtn.classList.remove('panel-open');
+      // 캘린더 노트만 사이드바(페이지 패널)를 쓰지 않는다. 위클리·먼슬리는 데일리와 마찬가지로
+      // 주/달 단위 페이지 목록을 패널에 보여준다.
+      if (mode === 'calendar') {
+        sidePanel.close();
+        panelToggleBtn.classList.remove('panel-open');
+      }
+      document.getElementById('spHeaderTitle').textContent = '페이지';
       closeCalInlinePanel(); // 탭 전환 시 이전 탭에서 열려있던 인라인 캘린더는 닫아둔다
       if (mode === 'calendar') {
         renderCalendarNoteCanvas(tabEl);
@@ -3425,6 +3442,7 @@
     card.className = 'card';
     card.dataset.canvasState = 'with-date';
     card.dataset.periodKind = 'weekly';
+    card.dataset.weekKey = `${start.getFullYear()}-${start.getMonth() + 1}-${start.getDate()}`;
     let rows = '';
     for (let i = 0; i < 7; i++) {
       const dt = new Date(start); dt.setDate(start.getDate() + i);
@@ -3462,6 +3480,7 @@
     card.className = 'card';
     card.dataset.canvasState = 'with-date';
     card.dataset.periodKind = 'monthly';
+    card.dataset.monthKey = `${year}-${month}`;
     const firstDow = (new Date(year, month - 1, 1).getDay() + 6) % 7; // 월=0
     const daysInMonth = new Date(year, month, 0).getDate();
     const rowCount = Math.ceil((firstDow + daysInMonth) / 7);
@@ -3520,16 +3539,18 @@
     return tabEl._monthPages;
   }
 
-  function renderWeeklyCanvas(tabEl) {
+  function renderWeeklyCanvas(tabEl, selectedIdx) {
     canvasZoomWrap.innerHTML = '';
     if (!tabEl) return;
     const keys = weekPagesOf(tabEl).slice().sort((a, b) => weekKeyToDate(a) - weekKeyToDate(b));
     tabEl._weekPages = keys;
-    keys.forEach(k => canvasZoomWrap.appendChild(buildWeekSpreadEl(weekKeyToDate(k))));
+    const cards = keys.map(k => { const c = buildWeekSpreadEl(weekKeyToDate(k)); canvasZoomWrap.appendChild(c); return c; });
     canvasZoomWrap.appendChild(addPageBtn); // 데일리와 마찬가지로 맨 아래에 "페이지 추가"
+    rebuildPanel(cards, selectedIdx == null ? cards.length - 1 : selectedIdx);
+    setTimeout(updateAllThumbs, 50);
     requestAnimationFrame(() => scrollToCard(0, false));
   }
-  function renderMonthlyCanvas(tabEl) {
+  function renderMonthlyCanvas(tabEl, selectedIdx) {
     canvasZoomWrap.innerHTML = '';
     if (!tabEl) return;
     const keys = monthPagesOf(tabEl).slice().sort((a, b) => {
@@ -3537,8 +3558,10 @@
       return (A.year * 12 + A.month) - (B.year * 12 + B.month);
     });
     tabEl._monthPages = keys;
-    keys.forEach(k => { const p = monthKeyParts(k); canvasZoomWrap.appendChild(buildMonthGridEl(p.year, p.month)); });
+    const cards = keys.map(k => { const p = monthKeyParts(k); const c = buildMonthGridEl(p.year, p.month); canvasZoomWrap.appendChild(c); return c; });
     canvasZoomWrap.appendChild(addPageBtn);
+    rebuildPanel(cards, selectedIdx == null ? cards.length - 1 : selectedIdx);
+    setTimeout(updateAllThumbs, 50);
     requestAnimationFrame(() => scrollToCard(0, false));
   }
 
@@ -3550,7 +3573,8 @@
     const keys = weekPagesOf(tab);
     if (keys.includes(key)) return;
     keys.push(key);
-    renderWeeklyCanvas(tab);
+    const idx0 = keys.slice().sort((a, b) => weekKeyToDate(a) - weekKeyToDate(b)).indexOf(key);
+    renderWeeklyCanvas(tab, idx0);
     const s = weekKeyToDate(key);
     const idx = tab._weekPages.indexOf(key);
     requestAnimationFrame(() => scrollToCard(idx, true));
@@ -3563,7 +3587,11 @@
     const keys = monthPagesOf(tab);
     if (keys.includes(key)) return;
     keys.push(key);
-    renderMonthlyCanvas(tab);
+    const idx0 = keys.slice().sort((a, b) => {
+      const A = monthKeyParts(a), B = monthKeyParts(b);
+      return (A.year * 12 + A.month) - (B.year * 12 + B.month);
+    }).indexOf(key);
+    renderMonthlyCanvas(tab, idx0);
     const idx = tab._monthPages.indexOf(key);
     requestAnimationFrame(() => scrollToCard(idx, true));
     pageToast.show(`${year}년 ${month}월 페이지가 추가되었습니다`);

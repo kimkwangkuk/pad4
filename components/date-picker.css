@@ -148,7 +148,8 @@
 /* ── 주(週) 선택 모드 ─────────────────────────────
    캘린더 UI는 그대로 두고, 한 줄(월~일)이 통째로 눌리는 하나의 선택 단위가 된다 */
 .dp-week-row.dp-week-pick { cursor: pointer; border-radius: 28px; }
-.dp-week-row.dp-week-pick .dp-day-cell { cursor: pointer; }
+/* 공부시간 마크를 그리지 않으므로 그 자리의 간격도 없앤다 — 날짜가 알약 정중앙에 온다 */
+.dp-week-row.dp-week-pick .dp-day-cell { cursor: pointer; gap: 0; }
 .dp-week-row.dp-week-pick:hover { background: rgba(0,0,0,0.05); }
 .dp-week-row.dp-week-pick.selected { background: rgba(0,0,0,0.86); }
 .dp-week-row.dp-week-pick.selected .dp-day-num { color: #fff; }
