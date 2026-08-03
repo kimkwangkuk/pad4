@@ -65,6 +65,8 @@
   overflow: hidden;
   background: #ebebeb;
 }
+/* 가로형(4:3) 속지 페이지의 썸네일 — 칸 폭은 그대로, 높이만 4:3으로 낮아진다 */
+.sp-thumb.sp-thumb-landscape { aspect-ratio: 4 / 3; }
 .sp-card.sp-selected .sp-thumb { border-color: #242424; }
 .sp-card.sp-selected .sp-thumb-add { border-color: #242424 !important; border-style: solid !important; }
 

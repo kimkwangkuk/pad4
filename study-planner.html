@@ -394,6 +394,21 @@
       flex-direction: column;
     }
 
+    /* ─── 가로형(4:3) 페이지 ─────────────────────────────
+       캔버스에서 가로형의 "가로"가 세로형의 "세로"(800px)와 같아지도록 800×600으로 놓는다.
+       .canvas-zoom-wrap이 align-items:center이므로 세로형 카드와 가운데가 자동으로 맞는다. */
+    .card[data-orient="landscape"] { width: 800px; height: 600px; }
+    /* 카드 안쪽 폭(800-32=768)에 맞춰 헤더/리스트를 늘리고, 낮아진 높이(568-106-8)에 맞게 리스트를 줄인다 */
+    .card[data-orient="landscape"] .card-header { width: 768px; }
+    .card[data-orient="landscape"] .list-area { width: 768px; height: 454px; }
+    /* 늘어난 가로 폭은 왼쪽(날짜·과목) 영역이 받는다 — 오른쪽 타임라인 폭(175px)은 그대로 */
+    .card[data-orient="landscape"] .hd-left,
+    .card[data-orient="landscape"] .left-panel { width: auto; flex: 1 1 0; min-width: 0; }
+    /* 24행 타임라인이 낮아진 높이(421px = 454 - 1 - 32) 안에 다 들어가도록 행 높이를 26→17px로 */
+    .card[data-orient="landscape"] .grid-wrap { height: 421px; }
+    .card[data-orient="landscape"] .g-row,
+    .card[data-orient="landscape"] .g-row td { height: 17px; }
+
     /* Card has 16px padding; the two panels sit side by side */
     .card-inner {
       flex: 1;
@@ -1239,6 +1254,8 @@
       aspect-ratio: 160 / 214;
       flex-shrink: 0;
     }
+    /* 가로형(4:3) 속지 — 폭을 꽉 채우고 높이가 4:3으로 따라온다 */
+    .ip-thumb-pos-land { height: auto; width: 100%; aspect-ratio: 4 / 3; }
     .ip-thumb {
       position: relative;
       width: 100%; height: 100%;
@@ -1305,6 +1322,7 @@
       display: flex; align-items: center; justify-content: center;
       position: relative;
     }
+    .ipd-preview-thumb-land { width: 240px !important; height: 180px !important; }
     .ipd-preview-thumb {
       position: relative;
       width: 180px; height: 240px;
@@ -3073,8 +3091,12 @@
     const dateCls = page.empty ? 'hd-date-val placeholder' : 'hd-date-val';
     const dday    = page.empty ? '–' : ddayText(page.dateText);
     const time    = page.studyTime || (page.today ? '5:30:24' : '–');
+    // 가로형(4:3) 속지는 800×600 — 그리기 캔버스 픽셀 크기도 카드와 1:1로 맞춘다
+    const landscape = page.orient === 'landscape';
+    const cvW = landscape ? 800 : 600;
+    const cvH = landscape ? 600 : 800;
     return `
-<div class="card" data-page-id="${page.id}" data-canvas-state="${state}">
+<div class="card" data-page-id="${page.id}" data-canvas-state="${state}" data-orient="${landscape ? 'landscape' : 'portrait'}">
   ${page.empty ? `<button class="page-type-tab" id="pageTypeTabBtn">
     <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
       <rect x="9.5" y="2.5" width="13" height="17" rx="2.5" stroke="rgba(0,0,0,0.86)" stroke-width="1.5"/>
@@ -3082,7 +3104,7 @@
     </svg>
     <span class="page-type-tab-label">변경</span>
   </button>` : ''}
-  <canvas class="card-draw-canvas" width="600" height="800"></canvas>
+  <canvas class="card-draw-canvas" width="${cvW}" height="${cvH}"></canvas>
   <div class="card-inner">
     <div class="card-header">
       <div class="hd-left">
@@ -3270,7 +3292,11 @@
   // ── Thumbnail renderer ────────────────────────────────────
   function renderThumb(card, thumbEl) {
     thumbEl.innerHTML = '';
-    const cardW = 600, cardH = 800;
+    // 썸네일 비율은 원본 카드의 방향을 그대로 따라간다 — 가로형이면 칸도 4:3이 된다
+    const landscape = card.dataset.orient === 'landscape';
+    thumbEl.classList.toggle('sp-thumb-landscape', landscape);
+    const cardW = landscape ? 800 : 600;
+    const cardH = landscape ? 600 : 800;
     const thumbW = thumbEl.offsetWidth || 70;
     const scale  = thumbW / cardW;
 
@@ -3655,7 +3681,9 @@
 
     // 캔버스에 기본으로 깔린 속지(데일리)를 그대로 사용한다. 그날 캘린더에 공부기록이 있으면
     // 그 시간을 반영해 타임라인/과목시간이 채워진 채로 추가된다.
-    const newPage = { id: 'p' + pageCount++, dateText, today: false, studyTime: STUDY_TIMES[`${year}-${month}-${day}`] };
+    // 속지 목록에서 마지막으로 고른 속지가 가로형이면 이 페이지도 가로형(800×600)으로 만들어진다.
+    const orient = (window.ipSelectedOrient && window.ipSelectedOrient()) || 'portrait';
+    const newPage = { id: 'p' + pageCount++, dateText, today: false, orient, studyTime: STUDY_TIMES[`${year}-${month}-${day}`] };
     canvasZoomWrap.insertAdjacentHTML('beforeend', buildCardHTML(newPage));
     const newCard = canvasZoomWrap.lastElementChild;
     newCard.classList.add('card-creating'); // 스크롤이 도착하기 전까지는 보이지 않게 숨겨둔다
@@ -4516,7 +4544,11 @@
     }
     if (!card) return;
     innerEl.innerHTML = '';
-    const scale = (innerEl.offsetWidth || 80) / 600;
+    // 가로형 속지는 800×600이므로 스케일 기준 폭도 그에 맞춰야 썸네일이 잘리지 않는다
+    const landscape = card.dataset.orient === 'landscape';
+    const srcW = landscape ? 800 : 600;
+    const srcH = landscape ? 600 : 800;
+    const scale = (innerEl.offsetWidth || 80) / srcW;
     const clone = card.cloneNode(true);
     clone.classList.remove('card-creating', 'card-created-reveal'); // 생성 트랜지션(opacity:0) 상태로 스냅샷되는 것 방지
     clone.querySelectorAll('.stk-rot-handle, .stk-rot-line, .stk-del-btn').forEach(el => el.remove());
@@ -4528,7 +4560,7 @@
       cloneCanvas.height = origCanvas.height;
       cloneCanvas.getContext('2d').drawImage(origCanvas, 0, 0);
     }
-    clone.style.cssText = `position:absolute;top:0;left:0;width:600px;height:800px;transform:scale(${scale});transform-origin:top left;pointer-events:none;box-shadow:none;border-radius:0;margin:0`;
+    clone.style.cssText = `position:absolute;top:0;left:0;width:${srcW}px;height:${srcH}px;transform:scale(${scale});transform-origin:top left;pointer-events:none;box-shadow:none;border-radius:0;margin:0`;
     innerEl.appendChild(clone);
   }
 
@@ -5444,12 +5476,21 @@
       { color: '#f2f2f1', name: '그레이' }
     ];
     const IP_UNLOCK_COUNT = 3; // 상단 3개는 잠금 해제
-    const IP_ITEMS = Array.from({ length: 9 }, (_, i) => ({
-      id: i,
-      name: '모던 텐미닛 플래너',
-      desc: '심플하고 정돈된 레이아웃으로 하루 학습을 체계적으로 기록할 수 있는 데일리 플래너 속지입니다.',
-      unlocked: i < IP_UNLOCK_COUNT
-    }));
+    // orient: 'portrait'(3:4, 600×800) | 'landscape'(4:3, 800×600).
+    // 가로형 속지를 고르면 그 뒤로 추가되는 페이지가 가로형으로 만들어지고,
+    // 기존 페이지에 "속지 변경"으로 적용하면 그 페이지가 가로형으로 바뀐다.
+    const IP_ITEMS = Array.from({ length: 9 }, (_, i) => {
+      const landscape = i % 3 === 1; // 세 개마다 하나는 가로형 (잠금 해제 구간에도 하나 포함)
+      return {
+        id: i,
+        name: landscape ? '모던 텐미닛 플래너 (가로형)' : '모던 텐미닛 플래너',
+        orient: landscape ? 'landscape' : 'portrait',
+        desc: landscape
+          ? '가로로 넓게 펼쳐지는 4:3 비율의 데일리 플래너 속지입니다. 과목 목록을 넓게 쓰고 싶을 때 좋아요.'
+          : '심플하고 정돈된 레이아웃으로 하루 학습을 체계적으로 기록할 수 있는 데일리 플래너 속지입니다.',
+        unlocked: i < IP_UNLOCK_COUNT
+      };
+    });
     const IP_FEATURES = [
       { title: '날짜 선택', desc: '오늘의 학습을 기록할 날짜를 선택하여 하루를 시작하세요' },
       { title: 'Dday', desc: '중요한 시험이나 목표까지 남은 시간을 한눈에 관리해요' },
@@ -5458,7 +5499,24 @@
     ];
     let ipSelectedId = 0;
     let ipActiveId = 0;
+    // 썸네일 렌더용 원본 카드 — 세로형/가로형을 따로 캐시해 속지 방향에 맞는 비율로 그린다
     let ipSourceCard = null;
+    let ipSourceCardLand = null;
+    function ipSourceFor(orient) {
+      if (orient === 'landscape') {
+        if (!ipSourceCardLand) {
+          ipSourceCardLand = buildStudyCardEl();
+          ipSourceCardLand.style.width = '800px';
+          ipSourceCardLand.style.height = '600px';
+          ipSourceCardLand.dataset.orient = 'landscape';
+        }
+        return ipSourceCardLand;
+      }
+      if (!ipSourceCard) ipSourceCard = buildStudyCardEl();
+      return ipSourceCard;
+    }
+    // createPage가 새 페이지의 방향을 정할 때 참조한다
+    window.ipSelectedOrient = () => getIpItem(ipSelectedId)?.orient || 'portrait';
     let ipApplyTarget = null; // 속지 변경으로 열렸을 때 실제 적용할 대상 카드 (없으면 페이지 추가 흐름)
     let ipChangeMode = false; // true면 기존 카드의 속지를 바꾸는 모드 (닫을 때 날짜 오버레이를 다시 띄우지 않음)
     let ipConfirmedColorIdx = 0; // 실제로 확정 적용된 컬러 (캔버스에 놓일 속지에 반영됨)
@@ -5485,7 +5543,6 @@
 
     function renderIpGrid() {
       grid.innerHTML = '';
-      if (!ipSourceCard) ipSourceCard = buildStudyCardEl();
 
       getIpDisplayItems().forEach(item => {
         const isSelected = item.id === ipSelectedId;
@@ -5494,7 +5551,7 @@
         cell.className = 'ip-cell' + (isSelected ? ' selected' : '') + (unlocked ? '' : ' locked');
         cell.innerHTML = `
           <div class="ip-thumbwrap">
-            <div class="ip-thumb-pos">
+            <div class="ip-thumb-pos${item.orient === 'landscape' ? ' ip-thumb-pos-land' : ''}">
               <div class="ip-thumb"></div>
               ${isSelected
                 ? `<div class="ip-check"><i data-lucide="check" style="width:14px;height:14px;color:white;"></i></div>`
@@ -5517,7 +5574,7 @@
         cell.addEventListener('click', () => openIpDetail(item.id));
         grid.appendChild(cell);
         const thumbEl = cell.querySelector('.ip-thumb');
-        setTimeout(() => renderMp2Thumb(ipSourceCard, thumbEl), 0);
+        setTimeout(() => renderMp2Thumb(ipSourceFor(item.orient), thumbEl), 0);
       });
       if (window.lucide) lucide.createIcons({ nodes: [grid] });
     }
@@ -5527,7 +5584,7 @@
       const isLocked = !item.unlocked;
       detailBody.innerHTML = `
         <div class="ipd-preview-wrap">
-          <div class="ipd-preview-thumb" id="ipdPreviewThumb"></div>
+          <div class="ipd-preview-thumb${item.orient === 'landscape' ? ' ipd-preview-thumb-land' : ''}" id="ipdPreviewThumb"></div>
           <button class="ipd-expand-btn" id="ipdExpandBtn"><i data-lucide="maximize-2" style="width:14px;height:14px;color:rgba(0,0,0,0.6);"></i></button>
         </div>
         <div>
@@ -5552,7 +5609,7 @@
       `;
 
       const previewThumb = document.getElementById('ipdPreviewThumb');
-      setTimeout(() => renderMp2Thumb(ipSourceCard, previewThumb), 0);
+      setTimeout(() => renderMp2Thumb(ipSourceFor(item.orient), previewThumb), 0);
 
       const colorGrid = document.getElementById('ipdColorGrid');
       IP_COLOR_OPTIONS.forEach(opt => {
@@ -5561,12 +5618,12 @@
         sw.innerHTML = `<div class="ipd-color-swatch-thumb"></div><div class="ipd-color-tint" style="background:${opt.color};"></div>`;
         colorGrid.appendChild(sw);
         const thumbEl = sw.querySelector('.ipd-color-swatch-thumb');
-        setTimeout(() => renderMp2Thumb(ipSourceCard, thumbEl), 0);
+        setTimeout(() => renderMp2Thumb(ipSourceFor(item.orient), thumbEl), 0);
       });
 
       const darkLight = document.getElementById('ipdDarkLight');
       const darkDark  = document.getElementById('ipdDarkDark');
-      setTimeout(() => { renderMp2Thumb(ipSourceCard, darkLight); renderMp2Thumb(ipSourceCard, darkDark); }, 0);
+      setTimeout(() => { renderMp2Thumb(ipSourceFor(item.orient), darkLight); renderMp2Thumb(ipSourceFor(item.orient), darkDark); }, 0);
 
       useBtn.textContent = isLocked ? '잠긴 속지입니다' : '이 속지 사용';
       useBtn.classList.toggle('locked', isLocked);
@@ -5647,6 +5704,15 @@
       const existingDate = isWithDate ? (card.dataset.dateText || card.querySelector('.hd-date-val')?.textContent || '') : null;
 
       card.dataset.pageType = 'study';
+      // 고른 속지의 방향(세로 3:4 / 가로 4:3)을 페이지에 그대로 적용한다 — 카드 크기와
+      // 그리기 캔버스 픽셀 크기가 함께 바뀐다(캔버스 리사이즈는 기존 필기를 지운다)
+      const orient = getIpItem(ipSelectedId)?.orient || 'portrait';
+      card.dataset.orient = orient;
+      const drawCv = card.querySelector('.card-draw-canvas');
+      if (drawCv) {
+        drawCv.width = orient === 'landscape' ? 800 : 600;
+        drawCv.height = orient === 'landscape' ? 600 : 800;
+      }
       const tab = card.querySelector('.page-type-tab');
       // 캔버스·탭 버튼 외 기존 내용 + 이전 틴트 제거
       Array.from(card.children).forEach(child => {
@@ -5665,7 +5731,7 @@
     function openInsertPicker(targetCard) {
       ipApplyTarget = targetCard || null;
       ipChangeMode = !!targetCard;
-      ipSourceCard = null; // 썸네일은 항상 속지 템플릿으로 렌더
+      ipSourceCard = null; ipSourceCardLand = null; // 썸네일은 항상 속지 템플릿으로 렌더
       slider.reset(0);
       colorSheet.style.transition = 'none';
       closeIpColorSheet();
