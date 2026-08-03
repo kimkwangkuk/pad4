@@ -3780,7 +3780,7 @@
     const addThumb = e.target.closest('.sp-thumb-add');
     if (addThumb) {
       const rect = addThumb.getBoundingClientRect();
-      startAddPageFlow(rect.left + rect.width / 2, rect.top, { above: true });
+      openAddPageMenu(rect.left + rect.width / 2, rect.top, { above: true });
       return;
     }
     const moreIcon = e.target.closest('.sp-more-icon');
@@ -3946,18 +3946,11 @@
     dateSelectMenu.open(x, y, opts);
   }
 
-  // 페이지 추가 진입점. 데일리 노트는 먼저 "속지 설정"(현재 속지·테마 확인 → 필요하면
-  // 속지 선택/상세로 이동)을 거치고, 확인을 누르면 날짜 선택으로 이어진다.
-  // 위클리·먼슬리는 속지 개념이 없으므로 바로 주/월 선택 메뉴를 연다.
-  function startAddPageFlow(x, y, opts) {
-    const nt = activeNoteType();
-    if (nt === 'weekly' || nt === 'monthly') { openAddPageMenu(x, y, opts); return; }
-    window.openInsertPicker(null, { onConfirm: () => openAddPageMenu(x, y, opts) });
-  }
-
+  // 페이지 추가 진입점 — 먼저 날짜(주/월) 선택 팝업이 뜬다. 그 팝업 위쪽의 속지 미리보기를
+  // 누르면 속지 설정 팝업으로 들어가고, 확인하면 다시 이 팝업으로 돌아온다.
   addPageBtn.addEventListener('click', () => {
     const rect = addPageBtn.getBoundingClientRect();
-    startAddPageFlow(rect.left + rect.width / 2, rect.top, { above: true });
+    openAddPageMenu(rect.left + rect.width / 2, rect.top, { above: true });
   });
 
   // ── 위클리 노트: 주 단위 페이지 추가 ──────────────────────────
