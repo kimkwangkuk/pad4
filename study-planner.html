@@ -1225,7 +1225,98 @@
 
     /* 2-panel push/back slider (uses shared .pnl-slider/.pnl-panel from panel-slider.css) */
     .ip-slider { align-items: flex-start; }
-    .ip-panel { max-height: 82vh; }
+    /* 패널 폭(=팝업 폭) 밖으로 내용이 새지 않게 클립한다. flex 아이템의 기본 min-width:auto가
+       미리보기 폭을 밀어내는 것도 아래에서 min-width:0으로 막는다 */
+    .ip-panel { max-height: 82vh; overflow: hidden; }
+    .ip-panel > * { min-width: 0; }
+
+    /* ─── Panel 0: 속지 설정 (Figma 5675:559985) ───────────────── */
+    .ips-header {
+      position: relative; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 16px 10px;
+    }
+    .ips-title {
+      position: absolute; left: 50%; transform: translateX(-50%);
+      font-family: 'Pretendard', sans-serif;
+      font-size: 17px; font-weight: 600;
+      color: rgba(0,0,0,0.86); letter-spacing: -0.3px; line-height: 1.4;
+      white-space: nowrap;
+    }
+    .ips-close-btn, .ips-confirm-btn {
+      width: 38px; height: 38px; flex-shrink: 0;
+      border: none; border-radius: 100px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; -webkit-tap-highlight-color: transparent;
+    }
+    .ips-close-btn { background: rgba(0,0,0,0.05); }
+    .ips-confirm-btn { background: rgba(0,0,0,0.86); }
+    .ips-confirm-btn:hover { background: rgba(0,0,0,0.75); }
+    /* 큰 미리보기 — 회색 판 위에 흰 페이지가 떠 있는 형태 */
+    .ips-preview-wrap {
+      flex-shrink: 0;
+      width: 100%; box-sizing: border-box;
+      background: rgba(0,0,0,0.05);
+      height: 420px;
+      display: flex; align-items: center; justify-content: center;
+      padding: 16px;
+    }
+    /* 미리보기는 항상 높이 기준으로 잡고 폭은 비율로 따라오게 한다 — 폭 기준(width:100%)으로
+       잡으면 가로형에서 회색 판보다 커져 헤더 위로 삐져나온다 */
+    .ips-preview, .ipd-preview {
+      position: relative; height: 100%; width: auto; max-width: 100%;
+      aspect-ratio: 160 / 214;
+      background: white; border-radius: 4px; overflow: hidden;
+      box-shadow: 0 0 1px rgba(0,0,0,0.6), 0 4px 6px rgba(0,0,0,0.03);
+    }
+    /* 가로형(4:3) 속지 — 높이는 그대로, 비율만 바뀐다 */
+    .ips-preview.land, .ipd-preview.land { aspect-ratio: 4 / 3; }
+    .ips-rows { flex-shrink: 0; padding: 0 24px 16px; }
+    .ips-row {
+      display: flex; align-items: center; gap: 16px;
+      padding: 16px 0;
+      width: 100%; box-sizing: border-box;
+      background: none; border: none; text-align: left;
+    }
+    .ips-row-line { border-bottom: 1px solid rgba(0,0,0,0.08); cursor: pointer; }
+    .ips-row-label {
+      flex: 1; min-width: 0;
+      font-family: 'Pretendard', sans-serif;
+      font-size: 17px; font-weight: 500;
+      color: rgba(0,0,0,0.86); letter-spacing: -0.051px; line-height: 1.4;
+    }
+    .ips-row-value {
+      font-family: 'Pretendard', sans-serif;
+      font-size: 17px; font-weight: 500;
+      color: rgba(0,0,0,0.59); letter-spacing: -0.051px; line-height: 1.4;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    /* 테마 스와치 — 선택된 것만 2px 검은 링 */
+    .ips-theme-row { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+    .ips-theme-swatch {
+      width: 36px; height: 36px; flex-shrink: 0;
+      padding: 5px; box-sizing: border-box;
+      border: 2px solid transparent; border-radius: 50px;
+      background: none;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; -webkit-tap-highlight-color: transparent;
+    }
+    .ips-theme-swatch.selected { border-color: #000; }
+    .ips-theme-dot {
+      width: 26px; height: 26px; border-radius: 60px;
+      border: 1px solid rgba(0,0,0,0.08);
+    }
+
+    /* ─── Panel 2: 속지 상세 (Figma 5675:560567) ───────────────── */
+    .ipd-preview-wrap {
+      flex-shrink: 0;
+      width: 100%; box-sizing: border-box;
+      height: 420px;
+      background: rgba(0,0,0,0.05);
+      display: flex; align-items: center; justify-content: center;
+      padding: 24px;
+    }
+    .ipd-theme-row { padding: 12px 0; }
 
     .ip-body { padding: 20px; flex: 1; min-height: 0; overflow-y: auto; overflow-anchor: none; }
     .ip-grid {
@@ -1247,10 +1338,11 @@
       width: 100%;
       aspect-ratio: 1 / 1;
       display: flex;
-      align-items: center;
+      /* Figma: 칸(214×214) 안에서 썸네일을 바닥 기준으로 정렬 — 세로형/가로형이 섞여도
+         밑변과 그 아래 이름이 나란히 맞는다 */
+      align-items: flex-end;
       justify-content: center;
       box-sizing: border-box;
-      padding: 0 12.6%;
     }
     .ip-thumb-pos {
       position: relative;
@@ -2893,33 +2985,50 @@
   <div id="insertPickerBackdrop" class="bsm-backdrop"></div>
   <div id="insertPickerPopup">
     <div class="pnl-slider ip-slider" id="ipSlider">
-      <!-- Panel 1: 속지 그리드 -->
+      <!-- Panel 0: 속지 설정 (Figma 5675:559985) — 현재 설정된 속지·테마를 확인하는 첫 화면.
+           우상단 확인(체크)을 누르면 원래 하려던 페이지 추가(날짜/주/월 선택)로 이어진다. -->
+      <div class="pnl-panel ip-panel">
+        <div class="ips-header">
+          <button class="ips-close-btn" id="ipsCloseBtn" aria-label="닫기"><i data-lucide="x" style="width:20px;height:20px;color:rgba(0,0,0,0.6);"></i></button>
+          <span class="ips-title">속지 설정</span>
+          <button class="ips-confirm-btn" id="ipsConfirmBtn" aria-label="확인"><i data-lucide="check" style="width:20px;height:20px;color:#fff;"></i></button>
+        </div>
+        <div class="ips-preview-wrap"><div class="ips-preview" id="ipsPreview"></div></div>
+        <div class="ips-rows">
+          <button class="ips-row ips-row-line" id="ipsInsertRow" type="button">
+            <span class="ips-row-label">속지</span>
+            <span class="ips-row-value" id="ipsInsertValue"></span>
+            <i data-lucide="chevron-right" style="width:24px;height:24px;color:rgba(0,0,0,0.3);flex-shrink:0;"></i>
+          </button>
+          <div class="ips-row">
+            <span class="ips-row-label">테마</span>
+            <div class="ips-theme-row" id="ipsThemeRow"></div>
+          </div>
+        </div>
+      </div>
+      <!-- Panel 1: 속지 선택 (Figma 5675:560003) — 3열 그리드, 썸네일은 칸 바닥 기준 정렬 -->
       <div class="pnl-panel ip-panel">
         <div class="bsm-header">
-          <button class="bsm-close-btn" id="insertPickerClose"><i data-lucide="x" style="width:20px;height:20px;color:rgba(0,0,0,0.6);"></i></button>
-          <span class="bsm-title">속지 설정</span>
+          <button class="bsm-back-btn" id="ipGridBack">‹</button>
+          <span class="bsm-title">속지 선택</span>
           <div class="bsm-spacer"></div>
         </div>
         <div class="ip-body">
           <div class="ip-grid" id="ipGrid"></div>
         </div>
       </div>
-      <!-- Panel 2: 속지 상세 -->
+      <!-- Panel 2: 속지 상세 (Figma 5675:560567) — 큰 미리보기 + 테마 + "이 속지 사용" -->
       <div class="pnl-panel ip-panel">
         <div class="bsm-header">
           <button class="bsm-back-btn" id="ipDetailBack">‹</button>
-          <span class="bsm-title"></span>
+          <span class="bsm-title" id="ipdTitle"></span>
           <div class="bsm-spacer"></div>
         </div>
-        <div class="ip-detail-body" id="ipDetailBody"></div>
+        <div class="ipd-preview-wrap"><div class="ipd-preview" id="ipdPreview"></div></div>
         <div class="ipd-cta-wrap">
-          <div class="ipd-color-row" id="ipdColorRow">
-            <span class="ipd-color-row-label">속지 컬러</span>
-            <div class="ipd-color-chip">
-              <span class="ipd-color-chip-dot" id="ipdColorChipDot"></span>
-              <span class="ipd-color-chip-name" id="ipdColorChipName"></span>
-              <i data-lucide="chevron-down" style="width:16px;height:16px;color:rgba(0,0,0,0.4);"></i>
-            </div>
+          <div class="ips-row ipd-theme-row">
+            <span class="ips-row-label">테마</span>
+            <div class="ips-theme-row" id="ipdThemeRow"></div>
           </div>
           <button class="ipd-cta-btn" id="ipdUseBtn">이 속지 사용</button>
         </div>
@@ -3671,7 +3780,7 @@
     const addThumb = e.target.closest('.sp-thumb-add');
     if (addThumb) {
       const rect = addThumb.getBoundingClientRect();
-      openAddPageMenu(rect.left + rect.width / 2, rect.top, { above: true });
+      startAddPageFlow(rect.left + rect.width / 2, rect.top, { above: true });
       return;
     }
     const moreIcon = e.target.closest('.sp-more-icon');
@@ -3785,6 +3894,7 @@
     datePicker.takenDates.add(`${year}-${month}-${day}`);
     // 내부에서 scrollToCard(smooth)로 스크롤을 시작함 + 광고 배너를 전부 새로 만듦(생성된 배너는
     // scrollToCard가 리플로우를 일으키기 전에 이미 card-creating으로 숨겨진 채 돌려받는다)
+    if (window.ipApplyTint) window.ipApplyTint(newCard); // 속지 설정에서 고른 테마 색 반영
     fillCardAd(newCard);
     sortPages(newCard, true);
 
@@ -3836,18 +3946,18 @@
     dateSelectMenu.open(x, y, opts);
   }
 
-  window.onInsertPickerClosed = () => {
-    if (_lastDateMenuPos) {
-      // 팝업이 완전히 닫히는 애니메이션(0.22s)이 끝난 뒤 약간의 여유를 두고 다시 띄움
-      setTimeout(() => {
-        openAddPageMenu(_lastDateMenuPos.x, _lastDateMenuPos.y, _lastDateMenuPos.opts);
-      }, 400);
-    }
-  };
+  // 페이지 추가 진입점. 데일리 노트는 먼저 "속지 설정"(현재 속지·테마 확인 → 필요하면
+  // 속지 선택/상세로 이동)을 거치고, 확인을 누르면 날짜 선택으로 이어진다.
+  // 위클리·먼슬리는 속지 개념이 없으므로 바로 주/월 선택 메뉴를 연다.
+  function startAddPageFlow(x, y, opts) {
+    const nt = activeNoteType();
+    if (nt === 'weekly' || nt === 'monthly') { openAddPageMenu(x, y, opts); return; }
+    window.openInsertPicker(null, { onConfirm: () => openAddPageMenu(x, y, opts) });
+  }
 
   addPageBtn.addEventListener('click', () => {
     const rect = addPageBtn.getBoundingClientRect();
-    openAddPageMenu(rect.left + rect.width / 2, rect.top, { above: true });
+    startAddPageFlow(rect.left + rect.width / 2, rect.top, { above: true });
   });
 
   // ── 위클리 노트: 주 단위 페이지 추가 ──────────────────────────
@@ -3960,7 +4070,9 @@
         if (window.ipBuildConfiguredCardEl) renderMp2Thumb(window.ipBuildConfiguredCardEl(), el);
       },
       onClick() {
-        window.openInsertPicker();
+        window.openInsertPicker(null, {
+          onConfirm: () => { if (_lastDateMenuPos) openAddPageMenu(_lastDateMenuPos.x, _lastDateMenuPos.y, _lastDateMenuPos.opts); }
+        });
       }
     }
   });
@@ -5640,25 +5752,29 @@
     const backdrop    = document.getElementById('insertPickerBackdrop');
     const popup       = document.getElementById('insertPickerPopup');
     const slider      = new PanelSlider(document.getElementById('ipSlider'));
-    const closeBtn    = document.getElementById('insertPickerClose');
+    // Panel 0: 속지 설정
+    const ipsCloseBtn   = document.getElementById('ipsCloseBtn');
+    const ipsConfirmBtn = document.getElementById('ipsConfirmBtn');
+    const ipsPreview    = document.getElementById('ipsPreview');
+    const ipsInsertRow  = document.getElementById('ipsInsertRow');
+    const ipsInsertValue = document.getElementById('ipsInsertValue');
+    const ipsThemeRow   = document.getElementById('ipsThemeRow');
+    // Panel 1: 속지 선택
     const grid        = document.getElementById('ipGrid');
-    const detailBody  = document.getElementById('ipDetailBody');
+    const gridBack    = document.getElementById('ipGridBack');
+    // Panel 2: 속지 상세
     const detailBack  = document.getElementById('ipDetailBack');
+    const ipdTitle    = document.getElementById('ipdTitle');
+    const ipdPreview  = document.getElementById('ipdPreview');
+    const ipdThemeRow = document.getElementById('ipdThemeRow');
     const useBtn      = document.getElementById('ipdUseBtn');
-    const colorBackdrop   = document.getElementById('ipColorBackdrop');
-    const colorSheet      = document.getElementById('ipColorSheet');
-    const colorList       = document.getElementById('ipColorList');
-    const colorRow        = document.getElementById('ipdColorRow');
-    const colorChipDot    = document.getElementById('ipdColorChipDot');
-    const colorChipName   = document.getElementById('ipdColorChipName');
 
+    // 테마 컬러 (Figma 5675:559998) — 속지 위에 곱연산으로 얹히는 색
     const IP_COLOR_OPTIONS = [
-      { color: '#eee0e5', name: '핑크' },
-      { color: '#e2e4df', name: '세이지' },
-      { color: '#e4ebb3', name: '라임' },
-      { color: '#ede4cb', name: '옐로우' },
-      { color: '#d5d0dc', name: '라벤더' },
-      { color: '#f2f2f1', name: '그레이' }
+      { color: '#c7e0fe', name: '블루' },
+      { color: '#fff3a4', name: '옐로우' },
+      { color: '#e9c7fe', name: '퍼플' },
+      { color: '#fed7c7', name: '피치' }
     ];
     const IP_UNLOCK_COUNT = 3; // 상단 3개는 잠금 해제
     // orient: 'portrait'(3:4, 600×800) | 'landscape'(4:3, 800×600).
@@ -5676,12 +5792,6 @@
         unlocked: i < IP_UNLOCK_COUNT
       };
     });
-    const IP_FEATURES = [
-      { title: '날짜 선택', desc: '오늘의 학습을 기록할 날짜를 선택하여 하루를 시작하세요' },
-      { title: 'Dday', desc: '중요한 시험이나 목표까지 남은 시간을 한눈에 관리해요' },
-      { title: '총 공부시간', desc: '오늘 내가 몰입한 총 시간을 직관적으로 확인하세요' },
-      { title: '메모', desc: '오늘의 다짐, 기억하고 싶은 아이디어를 자유롭게 채워보세요' }
-    ];
     let ipSelectedId = 0;
     let ipActiveId = 0;
     // 썸네일 렌더용 원본 카드 — 세로형/가로형을 따로 캐시해 속지 방향에 맞는 비율로 그린다
@@ -5705,6 +5815,7 @@
     let ipApplyTarget = null; // 속지 변경으로 열렸을 때 실제 적용할 대상 카드 (없으면 페이지 추가 흐름)
     let ipChangeMode = false; // true면 기존 카드의 속지를 바꾸는 모드 (닫을 때 날짜 오버레이를 다시 띄우지 않음)
     let ipConfirmedColorIdx = 0; // 실제로 확정 적용된 컬러 (캔버스에 놓일 속지에 반영됨)
+    let ipConfirmCb = null;      // 속지 설정에서 확인을 눌렀을 때 이어서 실행할 콜백
 
     function updateIpColorChip() {
       const opt = IP_COLOR_OPTIONS[ipConfirmedColorIdx];
@@ -5745,15 +5856,6 @@
           </div>
           <div class="ip-info">
             <div class="ip-name">${item.name}</div>
-            <div class="ip-tags">
-              ${isSelected
-                ? `<div class="ip-tag-selected"><span class="ip-tag-dot" style="background:#ff9a9a;"></span></div>`
-                : `<div class="ip-tag-dots">
-                     <span class="ip-tag-dot" style="background:#ff9a9a;"></span>
-                     <span class="ip-tag-dot" style="background:#ffb86b;"></span>
-                     <span class="ip-tag-dot" style="background:#7e96ff;"></span>
-                   </div><span class="ip-tag-plus">+2</span>`}
-            </div>
           </div>
         `;
         cell.addEventListener('click', () => openIpDetail(item.id));
@@ -5764,83 +5866,51 @@
       if (window.lucide) lucide.createIcons({ nodes: [grid] });
     }
 
+    // 테마 스와치 행 — 속지 설정(Panel 0)과 속지 상세(Panel 2)에서 공용으로 쓴다.
+    // 고르는 즉시 그 화면의 미리보기에 반영된다.
+    function renderThemeRow(container, onPick) {
+      container.innerHTML = '';
+      IP_COLOR_OPTIONS.forEach((opt, idx) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'ips-theme-swatch' + (idx === ipConfirmedColorIdx ? ' selected' : '');
+        btn.setAttribute('aria-label', opt.name);
+        btn.innerHTML = `<span class="ips-theme-dot" style="background:${opt.color};"></span>`;
+        btn.addEventListener('click', () => {
+          ipConfirmedColorIdx = idx;
+          renderThemeRow(container, onPick);
+          if (onPick) onPick();
+        });
+        container.appendChild(btn);
+      });
+    }
+
+    // 미리보기 박스에 현재 속지(+테마 색)를 그린다
+    function renderPreviewInto(el, item) {
+      el.classList.toggle('land', item.orient === 'landscape');
+      renderMp2Thumb(ipSourceFor(item.orient), el);
+      const tint = document.createElement('div');
+      tint.style.cssText = `position:absolute;inset:0;mix-blend-mode:multiply;opacity:0.5;pointer-events:none;background:${IP_COLOR_OPTIONS[ipConfirmedColorIdx].color};`;
+      el.appendChild(tint);
+    }
+
+    // ── Panel 0: 속지 설정 ──
+    function renderIpsPanel() {
+      const item = getIpItem(ipSelectedId);
+      ipsInsertValue.textContent = item ? item.name : '';
+      renderThemeRow(ipsThemeRow, () => setTimeout(() => renderPreviewInto(ipsPreview, item), 0));
+      setTimeout(() => renderPreviewInto(ipsPreview, item), 0);
+    }
+
+    // ── Panel 2: 속지 상세 ──
     function renderIpDetail(id) {
       const item = getIpItem(id);
       const isLocked = !item.unlocked;
-      detailBody.innerHTML = `
-        <div class="ipd-preview-wrap">
-          <div class="ipd-preview-thumb${item.orient === 'landscape' ? ' ipd-preview-thumb-land' : ''}" id="ipdPreviewThumb"></div>
-          <button class="ipd-expand-btn" id="ipdExpandBtn"><i data-lucide="maximize-2" style="width:14px;height:14px;color:rgba(0,0,0,0.6);"></i></button>
-        </div>
-        <div>
-          <div class="ipd-title">${item.name}</div>
-          <div class="ipd-desc">${item.desc}</div>
-        </div>
-        <div class="ipd-section-title">상세 소개</div>
-        <div class="ipd-card">
-          <div class="ipd-card-title">다양한 컬러</div>
-          <div class="ipd-color-grid" id="ipdColorGrid"></div>
-        </div>
-        <div class="ipd-card">
-          <div class="ipd-card-title">컬러별 다크모드 지원</div>
-          <div class="ipd-dark-stack">
-            <div class="ipd-dark-thumb ipd-dark-light"><div class="ipd-color-swatch-thumb" id="ipdDarkLight"></div><div class="ipd-color-tint"></div></div>
-            <div class="ipd-dark-thumb ipd-dark-dark"><div class="ipd-color-swatch-thumb" id="ipdDarkDark"></div></div>
-          </div>
-        </div>
-        <div class="ipd-features">
-          ${IP_FEATURES.map(f => `<div class="ipd-feature"><div class="ipd-feature-title">${f.title}</div><div class="ipd-feature-desc">${f.desc}</div></div>`).join('')}
-        </div>
-      `;
-
-      const previewThumb = document.getElementById('ipdPreviewThumb');
-      setTimeout(() => renderMp2Thumb(ipSourceFor(item.orient), previewThumb), 0);
-
-      const colorGrid = document.getElementById('ipdColorGrid');
-      IP_COLOR_OPTIONS.forEach(opt => {
-        const sw = document.createElement('div');
-        sw.className = 'ipd-color-swatch';
-        sw.innerHTML = `<div class="ipd-color-swatch-thumb"></div><div class="ipd-color-tint" style="background:${opt.color};"></div>`;
-        colorGrid.appendChild(sw);
-        const thumbEl = sw.querySelector('.ipd-color-swatch-thumb');
-        setTimeout(() => renderMp2Thumb(ipSourceFor(item.orient), thumbEl), 0);
-      });
-
-      const darkLight = document.getElementById('ipdDarkLight');
-      const darkDark  = document.getElementById('ipdDarkDark');
-      setTimeout(() => { renderMp2Thumb(ipSourceFor(item.orient), darkLight); renderMp2Thumb(ipSourceFor(item.orient), darkDark); }, 0);
-
+      ipdTitle.textContent = item.name;
+      renderThemeRow(ipdThemeRow, () => setTimeout(() => renderPreviewInto(ipdPreview, item), 0));
+      setTimeout(() => renderPreviewInto(ipdPreview, item), 0);
       useBtn.textContent = isLocked ? '잠긴 속지입니다' : '이 속지 사용';
       useBtn.classList.toggle('locked', isLocked);
-
-      if (window.lucide) lucide.createIcons({ nodes: [detailBody] });
-    }
-
-    function renderIpColorSheet() {
-      colorList.innerHTML = '';
-      IP_COLOR_OPTIONS.forEach((opt, idx) => {
-        const row = document.createElement('div');
-        row.className = 'ipcs-row';
-        row.innerHTML = `
-          <div class="ipcs-thumb"><div class="ipcs-thumb-inner"></div><div class="ipcs-thumb-tint" style="background:${opt.color};"></div></div>
-          <div class="ipcs-name">${opt.name}</div>
-          <div class="ctp-radio${idx === ipConfirmedColorIdx ? ' selected' : ''}"></div>
-        `;
-        row.addEventListener('click', () => {
-          ipConfirmedColorIdx = idx;
-          closeIpColorSheet();
-          updateIpColorChip();
-        });
-        colorList.appendChild(row);
-        const thumbEl = row.querySelector('.ipcs-thumb-inner');
-        setTimeout(() => renderMp2Thumb(ipSourceCard, thumbEl), 0);
-      });
-    }
-
-    function openIpColorSheet() {
-      renderIpColorSheet();
-      colorBackdrop.classList.add('open');
-      colorSheet.classList.add('open');
     }
 
     // 현재 확정된 템플릿+컬러를 반영한 미리보기용 카드 엘리먼트 (실제 캔버스엔 붙지 않음)
@@ -5864,22 +5934,10 @@
     }
     window.ipApplyTint = applyIpTintToCard;
 
-    function closeIpColorSheet() {
-      colorBackdrop.classList.remove('open');
-      colorSheet.classList.remove('open');
-    }
-
     function openIpDetail(id) {
       ipActiveId = id;
       renderIpDetail(id);
-      updateIpColorChip();
-      detailBody.scrollTop = 0;
-      setTimeout(() => { detailBody.scrollTop = 0; }, 0);
-      slider.goTo(1);
-    }
-
-    function closeIpDetail() {
-      slider.goTo(0);
+      slider.goTo(2);
     }
 
     // 기존 카드의 속지를 선택한 스터디 템플릿(+확정 컬러)으로 교체 — 페이지 추가 흐름과 동일한 결과물
@@ -5913,43 +5971,53 @@
       if (isWithDate && typeof updateAllThumbs === 'function') setTimeout(updateAllThumbs, 50);
     }
 
-    function openInsertPicker(targetCard) {
+    // opts.onConfirm — 속지 설정(Panel 0)에서 확인(체크)을 눌렀을 때 이어서 할 일.
+    // 페이지 추가 흐름에서는 여기에 "날짜 선택 메뉴 열기"가 들어온다.
+    function openInsertPicker(targetCard, opts) {
       ipApplyTarget = targetCard || null;
       ipChangeMode = !!targetCard;
+      ipConfirmCb = (opts && opts.onConfirm) || null;
       ipSourceCard = null; ipSourceCardLand = null; // 썸네일은 항상 속지 템플릿으로 렌더
       slider.reset(0);
-      colorSheet.style.transition = 'none';
-      closeIpColorSheet();
-      setTimeout(() => { colorSheet.style.transition = ''; }, 10);
-      renderIpGrid();
+      renderIpsPanel(); // 현재 설정된 속지·테마를 보여주는 첫 화면
       backdrop.classList.add('visible');
       popup.classList.add('visible');
     }
 
-    function closeInsertPicker() {
+    function closeInsertPicker(confirmed) {
       backdrop.classList.remove('visible');
       popup.classList.remove('visible');
-      // 페이지 추가 흐름에서만: 팝업이 닫히면 대기 중이던 날짜 선택 오버레이를 다시 띄움
-      if (!ipChangeMode && typeof window.onInsertPickerClosed === 'function') window.onInsertPickerClosed();
+      const cb = confirmed ? ipConfirmCb : null;
+      ipConfirmCb = null;
       ipChangeMode = false;
       ipApplyTarget = null;
+      // 팝업이 닫히는 애니메이션(0.22s)이 끝난 뒤 다음 단계로 넘어간다
+      if (cb) setTimeout(cb, 260);
     }
 
     window.openInsertPicker = openInsertPicker;
 
-    closeBtn.addEventListener('click', closeInsertPicker);
-    backdrop.addEventListener('click', closeInsertPicker);
-    detailBack.addEventListener('click', closeIpDetail);
-    colorBackdrop.addEventListener('click', closeIpColorSheet);
-    colorRow.addEventListener('click', openIpColorSheet);
+    ipsCloseBtn.addEventListener('click', () => closeInsertPicker(false));
+    backdrop.addEventListener('click', () => closeInsertPicker(false));
+    // 확인(체크) — 지금 설정된 속지·테마로 확정하고 다음 단계(날짜 선택)로
+    ipsConfirmBtn.addEventListener('click', () => {
+      const target = ipApplyTarget;
+      if (target) applyStudyTemplateToCard(target);
+      closeInsertPicker(true);
+    });
+    // 속지 행 → 속지 선택 목록 → 상세
+    ipsInsertRow.addEventListener('click', () => { renderIpGrid(); slider.goTo(1); });
+    gridBack.addEventListener('click', () => slider.goTo(0));
+    detailBack.addEventListener('click', () => slider.goTo(1));
 
+    // "이 속지 사용" — 속지를 확정하고 속지 설정 화면으로 돌아온다
     useBtn.addEventListener('click', () => {
       if (!isIpUnlocked(ipActiveId)) return; // locked: no-op
       ipSelectedId = ipActiveId;
-      const target = ipApplyTarget; // closeInsertPicker가 초기화하기 전에 캡처
-      if (target) applyStudyTemplateToCard(target);
-      closeInsertPicker();
-      pageToast.show(target ? '속지가 변경되었습니다' : '속지가 설정되었습니다');
+      if (ipApplyTarget) applyStudyTemplateToCard(ipApplyTarget);
+      renderIpsPanel();
+      slider.goTo(0);
+      pageToast.show('속지가 설정되었습니다');
     });
   })();
   // ── 오늘자 임시 페이지 "속지 변경" → 페이지 설정 사이드 패널 (Figma 5017:326690 / 5017:326734) ──
