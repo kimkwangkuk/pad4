@@ -275,13 +275,19 @@
       flex-shrink: 0;
       overflow: hidden;
       position: relative;
+      display: flex; align-items: center; justify-content: center;
       border-top: 1px solid rgba(0,0,0,0.06);
       background: #f2f2f2;
+      /* 속지 컬러 틴트가 광고 영역까지 덮지 않도록 위로 띄운다 */
+      z-index: 20;
     }
+    /* 배너 이미지는 카드 폭(세로형 600 / 가로형 800)과 무관하게 항상 같은 크기로 —
+       높이(75px)에 맞추고 폭은 원본 비율(1206:150)대로 따라간다. 넘치는 만큼만 잘린다. */
     .card-ad img {
-      width: 100%; height: 100%;
+      height: 100%; width: auto;
+      max-width: none;
       display: block;
-      object-fit: cover;
+      flex-shrink: 0;
     }
     .card-ad-close {
       position: absolute;
@@ -5913,7 +5919,8 @@
     function applyIpTintToCard(cardEl) {
       const tint = document.createElement('div');
       tint.className = 'ip-applied-tint';
-      tint.style.cssText = `position:absolute;inset:0;mix-blend-mode:multiply;opacity:0.5;pointer-events:none;background:${IP_COLOR_OPTIONS[ipConfirmedColorIdx].color};`;
+      // 페이지 콘텐츠 영역만 물들인다 — 하단 광고(75px)는 속지 컬러의 영향을 받지 않는다
+      tint.style.cssText = `position:absolute;left:0;right:0;top:0;bottom:75px;mix-blend-mode:multiply;opacity:0.5;pointer-events:none;background:${IP_COLOR_OPTIONS[ipConfirmedColorIdx].color};`;
       cardEl.appendChild(tint);
     }
     window.ipApplyTint = applyIpTintToCard;
@@ -5995,16 +6002,14 @@
     gridBack.addEventListener('click', () => closeInsertPicker(true));
     detailBack.addEventListener('click', () => closeInsertPicker(true));
 
-    // "이 속지 사용" — 속지를 확정하고, 이전 화면(속지 설정)으로 되돌아간 뒤
-    // 시트가 아래로 내려가며 처음(날짜 선택 팝업)으로 돌아간다
+    // "이 속지 사용" — 속지를 확정하고 시트를 바로 닫는다(중간 화면으로 되돌아가지 않는다).
+    // 시트가 다 내려가면 원래 있던 날짜 선택 팝업으로 돌아간다.
     useBtn.addEventListener('click', () => {
       if (!isIpUnlocked(ipActiveId)) return; // locked: no-op
       ipSelectedId = ipActiveId;
       if (ipApplyTarget) applyStudyTemplateToCard(ipApplyTarget);
-      renderIpsPanel();
-      slider.goTo(0);
+      closeInsertPicker(true);
       pageToast.show('속지가 설정되었습니다');
-      setTimeout(() => closeInsertPicker(true), 340); // 패널 슬라이드(0.32s)가 끝난 뒤 내려간다
     });
   })();
   // ── 오늘자 임시 페이지 "속지 변경" → 페이지 설정 사이드 패널 (Figma 5017:326690 / 5017:326734) ──
@@ -6100,7 +6105,7 @@
       const el = tint || (() => {
         const t = document.createElement('div');
         t.className = 'gps-applied-tint';
-        t.style.cssText = 'position:absolute;inset:0;mix-blend-mode:multiply;opacity:0.5;pointer-events:none;';
+        t.style.cssText = 'position:absolute;left:0;right:0;top:0;bottom:75px;mix-blend-mode:multiply;opacity:0.5;pointer-events:none;';
         gpsTargetCard.appendChild(t);
         return t;
       })();
@@ -6142,7 +6147,7 @@
         if (color) {
           const tint = document.createElement('div');
           tint.className = 'gps-applied-tint';
-          tint.style.cssText = `position:absolute;inset:0;mix-blend-mode:multiply;opacity:0.5;pointer-events:none;background:${color};`;
+          tint.style.cssText = `position:absolute;left:0;right:0;top:0;bottom:75px;mix-blend-mode:multiply;opacity:0.5;pointer-events:none;background:${color};`;
           cardEl.appendChild(tint);
         }
       }
