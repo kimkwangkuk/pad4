@@ -1203,31 +1203,33 @@
     }
 
     /* ─── INSERT PICKER POPUP (속지 선택) ──────────── */
+    /* 아래에서 위로 올라오는 바텀시트 */
     #insertPickerPopup {
       position: fixed; z-index: 5001;
       left: 50%;
-      top: 50%;
-      transform: translateX(-50%) translateY(calc(-50% + 20px));
+      bottom: 0;
+      transform: translateX(-50%) translateY(100%);
       width: 620px;
       max-width: calc(100vw - 32px);
       background: white;
-      border-radius: 36px;
-      box-shadow: 0px 15px 75px rgba(0,0,0,0.18);
+      border-radius: 36px 36px 0 0;
+      box-shadow: 0px -8px 40px rgba(0,0,0,0.18);
       overflow: hidden;
-      opacity: 0; pointer-events: none;
-      transition: opacity 0.22s ease, transform 0.22s cubic-bezier(0.34,1.1,0.64,1);
+      pointer-events: none;
+      transition: transform 0.34s cubic-bezier(0.32,0.72,0,1);
     }
     #insertPickerPopup.visible {
-      opacity: 1; pointer-events: auto;
-      transform: translateX(-50%) translateY(-50%);
+      pointer-events: auto;
+      transform: translateX(-50%) translateY(0);
     }
     #insertPickerBackdrop { z-index: 5000; }
 
     /* 2-panel push/back slider (uses shared .pnl-slider/.pnl-panel from panel-slider.css) */
     .ip-slider { align-items: flex-start; }
-    /* 패널 폭(=팝업 폭) 밖으로 내용이 새지 않게 클립한다. flex 아이템의 기본 min-width:auto가
-       미리보기 폭을 밀어내는 것도 아래에서 min-width:0으로 막는다 */
-    .ip-panel { max-height: 82vh; overflow: hidden; }
+    /* 세 패널 모두 같은 높이의 시트를 채운다 — 미리보기/목록이 남는 공간을 먹고,
+       테마 행과 CTA 버튼은 바닥에 붙는다. 폭 밖으로 내용이 새지 않게 클립하고,
+       flex 아이템의 기본 min-width:auto가 미리보기 폭을 밀어내는 것도 min-width:0으로 막는다 */
+    .ip-panel { height: 82vh; overflow: hidden; }
     .ip-panel > * { min-width: 0; }
 
     /* ─── Panel 0: 속지 설정 (Figma 5675:559985) ───────────────── */
@@ -1254,10 +1256,9 @@
     .ips-confirm-btn:hover { background: rgba(0,0,0,0.75); }
     /* 큰 미리보기 — 회색 판 위에 흰 페이지가 떠 있는 형태 */
     .ips-preview-wrap {
-      flex-shrink: 0;
+      flex: 1; min-height: 0;
       width: 100%; box-sizing: border-box;
       background: rgba(0,0,0,0.05);
-      height: 420px;
       display: flex; align-items: center; justify-content: center;
       padding: 16px;
     }
@@ -1308,10 +1309,10 @@
     }
 
     /* ─── Panel 2: 속지 상세 (Figma 5675:560567) ───────────────── */
+    /* 속지 상세: 미리보기가 남는 공간을 전부 채우고, 테마 행 + "이 속지 사용"은 바닥 고정 */
     .ipd-preview-wrap {
-      flex-shrink: 0;
+      flex: 1; min-height: 0;
       width: 100%; box-sizing: border-box;
-      height: 420px;
       background: rgba(0,0,0,0.05);
       display: flex; align-items: center; justify-content: center;
       padding: 24px;
@@ -3001,7 +3002,7 @@
       <!-- Panel 1: 속지 선택 (Figma 5675:560003) — 3열 그리드, 썸네일은 칸 바닥 기준 정렬 -->
       <div class="pnl-panel ip-panel">
         <div class="bsm-header">
-          <button class="bsm-back-btn" id="ipGridBack">‹</button>
+          <button class="bsm-close-btn" id="ipGridBack" aria-label="닫기"><i data-lucide="x" style="width:20px;height:20px;color:rgba(0,0,0,0.6);"></i></button>
           <span class="bsm-title">속지 선택</span>
           <div class="bsm-spacer"></div>
         </div>
@@ -3012,7 +3013,7 @@
       <!-- Panel 2: 속지 상세 (Figma 5675:560567) — 큰 미리보기 + 테마 + "이 속지 사용" -->
       <div class="pnl-panel ip-panel">
         <div class="bsm-header">
-          <button class="bsm-back-btn" id="ipDetailBack">‹</button>
+          <button class="bsm-close-btn" id="ipDetailBack" aria-label="닫기"><i data-lucide="x" style="width:20px;height:20px;color:rgba(0,0,0,0.6);"></i></button>
           <span class="bsm-title" id="ipdTitle"></span>
           <div class="bsm-spacer"></div>
         </div>
@@ -5974,14 +5975,15 @@
       ipConfirmCb = null;
       ipChangeMode = false;
       ipApplyTarget = null;
-      // 팝업이 닫히는 애니메이션(0.22s)이 끝난 뒤 다음 단계로 넘어간다
-      if (cb) setTimeout(cb, 260);
+      // 시트가 아래로 완전히 내려간(0.34s) 뒤에 다음 단계(처음 화면 = 날짜 선택 팝업)로 돌아간다
+      if (cb) setTimeout(cb, 360);
     }
 
     window.openInsertPicker = openInsertPicker;
 
-    ipsCloseBtn.addEventListener('click', () => closeInsertPicker(false));
-    backdrop.addEventListener('click', () => closeInsertPicker(false));
+    // X(닫기) — 어느 화면에서 눌러도 시트가 아래로 내려가고 처음(날짜 선택 팝업)으로 돌아간다
+    ipsCloseBtn.addEventListener('click', () => closeInsertPicker(true));
+    backdrop.addEventListener('click', () => closeInsertPicker(true));
     // 확인(체크) — 지금 설정된 속지·테마로 확정하고 다음 단계(날짜 선택)로
     ipsConfirmBtn.addEventListener('click', () => {
       const target = ipApplyTarget;
@@ -5990,10 +5992,11 @@
     });
     // 속지 행 → 속지 선택 목록 → 상세
     ipsInsertRow.addEventListener('click', () => { renderIpGrid(); slider.goTo(1); });
-    gridBack.addEventListener('click', () => slider.goTo(0));
-    detailBack.addEventListener('click', () => slider.goTo(1));
+    gridBack.addEventListener('click', () => closeInsertPicker(true));
+    detailBack.addEventListener('click', () => closeInsertPicker(true));
 
-    // "이 속지 사용" — 속지를 확정하고 속지 설정 화면으로 돌아온다
+    // "이 속지 사용" — 속지를 확정하고, 이전 화면(속지 설정)으로 되돌아간 뒤
+    // 시트가 아래로 내려가며 처음(날짜 선택 팝업)으로 돌아간다
     useBtn.addEventListener('click', () => {
       if (!isIpUnlocked(ipActiveId)) return; // locked: no-op
       ipSelectedId = ipActiveId;
@@ -6001,6 +6004,7 @@
       renderIpsPanel();
       slider.goTo(0);
       pageToast.show('속지가 설정되었습니다');
+      setTimeout(() => closeInsertPicker(true), 340); // 패널 슬라이드(0.32s)가 끝난 뒤 내려간다
     });
   })();
   // ── 오늘자 임시 페이지 "속지 변경" → 페이지 설정 사이드 패널 (Figma 5017:326690 / 5017:326734) ──
