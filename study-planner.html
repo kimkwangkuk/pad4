@@ -3910,8 +3910,6 @@
   }
 
   // ── "페이지 추가" 진입점 (캔버스 하단 버튼 · 사이드패널 add 타일 공용) ──
-  let _lastDateMenuPos = null;
-
   // 활성 노트의 유형 — 페이지 추가 단위(일/주/월)를 여기서 가른다
   function activeNoteType() {
     return document.querySelector('.tab.active')?.dataset.noteType || 'scroll';
@@ -3941,7 +3939,6 @@
       });
     }
     dateSelectMenu.setTitle('페이지 날짜 선택');
-    _lastDateMenuPos = { x, y, opts };
     dateSelectMenu.open(x, y, opts);
   }
 
@@ -4062,9 +4059,7 @@
         if (window.ipBuildConfiguredCardEl) renderMp2Thumb(window.ipBuildConfiguredCardEl(), el);
       },
       onClick() {
-        window.openInsertPicker(null, {
-          onConfirm: () => { if (_lastDateMenuPos) openAddPageMenu(_lastDateMenuPos.x, _lastDateMenuPos.y, _lastDateMenuPos.opts); }
-        });
+        window.openInsertPicker();
       }
     }
   });
@@ -5807,7 +5802,6 @@
     let ipApplyTarget = null; // 속지 변경으로 열렸을 때 실제 적용할 대상 카드 (없으면 페이지 추가 흐름)
     let ipChangeMode = false; // true면 기존 카드의 속지를 바꾸는 모드 (닫을 때 날짜 오버레이를 다시 띄우지 않음)
     let ipConfirmedColorIdx = 0; // 실제로 확정 적용된 컬러 (캔버스에 놓일 속지에 반영됨)
-    let ipConfirmCb = null;      // 속지 설정에서 확인을 눌렀을 때 이어서 실행할 콜백
 
     function updateIpColorChip() {
       const opt = IP_COLOR_OPTIONS[ipConfirmedColorIdx];
@@ -5962,12 +5956,9 @@
       if (isWithDate && typeof updateAllThumbs === 'function') setTimeout(updateAllThumbs, 50);
     }
 
-    // opts.onConfirm — 속지 설정(Panel 0)에서 확인(체크)을 눌렀을 때 이어서 할 일.
-    // 페이지 추가 흐름에서는 여기에 "날짜 선택 메뉴 열기"가 들어온다.
-    function openInsertPicker(targetCard, opts) {
+    function openInsertPicker(targetCard) {
       ipApplyTarget = targetCard || null;
       ipChangeMode = !!targetCard;
-      ipConfirmCb = (opts && opts.onConfirm) || null;
       ipSourceCard = null; ipSourceCardLand = null; // 썸네일은 항상 속지 템플릿으로 렌더
       slider.reset(0);
       renderIpsPanel(); // 현재 설정된 속지·테마를 보여주는 첫 화면
@@ -5975,40 +5966,36 @@
       popup.classList.add('visible');
     }
 
-    function closeInsertPicker(confirmed) {
+    // 시트를 아래로 내려 닫는다. 날짜 선택 팝업을 다시 띄우지는 않는다.
+    function closeInsertPicker() {
       backdrop.classList.remove('visible');
       popup.classList.remove('visible');
-      const cb = confirmed ? ipConfirmCb : null;
-      ipConfirmCb = null;
       ipChangeMode = false;
       ipApplyTarget = null;
-      // 시트가 아래로 완전히 내려간(0.34s) 뒤에 다음 단계(처음 화면 = 날짜 선택 팝업)로 돌아간다
-      if (cb) setTimeout(cb, 360);
     }
 
     window.openInsertPicker = openInsertPicker;
 
-    // X(닫기) — 어느 화면에서 눌러도 시트가 아래로 내려가고 처음(날짜 선택 팝업)으로 돌아간다
-    ipsCloseBtn.addEventListener('click', () => closeInsertPicker(true));
-    backdrop.addEventListener('click', () => closeInsertPicker(true));
+    // X(닫기) — 어느 화면에서 눌러도 시트가 아래로 내려가며 닫힌다
+    ipsCloseBtn.addEventListener('click', () => closeInsertPicker());
+    backdrop.addEventListener('click', () => closeInsertPicker());
     // 확인(체크) — 지금 설정된 속지·테마로 확정하고 다음 단계(날짜 선택)로
     ipsConfirmBtn.addEventListener('click', () => {
       const target = ipApplyTarget;
       if (target) applyStudyTemplateToCard(target);
-      closeInsertPicker(true);
+      closeInsertPicker();
     });
     // 속지 행 → 속지 선택 목록 → 상세
     ipsInsertRow.addEventListener('click', () => { renderIpGrid(); slider.goTo(1); });
-    gridBack.addEventListener('click', () => closeInsertPicker(true));
-    detailBack.addEventListener('click', () => closeInsertPicker(true));
+    gridBack.addEventListener('click', () => closeInsertPicker());
+    detailBack.addEventListener('click', () => closeInsertPicker());
 
-    // "이 속지 사용" — 속지를 확정하고 시트를 바로 닫는다(중간 화면으로 되돌아가지 않는다).
-    // 시트가 다 내려가면 원래 있던 날짜 선택 팝업으로 돌아간다.
+    // "이 속지 사용" — 속지를 확정하고 시트를 바로 닫는다.
     useBtn.addEventListener('click', () => {
       if (!isIpUnlocked(ipActiveId)) return; // locked: no-op
       ipSelectedId = ipActiveId;
       if (ipApplyTarget) applyStudyTemplateToCard(ipApplyTarget);
-      closeInsertPicker(true);
+      closeInsertPicker();
       pageToast.show('속지가 설정되었습니다');
     });
   })();
