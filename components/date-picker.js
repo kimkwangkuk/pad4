@@ -8,6 +8,12 @@ class DatePicker {
     this.instantSelect = !!options.instantSelect; // true면 확인 버튼 없이 날짜를 누르는 즉시 확정된다
     this.multiSelect = !!options.multiSelect; // true면 여러 날짜를 하나씩 눌러 토글 선택하고 확인 시 한번에 확정
     this.selectedDates = new Set(); // 다중 선택 모드에서 선택된 날짜 키("YYYY-M-D")
+    // 선택 단위 — 'day'(기본, 하루) | 'week'(캘린더 UI 유지, 한 줄=한 주 통째 선택) | 'month'(월 그리드)
+    this.selectMode = options.selectMode || 'day';
+    this.selectedWeekStart = null; // week 모드에서 고른 주의 월요일(Date)
+    this.selectedMonth = null;     // month 모드에서 고른 달(1~12)
+    this.takenWeeks = new Set(options.takenWeeks || []);   // 이미 페이지가 있는 주 ("YYYY-M-D" = 월요일)
+    this.takenMonths = new Set(options.takenMonths || []); // 이미 페이지가 있는 달 ("YYYY-M")
     this.landOnCurrentMonth = !!options.landOnCurrentMonth; // true면 열 때마다 이번달로 이동
     this._overlay = null;
     this._sheet = null;
@@ -16,6 +22,23 @@ class DatePicker {
     );
     // 날짜별 공부시간 맵 ("YYYY-M-D" → "H:MM:SS"). 공부한 날짜는 셀 아래에 시간 단위로 작게 표시된다.
     this.studyDates = options.studyDates || {};
+  }
+
+  _titleText() {
+    if (this.selectMode === 'week') return '주 선택';
+    if (this.selectMode === 'month') return '월 선택';
+    return '날짜 선택';
+  }
+
+  // 어떤 날짜가 속한 주의 월요일
+  _weekStartOf(date) {
+    const x = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    x.setDate(x.getDate() - ((x.getDay() + 6) % 7));
+    return x;
+  }
+  _weekKeyOf(date) {
+    const s = this._weekStartOf(date);
+    return `${s.getFullYear()}-${s.getMonth() + 1}-${s.getDate()}`;
   }
 
   // "4:18:05" → "4h" (캘린더 셀 아래에 표시할 짧은 형태)
@@ -38,7 +61,7 @@ class DatePicker {
           ${this.instantSelect
             ? '<div class="dp-header-spacer"></div>'
             : '<button class="dp-header-confirm-btn" disabled><i data-lucide="check" style="width:16px;height:16px;color:#fff;"></i></button>'}
-          <span class="dp-title">날짜 선택</span>
+          <span class="dp-title">${this._titleText()}</span>
         </div>
       </div>
       <div class="dp-content">
@@ -52,7 +75,9 @@ class DatePicker {
               <i data-lucide="chevron-right" style="width:20px;height:20px;color:rgba(0,0,0,0.86);"></i>
             </button>
           </div>
-          <div class="dp-grid">
+          ${this.selectMode === 'month'
+            ? '<div class="dp-months"></div>'
+            : `<div class="dp-grid">
             <div class="dp-day-headers">
               <div class="dp-day-header">월</div>
               <div class="dp-day-header">화</div>
@@ -63,7 +88,7 @@ class DatePicker {
               <div class="dp-day-header">일</div>
             </div>
             <div class="dp-dates"></div>
-          </div>
+          </div>`}
         </div>
       </div>
     `;
@@ -81,29 +106,75 @@ class DatePicker {
           this.close();
           return;
         }
+        // 주 선택: 고른 주의 월요일을 돌려준다
+        if (this.selectMode === 'week') {
+          if (!this.selectedWeekStart) return;
+          const s = this.selectedWeekStart;
+          if (this.onConfirm) this.onConfirm({ year: s.getFullYear(), month: s.getMonth() + 1, day: s.getDate() });
+          this.close();
+          return;
+        }
+        // 월 선택: 연·월만 돌려준다(day 없음)
+        if (this.selectMode === 'month') {
+          if (this.selectedMonth == null) return;
+          if (this.onConfirm) this.onConfirm({ year: this.year, month: this.selectedMonth });
+          this.close();
+          return;
+        }
         if (this.selected == null) return;
         if (this.onConfirm) this.onConfirm({ year: this.year, month: this.month, day: this.selected });
         this.close();
       });
     }
-    sheet.querySelector('.dp-prev').addEventListener('click', () => {
-      this.month--;
-      if (this.month < 1) { this.month = 12; this.year--; }
+    // 월 선택 모드에서는 좌우 화살표가 달이 아니라 연도를 옮긴다
+    const step = (dir) => {
+      if (this.selectMode === 'month') {
+        this.year += dir;
+      } else {
+        this.month += dir;
+        if (this.month < 1) { this.month = 12; this.year--; }
+        if (this.month > 12) { this.month = 1; this.year++; }
+      }
       this.selected = null;
+      this.selectedWeekStart = null;
+      this.selectedMonth = null;
       this._renderGrid(sheet);
-    });
-    sheet.querySelector('.dp-next').addEventListener('click', () => {
-      this.month++;
-      if (this.month > 12) { this.month = 1; this.year++; }
-      this.selected = null;
-      this._renderGrid(sheet);
-    });
+    };
+    sheet.querySelector('.dp-prev').addEventListener('click', () => step(-1));
+    sheet.querySelector('.dp-next').addEventListener('click', () => step(1));
     this._renderGrid(sheet);
 
     return sheet;
   }
 
+  // 월 선택 모드 — 1~12월 셀 그리드 (연도는 상단 화살표로 이동)
+  _renderMonthGrid(sheet) {
+    sheet.querySelector('.dp-month-title').textContent = `${this.year}년`;
+    const wrap = sheet.querySelector('.dp-months');
+    wrap.innerHTML = '';
+    for (let m = 1; m <= 12; m++) {
+      const taken = this.takenMonths.has(`${this.year}-${m}`);
+      const cell = document.createElement('div');
+      cell.className = 'dp-month-cell' + (taken ? ' taken' : '') + (this.selectedMonth === m ? ' selected' : '');
+      cell.textContent = `${m}월`;
+      if (!taken) {
+        cell.addEventListener('click', () => {
+          this.selectedMonth = m;
+          if (this.instantSelect) {
+            if (this.onConfirm) this.onConfirm({ year: this.year, month: m });
+          } else {
+            this._renderMonthGrid(sheet);
+          }
+        });
+      }
+      wrap.appendChild(cell);
+    }
+    const confirmBtn = sheet.querySelector('.dp-header-confirm-btn');
+    if (confirmBtn) confirmBtn.disabled = this.selectedMonth == null;
+  }
+
   _renderGrid(sheet) {
+    if (this.selectMode === 'month') return this._renderMonthGrid(sheet);
     sheet.querySelector('.dp-month-title').textContent = `${this.year}년 ${this.month}월`;
     const grid = sheet.querySelector('.dp-dates');
     grid.innerHTML = '';
@@ -115,11 +186,44 @@ class DatePicker {
     for (let i = 0; i < totalCells; i += 7) {
       const row = document.createElement('div');
       row.className = 'dp-week-row';
+
+      // 주 선택 모드: 캘린더 UI는 그대로 두되, 한 줄(월~일) 전체가 하나의 선택 단위가 된다.
+      // 클릭 핸들러도 셀이 아니라 행에 달아 어느 칸을 눌러도 그 주가 통째로 눌린다.
+      let rowStart = null;
+      if (this.selectMode === 'week') {
+        rowStart = new Date(this.year, this.month - 1, i - startOffset + 1); // 달을 넘어가도 JS가 보정
+        const rowKey = `${rowStart.getFullYear()}-${rowStart.getMonth() + 1}-${rowStart.getDate()}`;
+        const rowTaken = this.takenWeeks.has(rowKey);
+        const rowSel = this.selectedWeekStart && this.selectedWeekStart.getTime() === rowStart.getTime();
+        row.className += ' dp-week-pick' + (rowTaken ? ' taken' : '') + (rowSel ? ' selected' : '');
+        if (!rowTaken) {
+          row.addEventListener('click', () => {
+            this.selectedWeekStart = rowStart;
+            if (this.instantSelect) {
+              if (this.onConfirm) this.onConfirm({ year: rowStart.getFullYear(), month: rowStart.getMonth() + 1, day: rowStart.getDate() });
+            } else {
+              this._renderGrid(sheet);
+            }
+          });
+        }
+      }
+
       for (let j = 0; j < 7; j++) {
         const day = (i + j) - startOffset + 1;
         const valid = day >= 1 && day <= daysInMonth;
+
+        // 주 선택 모드에선 앞뒤 달로 넘어가는 칸도 실제 날짜를 흐리게 보여줘 한 주가 통째로 읽히게 한다
+        if (this.selectMode === 'week' && !valid) {
+          const dt = new Date(this.year, this.month - 1, day);
+          const outCell = document.createElement('div');
+          outCell.className = 'dp-day-cell dp-day-out';
+          outCell.innerHTML = `<div class="dp-day-circle"><span class="dp-day-num">${dt.getDate()}</span></div><span class="dp-study-mark"></span>`;
+          row.appendChild(outCell);
+          continue;
+        }
+
         const dateKey = `${this.year}-${this.month}-${day}`;
-        const taken = valid && this.takenDates.has(dateKey);
+        const taken = valid && this.selectMode !== 'week' && this.takenDates.has(dateKey);
         const study = valid ? this._studyLabel(this.studyDates[dateKey]) : '';
         const cell = document.createElement('div');
         cell.className = 'dp-day-cell' + (valid ? '' : ' empty') + (taken ? ' taken' : '') + (study ? ' has-study' : '');
@@ -131,7 +235,8 @@ class DatePicker {
         cell.innerHTML =
           `<div class="${circleCls}"><span class="dp-day-num">${valid ? day : ''}</span></div>` +
           `<span class="dp-study-mark">${study}</span>`;
-        if (valid && !taken) {
+        // 주 선택 모드에선 칸별 클릭을 달지 않는다 — 선택은 행(주) 단위로만 일어난다
+        if (valid && !taken && this.selectMode !== 'week') {
           cell.addEventListener('click', () => {
             if (this.multiSelect) {
               // 하나씩 눌러 토글 — 확인을 눌러야 모두 확정
@@ -155,7 +260,11 @@ class DatePicker {
     }
 
     const confirmBtn = sheet.querySelector('.dp-header-confirm-btn');
-    if (confirmBtn) confirmBtn.disabled = this.multiSelect ? this.selectedDates.size === 0 : this.selected == null;
+    if (confirmBtn) {
+      confirmBtn.disabled = this.multiSelect ? this.selectedDates.size === 0
+        : this.selectMode === 'week' ? this.selectedWeekStart == null
+        : this.selected == null;
+    }
     // 다중 선택 모드에서는 선택 개수를 타이틀에 보여준다
     if (this.multiSelect) {
       const titleEl = sheet.querySelector('.dp-title');
@@ -178,6 +287,8 @@ class DatePicker {
     // 열 때마다 이전 선택은 초기화
     this.selected = null;
     this.selectedDates.clear();
+    this.selectedWeekStart = null;
+    this.selectedMonth = null;
     // 직접 선택 등: 열 때마다 이번달로 이동
     if (this.landOnCurrentMonth) {
       const t = new Date();

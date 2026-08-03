@@ -144,6 +144,46 @@
 .dp-day-circle.taken { background: rgba(0,0,0,0.08); }
 .dp-day-cell:not(.taken):hover .dp-day-circle:not(.selected) { background: rgba(0,0,0,0.05); }
 .dp-day-cell.taken { cursor: default; }
+
+/* ── 주(週) 선택 모드 ─────────────────────────────
+   캘린더 UI는 그대로 두고, 한 줄(월~일)이 통째로 눌리는 하나의 선택 단위가 된다 */
+.dp-week-row.dp-week-pick { cursor: pointer; border-radius: 28px; }
+.dp-week-row.dp-week-pick .dp-day-cell { cursor: pointer; }
+.dp-week-row.dp-week-pick:hover { background: rgba(0,0,0,0.05); }
+.dp-week-row.dp-week-pick.selected { background: rgba(0,0,0,0.86); }
+.dp-week-row.dp-week-pick.selected .dp-day-num { color: #fff; }
+.dp-week-row.dp-week-pick.selected .dp-study-mark { color: rgba(255,255,255,0.6); }
+.dp-week-row.dp-week-pick.selected .dp-day-circle { background: none; }
+/* 이미 페이지가 있는 주 */
+.dp-week-row.dp-week-pick.taken { opacity: 0.32; cursor: default; }
+.dp-week-row.dp-week-pick.taken:hover { background: none; }
+.dp-week-row.dp-week-pick.taken .dp-day-cell { cursor: default; }
+/* 앞뒤 달로 넘어가는 칸 — 한 주가 통째로 읽히도록 날짜는 보여주되 흐리게 */
+.dp-day-cell.dp-day-out { pointer-events: none; }
+.dp-day-cell.dp-day-out .dp-day-num { color: rgba(0,0,0,0.25); }
+.dp-week-row.dp-week-pick.selected .dp-day-out .dp-day-num { color: rgba(255,255,255,0.45); }
+
+/* ── 월 선택 모드 ─────────────────────────────────
+   날짜 그리드 대신 1~12월 셀. 상단 화살표는 연도를 옮긴다 */
+.dp-months {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 8px; padding: 4px 0 16px;
+}
+.dp-month-cell {
+  height: 56px; border-radius: 16px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Pretendard', sans-serif;
+  font-weight: 500; font-size: 16px; letter-spacing: -0.048px;
+  color: rgba(0,0,0,0.86);
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.dp-month-cell:hover { background: rgba(0,0,0,0.05); }
+.dp-month-cell.selected { background: rgba(0,0,0,0.86); color: #fff; }
+.dp-month-cell.taken {
+  background: rgba(0,0,0,0.04); color: rgba(0,0,0,0.2); cursor: default;
+}
+.dp-month-cell.taken:hover { background: rgba(0,0,0,0.04); }
 .dp-day-num {
   font-family: 'Pretendard', sans-serif;
   font-weight: 400; font-size: 16px;

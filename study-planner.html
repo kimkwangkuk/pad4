@@ -265,20 +265,25 @@
       transform-origin: top center;
     }
 
-    .canvas-ad-banner {
-      width: 600px;
+    /* ─── 페이지 안쪽 하단 광고 영역 ──────────────────────────
+       배너는 캔버스가 아니라 페이지(.card) 안에 들어간다. 페이지 콘텐츠는 3:4 비율
+       (600×800, 가로형은 800×600)을 그대로 유지하고, 카드 높이가 배너 높이(75px)만큼
+       더해진다 — 즉 "3:4 + 배너"이지 3:4 안에 배너를 욱여넣는 게 아니다. */
+    .card-ad {
+      width: 100%;
       height: 75px;
-      border-radius: 12px;
-      overflow: hidden;
       flex-shrink: 0;
+      overflow: hidden;
       position: relative;
+      border-top: 1px solid rgba(0,0,0,0.06);
+      background: #f2f2f2;
     }
-    .canvas-ad-banner img {
+    .card-ad img {
       width: 100%; height: 100%;
       display: block;
       object-fit: cover;
     }
-    .canvas-ad-close {
+    .card-ad-close {
       position: absolute;
       top: 8px;
       right: 8px;
@@ -286,6 +291,7 @@
       border: none; background: none;
       cursor: pointer;
       -webkit-tap-highlight-color: transparent;
+      z-index: 2;
     }
 
     /* ─── ADD PAGE BUTTON (always trailing element in canvas) ── */
@@ -307,14 +313,12 @@
     .add-page-btn:active { background: rgba(0,0,0,0.07); }
 
     /* ─── 날짜 선택으로 새 페이지가 추가될 때: 스크롤이 도착한 뒤에 카드(+광고 배너)가 나타나는 생성 트랜지션 ─── */
-    .card.card-creating,
-    .canvas-ad-banner.card-creating {
+    .card.card-creating {
       opacity: 0;
       transform: scale(0.92);
       transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1), transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
     }
-    .card.card-creating.card-created-reveal,
-    .canvas-ad-banner.card-creating.card-created-reveal {
+    .card.card-creating.card-created-reveal {
       opacity: 1;
       transform: scale(1);
     }
@@ -362,7 +366,7 @@
 
     /* ─── DRAW CANVAS ────────────────────────────── */
     .card-draw-canvas {
-      position: absolute; inset: 0;
+      position: absolute; left: 0; right: 0; top: 0; bottom: 75px; /* 광고 영역은 제외 */
       border-radius: 14px;
       pointer-events: none;
       z-index: 10;
@@ -380,12 +384,12 @@
     body.tool-hand .canvas-scroll { cursor: default; }
     body.tool-hand .card { cursor: default; }
 
-    /* ─── CARD  (600×800px) ──────────────────────── */
+    /* ─── CARD  (콘텐츠 600×800px = 3:4, + 하단 광고 75px) ─────────── */
     .card {
       position: relative;
       flex-shrink: 0;
       width: 600px;
-      height: 800px;
+      height: 875px;
       background: var(--surface);
       border-radius: 14px;
       box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 4px 20px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.03);
@@ -397,7 +401,7 @@
     /* ─── 가로형(4:3) 페이지 ─────────────────────────────
        캔버스에서 가로형의 "가로"가 세로형의 "세로"(800px)와 같아지도록 800×600으로 놓는다.
        .canvas-zoom-wrap이 align-items:center이므로 세로형 카드와 가운데가 자동으로 맞는다. */
-    .card[data-orient="landscape"] { width: 800px; height: 600px; }
+    .card[data-orient="landscape"] { width: 800px; height: 675px; } /* 콘텐츠 800×600 + 배너 75 */
     /* 카드 안쪽 폭(800-32=768)에 맞춰 헤더/리스트를 늘리고, 낮아진 높이(568-106-8)에 맞게 리스트를 줄인다 */
     .card[data-orient="landscape"] .card-header { width: 768px; }
     .card[data-orient="landscape"] .list-area { width: 768px; height: 454px; }
@@ -3146,6 +3150,7 @@
       </div>
     </div>
   </div>
+  <div class="card-ad"></div>
 </div>`;
   }
 
@@ -3246,39 +3251,28 @@
     cancelLabel: '취소',
   });
 
-  function buildAdBanner() {
-    const el = document.createElement('div');
-    el.className = 'canvas-ad-banner';
-    el.innerHTML = `
+  // 페이지 안쪽 하단의 광고 영역(.card-ad)에 배너를 채운다. 카드 HTML에는 빈 .card-ad만
+  // 들어있고, 이미지·닫기 버튼은 여기서 붙인다(닫기는 프리미엄 안내 다이얼로그).
+  function fillCardAd(card) {
+    const ad = card.querySelector('.card-ad');
+    if (!ad || ad.dataset.filled === '1') return;
+    ad.dataset.filled = '1';
+    ad.innerHTML = `
       <img src="assets/ad-banner.png" alt="">
-      <button class="canvas-ad-close" aria-label="닫기"></button>
+      <button class="card-ad-close" aria-label="닫기"></button>
     `;
-    el.querySelector('.canvas-ad-close').addEventListener('click', () => premiumDialog.open());
-    return el;
+    ad.querySelector('.card-ad-close').addEventListener('click', (e) => { e.stopPropagation(); premiumDialog.open(); });
   }
 
   function sortPages(selectedCard, revealBanners) {
     const allCards = Array.from(canvasScroll.querySelectorAll('.card'));
     const datedCards = allCards.filter(c => c.dataset.canvasState === 'with-date');
     datedCards.sort((a, b) => parseCardDate(a) - parseCardDate(b));
-    canvasZoomWrap.querySelectorAll('.canvas-ad-banner').forEach(b => b.remove());
 
-    // 캔버스에는 실제로 추가된 페이지만 날짜순으로 놓인다 — 오늘자 미리보기(고스트) 카드는 없앴고,
-    // 페이지 추가는 맨 아래 "페이지 추가" 버튼(항상 표시)과 패널의 + 타일로만 한다
+    // 캔버스에는 실제로 추가된 페이지만 날짜순으로 놓인다. 광고 배너는 더 이상 페이지 사이의
+    // 별도 요소가 아니라 각 페이지 안쪽 하단(.card-ad)에 붙어 있다.
     const orderedEls = datedCards.slice();
-
-    // revealBanners가 true면(날짜 선택으로 새 페이지가 막 추가된 경우) 새로 만든 배너를
-    // 여기서 즉시 card-creating으로 태어나게 한다 — scrollToCard의 offsetTop 리플로우가 일어나기
-    // 전에 이미 숨겨진 상태로 스타일이 확정되어야 "1→0" 깜빡임 없이 깔끔하게 시작한다
-    const newBanners = [];
-    orderedEls.forEach((el, i) => {
-      canvasZoomWrap.appendChild(el);
-      if (i < orderedEls.length - 1) {
-        const banner = buildAdBanner();
-        if (revealBanners) { banner.classList.add('card-creating'); newBanners.push(banner); }
-        canvasZoomWrap.appendChild(banner);
-      }
-    });
+    orderedEls.forEach(el => canvasZoomWrap.appendChild(el));
     canvasZoomWrap.appendChild(addPageBtn); // 항상 마지막 페이지 아래에 위치
 
     const selectedPanelIdx = selectedCard ? datedCards.indexOf(selectedCard) : datedCards.length - 1;
@@ -3286,7 +3280,7 @@
     rebuildPanel(datedCards, selectedPanelIdx);
     if (selectedCard) scrollToCard(selectedDomIdx, true);
     setTimeout(updateAllThumbs, 50);
-    return newBanners;
+    return [];
   }
 
   // ── Thumbnail renderer ────────────────────────────────────
@@ -3304,6 +3298,8 @@
     // 생성 트랜지션 도중(opacity:0인 card-creating 상태)에 썸네일이 갱신되는 경우가 있어,
     // 클론에서는 그 클래스를 걷어내 항상 보이는 상태로 스냅샷을 뜬다
     clone.classList.remove('card-creating', 'card-created-reveal');
+    // 썸네일은 페이지 콘텐츠(3:4)만 보여준다 — 하단 광고 영역은 빼고 스냅샷을 뜬다
+    clone.querySelector('.card-ad')?.remove();
     // Remove interactive overlay elements
     clone.querySelectorAll('.stk-rot-handle, .stk-rot-line, .stk-del-btn').forEach(el => el.remove());
     clone.querySelectorAll('.card-sticker').forEach(el => el.classList.remove('stk-selected'));
@@ -3391,6 +3387,7 @@
         buildCardHTML({ id: 'cal-' + dateText.replace(/\./g, ''), dateText, empty: false, today: isToday }));
       card = canvasZoomWrap.lastElementChild;
       buildGrid(card, isToday ? TODAY_FILLS : null);
+      fillCardAd(card);
       initEmojiPicker(card);
       lucide.createIcons({ nodes: [card] });
       state.pages.set(dateText, card);
@@ -3453,7 +3450,9 @@
           <span style="font-size:14px;color:rgba(0,0,0,0.45);margin-left:auto;">${fmt(start)} – ${fmt(end)}</span>
         </div>
         <div style="flex:1;display:flex;flex-direction:column;min-height:0;">${rows}</div>
-      </div>`;
+      </div>
+      <div class="card-ad"></div>`;
+    fillCardAd(card);
     return card;
   }
 
@@ -3493,20 +3492,81 @@
         </div>
         <div style="flex-shrink:0;display:flex;border-bottom:1px solid rgba(0,0,0,0.4);padding-bottom:6px;">${wdHeader}</div>
         <div style="flex:1;display:flex;flex-direction:column;min-height:0;border-bottom:1px solid rgba(0,0,0,0.4);">${rowsHtml}</div>
-      </div>`;
+      </div>
+      <div class="card-ad"></div>`;
+    fillCardAd(card);
     return card;
   }
 
-  function renderWeeklyCanvas() {
+  // ── 위클리/먼슬리 노트의 페이지 목록 ────────────────────────
+  // 데일리(스크롤) 노트가 날짜 단위 페이지를 갖듯, 위클리는 "주", 먼슬리는 "달" 단위로
+  // 페이지를 갖는다. 탭(노트)마다 자기 목록을 들고 있고 키는 아래 형식을 쓴다.
+  //   주  : "YYYY-M-D" (그 주의 월요일)   ·  달 : "YYYY-M"
+  function weekKeyOf(date) {
+    const s = _weekStart(date);
+    return `${s.getFullYear()}-${s.getMonth() + 1}-${s.getDate()}`;
+  }
+  function weekKeyToDate(key) { const [y, m, d] = key.split('-').map(Number); return new Date(y, m - 1, d); }
+  function monthKeyOf(year, month) { return `${year}-${month}`; }
+  function monthKeyParts(key) { const [y, m] = key.split('-').map(Number); return { year: y, month: m }; }
+
+  function weekPagesOf(tabEl) {
+    if (!tabEl._weekPages) tabEl._weekPages = [weekKeyOf(new Date())]; // 새 노트는 이번 주 한 장으로 시작
+    return tabEl._weekPages;
+  }
+  function monthPagesOf(tabEl) {
+    const t = new Date();
+    if (!tabEl._monthPages) tabEl._monthPages = [monthKeyOf(t.getFullYear(), t.getMonth() + 1)];
+    return tabEl._monthPages;
+  }
+
+  function renderWeeklyCanvas(tabEl) {
     canvasZoomWrap.innerHTML = '';
-    canvasZoomWrap.appendChild(buildWeekSpreadEl(new Date()));
+    if (!tabEl) return;
+    const keys = weekPagesOf(tabEl).slice().sort((a, b) => weekKeyToDate(a) - weekKeyToDate(b));
+    tabEl._weekPages = keys;
+    keys.forEach(k => canvasZoomWrap.appendChild(buildWeekSpreadEl(weekKeyToDate(k))));
+    canvasZoomWrap.appendChild(addPageBtn); // 데일리와 마찬가지로 맨 아래에 "페이지 추가"
     requestAnimationFrame(() => scrollToCard(0, false));
   }
-  function renderMonthlyCanvas() {
+  function renderMonthlyCanvas(tabEl) {
     canvasZoomWrap.innerHTML = '';
-    const t = new Date();
-    canvasZoomWrap.appendChild(buildMonthGridEl(t.getFullYear(), t.getMonth() + 1));
+    if (!tabEl) return;
+    const keys = monthPagesOf(tabEl).slice().sort((a, b) => {
+      const A = monthKeyParts(a), B = monthKeyParts(b);
+      return (A.year * 12 + A.month) - (B.year * 12 + B.month);
+    });
+    tabEl._monthPages = keys;
+    keys.forEach(k => { const p = monthKeyParts(k); canvasZoomWrap.appendChild(buildMonthGridEl(p.year, p.month)); });
+    canvasZoomWrap.appendChild(addPageBtn);
     requestAnimationFrame(() => scrollToCard(0, false));
+  }
+
+  // 주/달 페이지 추가 — 이미 있는 주·달이면 무시하고, 새로 만들면 그 페이지로 스크롤한다
+  function addWeekPage(anchorDate) {
+    const tab = document.querySelector('.tab.active');
+    if (!tab) return;
+    const key = weekKeyOf(anchorDate);
+    const keys = weekPagesOf(tab);
+    if (keys.includes(key)) return;
+    keys.push(key);
+    renderWeeklyCanvas(tab);
+    const s = weekKeyToDate(key);
+    const idx = tab._weekPages.indexOf(key);
+    requestAnimationFrame(() => scrollToCard(idx, true));
+    pageToast.show(`${s.getMonth() + 1}월 ${_weekOfMonth(s)}주 페이지가 추가되었습니다`);
+  }
+  function addMonthPage(year, month) {
+    const tab = document.querySelector('.tab.active');
+    if (!tab) return;
+    const key = monthKeyOf(year, month);
+    const keys = monthPagesOf(tab);
+    if (keys.includes(key)) return;
+    keys.push(key);
+    renderMonthlyCanvas(tab);
+    const idx = tab._monthPages.indexOf(key);
+    requestAnimationFrame(() => scrollToCard(idx, true));
+    pageToast.show(`${year}년 ${month}월 페이지가 추가되었습니다`);
   }
 
   // 캘린더 노트는 사이드바를 쓰지 않으므로, DatePicker 인스턴스만 미리 만들어두고
@@ -3559,7 +3619,7 @@
 
   // ── Scroll to center a card ────────────────────────────────
   const mainArea = document.querySelector('.main-area');
-  const CARD_H = 800;
+  const CARD_H = 875; // 콘텐츠 800 + 하단 광고 75
   function CENTER_OFFSET() { return Math.max(0, (document.querySelector('.workspace').clientHeight - CARD_H) / 2); }
 
   function scrollToCard(idx, smooth) {
@@ -3697,16 +3757,15 @@
     datePicker.takenDates.add(`${year}-${month}-${day}`);
     // 내부에서 scrollToCard(smooth)로 스크롤을 시작함 + 광고 배너를 전부 새로 만듦(생성된 배너는
     // scrollToCard가 리플로우를 일으키기 전에 이미 card-creating으로 숨겨진 채 돌려받는다)
-    const banners = sortPages(newCard, true);
+    fillCardAd(newCard);
+    sortPages(newCard, true);
 
     // scrollToCard의 smooth-scroll 도착 시점(350ms fallback)이 지난 뒤에 카드+배너가 나타나는
     // 생성 트랜지션을 재생한다 — 스크롤 도중에는 보이지 않다가, 도착하면 짠 하고 함께 생성됨
     setTimeout(() => {
       newCard.classList.add('card-created-reveal');
-      banners.forEach(b => b.classList.add('card-created-reveal'));
       setTimeout(() => {
         newCard.classList.remove('card-creating', 'card-created-reveal');
-        banners.forEach(b => b.classList.remove('card-creating', 'card-created-reveal'));
       }, 400);
     }, 380);
 
@@ -3716,7 +3775,16 @@
   // ── "페이지 추가" 진입점 (캔버스 하단 버튼 · 사이드패널 add 타일 공용) ──
   let _lastDateMenuPos = null;
 
+  // 활성 노트의 유형 — 페이지 추가 단위(일/주/월)를 여기서 가른다
+  function activeNoteType() {
+    return document.querySelector('.tab.active')?.dataset.noteType || 'scroll';
+  }
+
   function openAddPageMenu(x, y, opts) {
+    // 위클리·먼슬리 노트는 "날짜"가 아니라 주/달 단위로 페이지를 추가한다
+    const nt = activeNoteType();
+    if (nt === 'weekly') return openWeekAddMenu(x, y, opts);
+    if (nt === 'monthly') return openMonthAddMenu(x, y, opts);
     activeCard = null;
     const todayTaken = datePicker.takenDates.has(`${_todayY}-${_todayM}-${_todayD}`);
     if (todayTaken) {
@@ -3753,6 +3821,94 @@
     const rect = addPageBtn.getBoundingClientRect();
     openAddPageMenu(rect.left + rect.width / 2, rect.top, { above: true });
   });
+
+  // ── 위클리 노트: 주 단위 페이지 추가 ──────────────────────────
+  // "직접 선택"은 캘린더 UI를 그대로 쓰되 한 줄(월~일)이 통째로 눌리는 주 선택 모드다.
+  const weekPicker = new DatePicker({
+    selectMode: 'week',
+    landOnCurrentMonth: true,
+    onConfirm({ year, month, day }) { addWeekPage(new Date(year, month - 1, day)); }
+  });
+  function openWeekPicker() {
+    const tab = document.querySelector('.tab.active');
+    weekPicker.takenWeeks = new Set(tab ? weekPagesOf(tab) : []); // 이미 있는 주는 고를 수 없게
+    weekPicker.open();
+  }
+  // 이번 주 페이지가 이미 있으면, 아직 없는 가장 가까운 다음 주를 빠른 추가 항목으로 제안한다
+  function suggestNextWeek(tab) {
+    const taken = new Set(weekPagesOf(tab));
+    const d = _weekStart(new Date());
+    for (let i = 0; i < 260; i++) { // 최대 5년치까지만 탐색
+      if (!taken.has(weekKeyOf(d))) return new Date(d);
+      d.setDate(d.getDate() + 7);
+    }
+    return null;
+  }
+  const weekSelectMenu = new OverlayMenu({
+    items: [
+      { lucideIcon: 'calendar-check', label: '이번 주', onClick() { addWeekPage(new Date()); } },
+      { lucideIcon: 'calendar-range', label: '직접 선택', onClick() { openWeekPicker(); } }
+    ]
+  });
+  function openWeekAddMenu(x, y, opts) {
+    const tab = document.querySelector('.tab.active');
+    const sugg = tab ? suggestNextWeek(tab) : new Date();
+    const isThisWeek = sugg && weekKeyOf(sugg) === weekKeyOf(new Date());
+    weekSelectMenu.updateItem(0, {
+      label: !sugg ? '이번 주'
+        : isThisWeek ? '이번 주'
+        : `${sugg.getMonth() + 1}월 ${_weekOfMonth(sugg)}주`,
+      onClick() { if (sugg) addWeekPage(sugg); }
+    });
+    weekSelectMenu.setTitle('페이지 주 선택');
+    weekSelectMenu.open(x, y, opts);
+  }
+
+  // ── 먼슬리 노트: 달 단위 페이지 추가 ──────────────────────────
+  // "직접 선택"은 날짜 그리드 대신 1~12월 셀 그리드(연도는 상단 화살표로 이동)를 쓴다.
+  const monthPicker = new DatePicker({
+    selectMode: 'month',
+    onConfirm({ year, month }) { addMonthPage(year, month); }
+  });
+  function openMonthPicker() {
+    const tab = document.querySelector('.tab.active');
+    monthPicker.takenMonths = new Set(tab ? monthPagesOf(tab) : []);
+    monthPicker.year = new Date().getFullYear();
+    monthPicker.open();
+  }
+  function suggestNextMonth(tab) {
+    const taken = new Set(monthPagesOf(tab));
+    const t = new Date();
+    let y = t.getFullYear(), m = t.getMonth() + 1;
+    for (let i = 0; i < 120; i++) { // 최대 10년치까지만 탐색
+      if (!taken.has(monthKeyOf(y, m))) return { year: y, month: m };
+      m++; if (m > 12) { m = 1; y++; }
+    }
+    return null;
+  }
+  const monthSelectMenu = new OverlayMenu({
+    items: [
+      {
+        lucideIcon: 'calendar-check', label: '이번 달',
+        onClick() { const t = new Date(); addMonthPage(t.getFullYear(), t.getMonth() + 1); }
+      },
+      { lucideIcon: 'calendar-days', label: '직접 선택', onClick() { openMonthPicker(); } }
+    ]
+  });
+  function openMonthAddMenu(x, y, opts) {
+    const tab = document.querySelector('.tab.active');
+    const sugg = tab ? suggestNextMonth(tab) : null;
+    const t = new Date();
+    const isThisMonth = sugg && sugg.year === t.getFullYear() && sugg.month === t.getMonth() + 1;
+    monthSelectMenu.updateItem(0, {
+      label: !sugg ? '이번 달'
+        : isThisMonth ? `이번 달 (${sugg.month}월)`
+        : `${sugg.year}년 ${sugg.month}월`,
+      onClick() { if (sugg) addMonthPage(sugg.year, sugg.month); }
+    });
+    monthSelectMenu.setTitle('페이지 월 선택');
+    monthSelectMenu.open(x, y, opts);
+  }
 
   const dateSelectMenu = new OverlayMenu({
     items: [
@@ -4551,6 +4707,7 @@
     const scale = (innerEl.offsetWidth || 80) / srcW;
     const clone = card.cloneNode(true);
     clone.classList.remove('card-creating', 'card-created-reveal'); // 생성 트랜지션(opacity:0) 상태로 스냅샷되는 것 방지
+    clone.querySelector('.card-ad')?.remove(); // 미리보기도 콘텐츠(3:4)만
     clone.querySelectorAll('.stk-rot-handle, .stk-rot-line, .stk-del-btn').forEach(el => el.remove());
     clone.querySelectorAll('.card-sticker').forEach(el => el.classList.remove('stk-selected'));
     const origCanvas = card.querySelector('.card-draw-canvas');
