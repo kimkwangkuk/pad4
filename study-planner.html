@@ -373,7 +373,7 @@
     /* ─── DRAW CANVAS ────────────────────────────── */
     .card-draw-canvas {
       position: absolute; left: 0; right: 0; top: 0; bottom: 75px; /* 광고 영역은 제외 */
-      border-radius: 14px;
+      border-radius: 14px 14px 0 0;
       pointer-events: none;
       z-index: 10;
       touch-action: none;
@@ -390,14 +390,15 @@
     body.tool-hand .canvas-scroll { cursor: default; }
     body.tool-hand .card { cursor: default; }
 
-    /* ─── CARD  (콘텐츠 600×800px = 3:4, + 하단 광고 75px) ─────────── */
+    /* ─── CARD  (콘텐츠 600×800px = 3:4, + 하단 광고 75px) ───────────
+       하단 광고 영역은 각지게 — 위쪽 모서리만 둥글다 */
     .card {
       position: relative;
       flex-shrink: 0;
       width: 600px;
       height: 875px;
       background: var(--surface);
-      border-radius: 14px;
+      border-radius: 14px 14px 0 0;
       box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 4px 20px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.03);
       overflow: hidden;
       display: flex;
@@ -3424,8 +3425,12 @@
     // 생성 트랜지션 도중(opacity:0인 card-creating 상태)에 썸네일이 갱신되는 경우가 있어,
     // 클론에서는 그 클래스를 걷어내 항상 보이는 상태로 스냅샷을 뜬다
     clone.classList.remove('card-creating', 'card-created-reveal');
-    // 썸네일은 페이지 콘텐츠(3:4)만 보여준다 — 하단 광고 영역은 빼고 스냅샷을 뜬다
+    // 썸네일은 페이지 콘텐츠(3:4)만 보여준다 — 하단 광고 영역은 빼고 스냅샷을 뜬다.
+    // 광고를 뺐으니, 광고 위까지만 덮던 속지 컬러 틴트와 그리기 캔버스도 클론 전체로 늘려야
+    // 썸네일 아래쪽만 색이 다르게 보이지 않는다.
     clone.querySelector('.card-ad')?.remove();
+    clone.querySelectorAll('.ip-applied-tint, .gps-applied-tint, .card-draw-canvas')
+      .forEach(el => { el.style.bottom = '0'; });
     // Remove interactive overlay elements
     clone.querySelectorAll('.stk-rot-handle, .stk-rot-line, .stk-del-btn').forEach(el => el.remove());
     clone.querySelectorAll('.card-sticker').forEach(el => el.classList.remove('stk-selected'));
@@ -4840,6 +4845,8 @@
     const clone = card.cloneNode(true);
     clone.classList.remove('card-creating', 'card-created-reveal'); // 생성 트랜지션(opacity:0) 상태로 스냅샷되는 것 방지
     clone.querySelector('.card-ad')?.remove(); // 미리보기도 콘텐츠(3:4)만
+    clone.querySelectorAll('.ip-applied-tint, .gps-applied-tint, .card-draw-canvas')
+      .forEach(el => { el.style.bottom = '0'; });
     clone.querySelectorAll('.stk-rot-handle, .stk-rot-line, .stk-del-btn').forEach(el => el.remove());
     clone.querySelectorAll('.card-sticker').forEach(el => el.classList.remove('stk-selected'));
     const origCanvas = card.querySelector('.card-draw-canvas');
