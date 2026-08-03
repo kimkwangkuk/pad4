@@ -1360,20 +1360,12 @@
       background: white;
       box-shadow: 0px 0px 1px 0px rgba(0,0,0,0.6), 0px 4px 6px 0px rgba(0,0,0,0.03);
     }
-    .ip-cell.selected .ip-thumb { border: 2px solid rgba(0,0,0,0.86); }
+
     .ip-lock-badge {
       position: absolute; left: 5px; bottom: 5px;
       width: 20px; height: 20px;
       border-radius: 4px;
       background: rgba(0,0,0,0.4);
-      display: flex; align-items: center; justify-content: center;
-      z-index: 2;
-    }
-    .ip-check {
-      position: absolute; top: -13px; right: -13.58px;
-      width: 24px; height: 24px;
-      border-radius: 30px;
-      background: rgba(0,0,0,0.86);
       display: flex; align-items: center; justify-content: center;
       z-index: 2;
     }
@@ -5834,17 +5826,15 @@
       grid.innerHTML = '';
 
       getIpDisplayItems().forEach(item => {
-        const isSelected = item.id === ipSelectedId;
         const unlocked = item.unlocked;
         const cell = document.createElement('div');
-        cell.className = 'ip-cell' + (isSelected ? ' selected' : '') + (unlocked ? '' : ' locked');
+        // 목록에서는 선택(체크) 상태를 표시하지 않는다 — 잠금 배지만 보여준다
+        cell.className = 'ip-cell' + (unlocked ? '' : ' locked');
         cell.innerHTML = `
           <div class="ip-thumbwrap">
             <div class="ip-thumb-pos${item.orient === 'landscape' ? ' ip-thumb-pos-land' : ''}">
               <div class="ip-thumb"></div>
-              ${isSelected
-                ? `<div class="ip-check"><i data-lucide="check" style="width:14px;height:14px;color:white;"></i></div>`
-                : (unlocked ? '' : `<div class="ip-lock-badge"><i data-lucide="lock" style="width:12px;height:12px;color:white;"></i></div>`)}
+              ${unlocked ? '' : `<div class="ip-lock-badge"><i data-lucide="lock" style="width:12px;height:12px;color:white;"></i></div>`}
             </div>
           </div>
           <div class="ip-info">
