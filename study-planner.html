@@ -1259,7 +1259,7 @@
     /* ─── Panel 0: 속지 설정 (Figma 5675:559985) ───────────────── */
     .ips-header {
       position: relative; flex-shrink: 0;
-      display: flex; align-items: center; justify-content: space-between;
+      display: flex; align-items: center; justify-content: flex-end;
       padding: 16px 16px 10px;
     }
     .ips-title {
@@ -1269,14 +1269,13 @@
       color: rgba(0,0,0,0.86); letter-spacing: -0.3px; line-height: 1.4;
       white-space: nowrap;
     }
-    .ips-close-btn, .ips-confirm-btn {
+    .ips-confirm-btn {
       width: 38px; height: 38px; flex-shrink: 0;
       border: none; border-radius: 100px;
       display: flex; align-items: center; justify-content: center;
       cursor: pointer; -webkit-tap-highlight-color: transparent;
+      background: rgba(0,0,0,0.86);
     }
-    .ips-close-btn { background: rgba(0,0,0,0.05); }
-    .ips-confirm-btn { background: rgba(0,0,0,0.86); }
     .ips-confirm-btn:hover { background: rgba(0,0,0,0.75); }
     /* 큰 미리보기 — 회색 판 위에 흰 페이지가 떠 있는 형태 */
     .ips-preview-wrap {
@@ -3000,7 +2999,6 @@
     <!-- 바탕: 속지 설정 (Figma 5675:559985) -->
     <div class="ip-base">
       <div class="ips-header">
-        <button class="ips-close-btn" id="ipsCloseBtn" aria-label="닫기"><i data-lucide="x" style="width:20px;height:20px;color:rgba(0,0,0,0.6);"></i></button>
         <span class="ips-title">속지 설정</span>
         <button class="ips-confirm-btn" id="ipsConfirmBtn" aria-label="확인"><i data-lucide="check" style="width:20px;height:20px;color:#fff;"></i></button>
       </div>
@@ -5753,7 +5751,6 @@
     const listLayer   = document.getElementById('ipListLayer');
     const detailLayer = document.getElementById('ipDetailLayer');
     // Panel 0: 속지 설정
-    const ipsCloseBtn   = document.getElementById('ipsCloseBtn');
     const ipsConfirmBtn = document.getElementById('ipsConfirmBtn');
     const ipsPreview    = document.getElementById('ipsPreview');
     const ipsInsertRow  = document.getElementById('ipsInsertRow');
@@ -6005,8 +6002,7 @@
 
     window.openInsertPicker = openInsertPicker;
 
-    // X(닫기) — 어느 화면에서 눌러도 시트가 아래로 내려가며 닫힌다
-    ipsCloseBtn.addEventListener('click', () => closeInsertPicker());
+    // 시트 닫기는 확인(체크) 버튼과 배경 탭으로만 한다
     backdrop.addEventListener('click', () => closeInsertPicker());
     // 확인(체크) — 지금 설정된 속지·테마로 확정하고 다음 단계(날짜 선택)로
     ipsConfirmBtn.addEventListener('click', () => {
