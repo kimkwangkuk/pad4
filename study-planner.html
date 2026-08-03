@@ -1245,12 +1245,13 @@
       transition: transform 0.32s cubic-bezier(0.32,0.72,0,1);
     }
     .ip-layer.open { pointer-events: auto; }
-    /* 속지 선택 — 시트 안에서 아래에서 위로 */
+    /* 오른쪽에서 왼쪽으로 밀려 들어오는 레이어 */
+    .ip-layer-right { transform: translateX(100%); }
+    .ip-layer-right.open { transform: translateX(0); }
+    /* 아래에서 위로 올라오는 레이어 */
     .ip-layer-up { transform: translateY(100%); }
     .ip-layer-up.open { transform: translateY(0); }
-    /* 속지 상세 — 목록 위로 오른쪽에서 왼쪽으로 밀려 들어온다 */
-    .ip-layer-right { z-index: 3; transform: translateX(100%); }
-    .ip-layer-right.open { transform: translateX(0); }
+    #ipDetailLayer { z-index: 3; } /* 상세는 목록 위에 */
     #insertPickerBackdrop { z-index: 5000; }
 
 
@@ -3016,10 +3017,11 @@
       </div>
     </div>
 
-    <!-- 레이어 1: 속지 선택 (Figma 5675:560003) — 아래에서 위로 -->
-    <div class="ip-layer ip-layer-up" id="ipListLayer">
+    <!-- 레이어 1: 속지 선택 (Figma 5675:560003) — 오른쪽에서 왼쪽으로.
+         목록에서 속지를 고르면 곧바로 설정되고 이 레이어가 닫히며 속지 설정으로 돌아간다 -->
+    <div class="ip-layer ip-layer-right" id="ipListLayer">
       <div class="bsm-header">
-        <button class="bsm-close-btn" id="ipGridBack" aria-label="닫기"><i data-lucide="x" style="width:20px;height:20px;color:rgba(0,0,0,0.6);"></i></button>
+        <button class="bsm-back-btn" id="ipGridBack" aria-label="뒤로">‹</button>
         <span class="bsm-title">속지 선택</span>
         <div class="bsm-spacer"></div>
       </div>
@@ -5846,7 +5848,16 @@
             <div class="ip-name">${item.name}</div>
           </div>
         `;
-        cell.addEventListener('click', () => openIpDetail(item.id));
+        // 목록에서 속지를 고르면 상세로 넘어가지 않고 곧바로 설정되고 속지 설정으로 돌아간다
+        cell.addEventListener('click', () => {
+          if (!item.unlocked) return; // 잠긴 속지는 고를 수 없다
+          ipSelectedId = item.id;
+          ipActiveId = item.id;
+          if (ipApplyTarget) applyStudyTemplateToCard(ipApplyTarget);
+          renderIpsPanel();  // 바탕(속지 설정)의 미리보기·이름 갱신
+          closeIpList();
+          pageToast.show('속지가 설정되었습니다');
+        });
         grid.appendChild(cell);
         const thumbEl = cell.querySelector('.ip-thumb');
         setTimeout(() => renderMp2Thumb(ipSourceFor(item.orient), thumbEl), 0);
