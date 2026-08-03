@@ -43,8 +43,10 @@
 }
 .sp-content::-webkit-scrollbar { display: none; }
 
+/* 한 행의 두 칸은 아래(바닥) 기준으로 정렬한다 — 가로형(4:3) 썸네일은 세로형보다
+   낮아서 위로 붙이면 같은 행의 세로형과 밑변·날짜 캡션이 어긋나 보인다 */
 .sp-row {
-  display: flex; gap: 16px; align-items: flex-start;
+  display: flex; gap: 16px; align-items: flex-end;
   padding-bottom: 10px; flex-shrink: 0;
 }
 
