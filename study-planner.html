@@ -1220,6 +1220,7 @@
       background: white;
       border-radius: 36px 36px 0 0;
       box-shadow: 0px -8px 40px rgba(0,0,0,0.18);
+      height: 82vh;
       overflow: hidden;
       pointer-events: none;
       transition: transform 0.34s cubic-bezier(0.32,0.72,0,1);
@@ -1228,15 +1229,30 @@
       pointer-events: auto;
       transform: translateX(-50%) translateY(0);
     }
+
+    /* 바탕(속지 설정) + 그 위에 겹치는 두 레이어 */
+    .ip-base, .ip-layer {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column;
+      background: white;
+      overflow: hidden;
+    }
+    .ip-base { position: relative; height: 100%; }
+    .ip-base > *, .ip-layer > * { min-width: 0; }
+    .ip-layer {
+      z-index: 2;
+      pointer-events: none;
+      transition: transform 0.32s cubic-bezier(0.32,0.72,0,1);
+    }
+    .ip-layer.open { pointer-events: auto; }
+    /* 속지 선택 — 시트 안에서 아래에서 위로 */
+    .ip-layer-up { transform: translateY(100%); }
+    .ip-layer-up.open { transform: translateY(0); }
+    /* 속지 상세 — 목록 위로 오른쪽에서 왼쪽으로 밀려 들어온다 */
+    .ip-layer-right { z-index: 3; transform: translateX(100%); }
+    .ip-layer-right.open { transform: translateX(0); }
     #insertPickerBackdrop { z-index: 5000; }
 
-    /* 2-panel push/back slider (uses shared .pnl-slider/.pnl-panel from panel-slider.css) */
-    .ip-slider { align-items: flex-start; }
-    /* 세 패널 모두 같은 높이의 시트를 채운다 — 미리보기/목록이 남는 공간을 먹고,
-       테마 행과 CTA 버튼은 바닥에 붙는다. 폭 밖으로 내용이 새지 않게 클립하고,
-       flex 아이템의 기본 min-width:auto가 미리보기 폭을 밀어내는 것도 min-width:0으로 막는다 */
-    .ip-panel { height: 82vh; overflow: hidden; }
-    .ip-panel > * { min-width: 0; }
 
     /* ─── Panel 0: 속지 설정 (Figma 5675:559985) ───────────────── */
     .ips-header {
@@ -2980,66 +2996,60 @@
     </div>
   </div>
 
-  <!-- INSERT PICKER POPUP (속지 선택 / 속지 설정 – 2-panel push/back slider) -->
+  <!-- INSERT PICKER BOTTOM SHEET
+       속지 설정(바탕) 위로 두 개의 레이어가 겹친다:
+         · 속지 선택 — 시트 안에서 아래에서 위로 올라온다
+         · 속지 상세 — 그 위로 오른쪽에서 왼쪽으로 밀려 들어온다(뒤로가기로 목록 복귀) -->
   <div id="insertPickerBackdrop" class="bsm-backdrop"></div>
   <div id="insertPickerPopup">
-    <div class="pnl-slider ip-slider" id="ipSlider">
-      <!-- Panel 0: 속지 설정 (Figma 5675:559985) — 현재 설정된 속지·테마를 확인하는 첫 화면.
-           우상단 확인(체크)을 누르면 원래 하려던 페이지 추가(날짜/주/월 선택)로 이어진다. -->
-      <div class="pnl-panel ip-panel">
-        <div class="ips-header">
-          <button class="ips-close-btn" id="ipsCloseBtn" aria-label="닫기"><i data-lucide="x" style="width:20px;height:20px;color:rgba(0,0,0,0.6);"></i></button>
-          <span class="ips-title">속지 설정</span>
-          <button class="ips-confirm-btn" id="ipsConfirmBtn" aria-label="확인"><i data-lucide="check" style="width:20px;height:20px;color:#fff;"></i></button>
-        </div>
-        <div class="ips-preview-wrap"><div class="ips-preview" id="ipsPreview"></div></div>
-        <div class="ips-rows">
-          <button class="ips-row ips-row-line" id="ipsInsertRow" type="button">
-            <span class="ips-row-label">속지</span>
-            <span class="ips-row-value" id="ipsInsertValue"></span>
-            <i data-lucide="chevron-right" style="width:24px;height:24px;color:rgba(0,0,0,0.3);flex-shrink:0;"></i>
-          </button>
-          <div class="ips-row">
-            <span class="ips-row-label">테마</span>
-            <div class="ips-theme-row" id="ipsThemeRow"></div>
-          </div>
-        </div>
+    <!-- 바탕: 속지 설정 (Figma 5675:559985) -->
+    <div class="ip-base">
+      <div class="ips-header">
+        <button class="ips-close-btn" id="ipsCloseBtn" aria-label="닫기"><i data-lucide="x" style="width:20px;height:20px;color:rgba(0,0,0,0.6);"></i></button>
+        <span class="ips-title">속지 설정</span>
+        <button class="ips-confirm-btn" id="ipsConfirmBtn" aria-label="확인"><i data-lucide="check" style="width:20px;height:20px;color:#fff;"></i></button>
       </div>
-      <!-- Panel 1: 속지 선택 (Figma 5675:560003) — 3열 그리드, 썸네일은 칸 바닥 기준 정렬 -->
-      <div class="pnl-panel ip-panel">
-        <div class="bsm-header">
-          <button class="bsm-close-btn" id="ipGridBack" aria-label="닫기"><i data-lucide="x" style="width:20px;height:20px;color:rgba(0,0,0,0.6);"></i></button>
-          <span class="bsm-title">속지 선택</span>
-          <div class="bsm-spacer"></div>
-        </div>
-        <div class="ip-body">
-          <div class="ip-grid" id="ipGrid"></div>
-        </div>
-      </div>
-      <!-- Panel 2: 속지 상세 (Figma 5675:560567) — 큰 미리보기 + 테마 + "이 속지 사용" -->
-      <div class="pnl-panel ip-panel">
-        <div class="bsm-header">
-          <button class="bsm-close-btn" id="ipDetailBack" aria-label="닫기"><i data-lucide="x" style="width:20px;height:20px;color:rgba(0,0,0,0.6);"></i></button>
-          <span class="bsm-title" id="ipdTitle"></span>
-          <div class="bsm-spacer"></div>
-        </div>
-        <div class="ipd-preview-wrap"><div class="ipd-preview" id="ipdPreview"></div></div>
-        <div class="ipd-cta-wrap">
-          <div class="ips-row ipd-theme-row">
-            <span class="ips-row-label">테마</span>
-            <div class="ips-theme-row" id="ipdThemeRow"></div>
-          </div>
-          <button class="ipd-cta-btn" id="ipdUseBtn">이 속지 사용</button>
+      <div class="ips-preview-wrap"><div class="ips-preview" id="ipsPreview"></div></div>
+      <div class="ips-rows">
+        <button class="ips-row ips-row-line" id="ipsInsertRow" type="button">
+          <span class="ips-row-label">속지</span>
+          <span class="ips-row-value" id="ipsInsertValue"></span>
+          <i data-lucide="chevron-right" style="width:24px;height:24px;color:rgba(0,0,0,0.3);flex-shrink:0;"></i>
+        </button>
+        <div class="ips-row">
+          <span class="ips-row-label">테마</span>
+          <div class="ips-theme-row" id="ipsThemeRow"></div>
         </div>
       </div>
     </div>
 
-    <!-- 속지 컬러 선택 (이커머스 옵션 선택형 바텀시트, 팝업 내부에서 슬라이드업) -->
-    <div class="ip-color-backdrop" id="ipColorBackdrop"></div>
-    <div class="ip-color-sheet" id="ipColorSheet">
-      <div class="ipcs-grabber"></div>
-      <div class="ipcs-title">속지 컬러 선택</div>
-      <div class="ipcs-list" id="ipColorList"></div>
+    <!-- 레이어 1: 속지 선택 (Figma 5675:560003) — 아래에서 위로 -->
+    <div class="ip-layer ip-layer-up" id="ipListLayer">
+      <div class="bsm-header">
+        <button class="bsm-close-btn" id="ipGridBack" aria-label="닫기"><i data-lucide="x" style="width:20px;height:20px;color:rgba(0,0,0,0.6);"></i></button>
+        <span class="bsm-title">속지 선택</span>
+        <div class="bsm-spacer"></div>
+      </div>
+      <div class="ip-body">
+        <div class="ip-grid" id="ipGrid"></div>
+      </div>
+    </div>
+
+    <!-- 레이어 2: 속지 상세 (Figma 5675:560567) — 오른쪽에서 왼쪽으로 -->
+    <div class="ip-layer ip-layer-right" id="ipDetailLayer">
+      <div class="bsm-header">
+        <button class="bsm-back-btn" id="ipDetailBack" aria-label="뒤로">‹</button>
+        <span class="bsm-title" id="ipdTitle"></span>
+        <div class="bsm-spacer"></div>
+      </div>
+      <div class="ipd-preview-wrap"><div class="ipd-preview" id="ipdPreview"></div></div>
+      <div class="ipd-cta-wrap">
+        <div class="ips-row ipd-theme-row">
+          <span class="ips-row-label">테마</span>
+          <div class="ips-theme-row" id="ipdThemeRow"></div>
+        </div>
+        <button class="ipd-cta-btn" id="ipdUseBtn">이 속지 사용</button>
+      </div>
     </div>
   </div>
   <!-- HOME SCREEN -->
@@ -5738,7 +5748,8 @@
   (function() {
     const backdrop    = document.getElementById('insertPickerBackdrop');
     const popup       = document.getElementById('insertPickerPopup');
-    const slider      = new PanelSlider(document.getElementById('ipSlider'));
+    const listLayer   = document.getElementById('ipListLayer');
+    const detailLayer = document.getElementById('ipDetailLayer');
     // Panel 0: 속지 설정
     const ipsCloseBtn   = document.getElementById('ipsCloseBtn');
     const ipsConfirmBtn = document.getElementById('ipsConfirmBtn');
@@ -5919,11 +5930,15 @@
     }
     window.ipApplyTint = applyIpTintToCard;
 
+    // 레이어 열고 닫기 — 속지 선택은 위로, 속지 상세는 왼쪽으로 밀려 들어온다
+    function openIpList() { renderIpGrid(); listLayer.classList.add('open'); }
+    function closeIpList() { closeIpDetail(); listLayer.classList.remove('open'); }
     function openIpDetail(id) {
       ipActiveId = id;
       renderIpDetail(id);
-      slider.goTo(2);
+      detailLayer.classList.add('open');
     }
+    function closeIpDetail() { detailLayer.classList.remove('open'); }
 
     // 기존 카드의 속지를 선택한 스터디 템플릿(+확정 컬러)으로 교체 — 페이지 추가 흐름과 동일한 결과물
     function applyStudyTemplateToCard(card) {
@@ -5960,7 +5975,10 @@
       ipApplyTarget = targetCard || null;
       ipChangeMode = !!targetCard;
       ipSourceCard = null; ipSourceCardLand = null; // 썸네일은 항상 속지 템플릿으로 렌더
-      slider.reset(0);
+      // 레이어는 애니메이션 없이 닫힌 상태로 초기화한 뒤 시트를 올린다
+      listLayer.style.transition = 'none'; detailLayer.style.transition = 'none';
+      closeIpList();
+      requestAnimationFrame(() => { listLayer.style.transition = ''; detailLayer.style.transition = ''; });
       renderIpsPanel(); // 현재 설정된 속지·테마를 보여주는 첫 화면
       backdrop.classList.add('visible');
       popup.classList.add('visible');
@@ -5985,16 +6003,17 @@
       if (target) applyStudyTemplateToCard(target);
       closeInsertPicker();
     });
-    // 속지 행 → 속지 선택 목록 → 상세
-    ipsInsertRow.addEventListener('click', () => { renderIpGrid(); slider.goTo(1); });
-    gridBack.addEventListener('click', () => closeInsertPicker());
-    detailBack.addEventListener('click', () => closeInsertPicker());
+    // 속지 행 → 속지 선택 목록(위로 등장) → 상세(왼쪽으로 등장)
+    ipsInsertRow.addEventListener('click', openIpList);
+    gridBack.addEventListener('click', closeIpList);   // X — 목록을 아래로 내려 속지 설정으로
+    detailBack.addEventListener('click', closeIpDetail); // ‹ — 상세를 밀어내고 목록으로
 
     // "이 속지 사용" — 속지를 확정하고 시트를 바로 닫는다.
     useBtn.addEventListener('click', () => {
       if (!isIpUnlocked(ipActiveId)) return; // locked: no-op
       ipSelectedId = ipActiveId;
       if (ipApplyTarget) applyStudyTemplateToCard(ipApplyTarget);
+      renderIpsPanel(); // 바탕(속지 설정)의 미리보기·이름을 새 속지로 갱신
       closeInsertPicker();
       pageToast.show('속지가 설정되었습니다');
     });
