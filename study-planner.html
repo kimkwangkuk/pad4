@@ -6934,11 +6934,26 @@
       if (st.step < 2) { openWizard(st.step + 1); return; }
       const input = $('nwzNameInput');
       const name = (input.value || '').trim() || input.placeholder;
+      const cover = NW_COVERS.find(c => c.id === st.cover) || NW_COVERS[0];
       closeWizard();
       showScreen(ibScreen, false);
       showScreen(nnScreen, false);
       input.value = '';
-      openTabFromHome(name, 'notebook-pen', 'note', 'scroll');
+
+      // 홈 목록에도 새 노트를 꽂아준다 — 표지 색/패턴은 방금 고른 값을 그대로 쓴다
+      const note = {
+        name, date: '방금 전', icon: 'notebook-pen',
+        color: cover.bg,
+        pattern: coverTab === '패턴' ? 'dot' : null,
+        noteType: 'scroll'
+      };
+      HOME_NOTES.unshift(note);
+      const cardEl = buildNoteCardEl(note);
+      const listEl = document.getElementById('hsNotes');
+      listEl.insertBefore(cardEl, listEl.firstChild);
+      if (window.lucide) lucide.createIcons({ nodes: [cardEl] });
+
+      openTabFromHome(note.name, note.icon, 'note', note.noteType);
       window.toast?.show('노트가 만들어졌습니다');
     });
   })();
