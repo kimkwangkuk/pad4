@@ -2564,6 +2564,331 @@
     }
     .nc-detail-swatch.on { box-shadow:0 0 0 2.5px #fff, 0 0 0 4.5px rgba(0,0,0,.86); }
 
+
+    /* ══════════════════════════════════════════════════════════════
+       새 노트 만들기 플로우 (Figma 5843:403428 / 403470 / 403587 / 412452 / 404056)
+       홈 + 버튼 → 노트/폴더 메뉴 → 새 노트 추가 → 속지 목록 → 속지 상세 시트
+       → 색상 선택 팝업 → 표지 선택
+       ══════════════════════════════════════════════════════════════ */
+
+    /* ── 홈 + 버튼 메뉴 (노트 / 폴더) ── */
+    .hsm-menu {
+      position: fixed; z-index: 996;
+      background: #fff; border-radius: 24px;
+      box-shadow: 0 4px 50px rgba(0,0,0,.14);
+      padding: 12px; width: 220px;
+      display: none; flex-direction: column;
+    }
+    .hsm-menu.show { display: flex; }
+    .hsm-row {
+      display: flex; align-items: center; gap: 14px;
+      padding: 14px 16px; border: none; background: none; border-radius: 14px;
+      cursor: pointer; -webkit-tap-highlight-color: transparent;
+      font-family: 'Pretendard', sans-serif; font-size: 16px; font-weight: 600;
+      color: rgba(0,0,0,0.86); letter-spacing: -0.048px; text-align: left;
+    }
+    .hsm-row:hover { background: rgba(0,0,0,0.04); }
+
+    /* ── 전체화면 스텝 (새 노트 추가 / 속지 목록) ── */
+    .nnf-screen {
+      position: fixed; inset: 0; z-index: 900;
+      background: #fff; overflow-y: auto;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+    .nnf-screen.show { opacity: 1; pointer-events: auto; }
+    .nnf-screen::-webkit-scrollbar { display: none; }
+    .nnf-header {
+      position: relative; height: 56px; flex-shrink: 0;
+      display: flex; align-items: center; padding: 0 16px;
+    }
+    .nnf-back {
+      width: 38px; height: 38px; border: none; background: none; border-radius: 100px;
+      display: flex; align-items: center; justify-content: center; cursor: pointer;
+      font-size: 26px; line-height: 1; color: rgba(0,0,0,0.86);
+      -webkit-tap-highlight-color: transparent;
+    }
+    .nnf-back:hover { background: rgba(0,0,0,0.05); }
+    .nnf-title {
+      position: absolute; left: 50%; transform: translateX(-50%);
+      font-family: 'Pretendard', sans-serif; font-size: 15px; font-weight: 600;
+      color: rgba(0,0,0,0.86); letter-spacing: -0.045px;
+    }
+
+    /* 새 노트 추가: 상단 큰 카드 2개 */
+    .nn2-top { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 20px 32px 0; }
+    .nn2-big {
+      position: relative; overflow: hidden;
+      height: 74px; padding: 18px 20px;
+      background: rgba(0,0,0,0.04); border: none; border-radius: 12px;
+      cursor: pointer; text-align: left; -webkit-tap-highlight-color: transparent;
+    }
+    .nn2-big:hover { background: rgba(0,0,0,0.06); }
+    .nn2-big-t {
+      font-family: 'Pretendard', sans-serif; font-size: 15px; font-weight: 700;
+      color: rgba(0,0,0,0.86); letter-spacing: -0.045px;
+    }
+    .nn2-big-s {
+      margin-top: 4px;
+      font-family: 'Pretendard', sans-serif; font-size: 11px; font-weight: 400;
+      color: rgba(0,0,0,0.45); letter-spacing: -0.033px;
+    }
+    /* 오른쪽에 살짝 겹쳐 놓인 종이 두 장 */
+    .nn2-big-pages { position: absolute; right: 20px; top: 10px; bottom: -14px; width: 96px; }
+    .nn2-big-pages i {
+      position: absolute; top: 0; bottom: 0; width: 56px;
+      background: #fff; border-radius: 3px; box-shadow: 0 1px 4px rgba(0,0,0,0.10);
+    }
+    .nn2-big-pages i:first-child { right: 34px; background: #f4f4f4; }
+    .nn2-big-pages i:last-child  { right: 0; }
+
+    .nn2-sec { padding: 34px 32px 0; }
+    .nn2-sec-t {
+      font-family: 'Pretendard', sans-serif; font-size: 15px; font-weight: 700;
+      color: rgba(0,0,0,0.86); letter-spacing: -0.045px;
+    }
+    .nn2-sec-s {
+      margin-top: 4px;
+      font-family: 'Pretendard', sans-serif; font-size: 11px; font-weight: 400;
+      color: rgba(0,0,0,0.45); letter-spacing: -0.033px;
+    }
+    .nn2-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      column-gap: 20px; row-gap: 24px;
+      padding: 16px 32px 40px;
+    }
+    .nn2-cell { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+    .nn2-thumb {
+      position: relative; width: 100%; aspect-ratio: 188 / 140;
+      border-radius: 6px; overflow: hidden;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .nn2-thumb > div { pointer-events: none; }
+    .nn2-name {
+      margin-top: 10px; text-align: center;
+      font-family: 'Pretendard', sans-serif; font-size: 12px; font-weight: 500;
+      color: rgba(0,0,0,0.86); letter-spacing: -0.036px;
+    }
+
+    /* 속지 목록 화면 — 히어로 + 필터 + 3열 그리드 */
+    .ib-hero {
+      background: rgba(0,0,0,0.05);
+      padding: 34px 32px; position: relative;
+      display: flex; align-items: center; gap: 20px;
+    }
+    .ib-hero-txt { flex: 1; min-width: 0; }
+    .ib-hero-t {
+      font-family: 'Pretendard', sans-serif; font-size: 22px; font-weight: 700;
+      color: rgba(0,0,0,0.86); letter-spacing: -0.066px;
+    }
+    .ib-hero-s {
+      margin-top: 10px; white-space: pre-line;
+      font-family: 'Pretendard', sans-serif; font-size: 12px; font-weight: 400;
+      color: rgba(0,0,0,0.55); letter-spacing: -0.036px; line-height: 1.6;
+    }
+    .ib-hero-pages { position: relative; width: 180px; height: 116px; flex-shrink: 0; }
+    .ib-hero-pages > div {
+      position: absolute; top: 0; height: 100%; aspect-ratio: 160/214;
+      background: #fff; border-radius: 3px; overflow: hidden;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.10);
+    }
+    .ib-hero-pages > div:first-child { right: 46px; }
+    .ib-hero-pages > div:last-child  { right: 0; }
+
+    .ib-filters {
+      display: flex; align-items: center; gap: 8px;
+      padding: 20px 32px 0;
+    }
+    .ib-chip {
+      padding: 8px 14px; border: 1px solid rgba(0,0,0,0.10); border-radius: 100px;
+      background: #fff; cursor: pointer; -webkit-tap-highlight-color: transparent;
+      font-family: 'Pretendard', sans-serif; font-size: 12px; font-weight: 500;
+      color: rgba(0,0,0,0.7); letter-spacing: -0.036px; white-space: nowrap;
+    }
+    .ib-chip.on { background: rgba(0,0,0,0.86); border-color: rgba(0,0,0,0.86); color: #fff; font-weight: 600; }
+    .ib-orient { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+    .ib-otab {
+      border: none; background: none; cursor: pointer; padding: 0;
+      font-family: 'Pretendard', sans-serif; font-size: 12px; font-weight: 500;
+      color: rgba(0,0,0,0.28); letter-spacing: -0.036px;
+    }
+    .ib-otab.on { color: rgba(0,0,0,0.86); font-weight: 600; }
+
+    .ib-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      column-gap: 20px; row-gap: 28px;
+      padding: 22px 32px 48px;
+    }
+    .ib-cell { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+    .ib-thumbwrap {
+      width: 100%; aspect-ratio: 1 / 1;
+      display: flex; align-items: flex-end; justify-content: center;
+    }
+    .ib-thumb {
+      position: relative; height: 100%; width: auto; aspect-ratio: 160 / 214;
+      background: #fff; border-radius: 4px; overflow: hidden;
+      box-shadow: 0 0 1px rgba(0,0,0,0.6), 0 4px 6px rgba(0,0,0,0.03);
+    }
+    .ib-thumb.land { height: auto; width: 100%; aspect-ratio: 4 / 3; }
+    .ib-lock {
+      position: absolute; left: 5px; bottom: 5px; z-index: 2;
+      width: 20px; height: 20px; border-radius: 4px;
+      background: rgba(0,0,0,0.4);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .ib-name {
+      margin-top: 12px; text-align: center;
+      font-family: 'Pretendard', sans-serif; font-size: 13px; font-weight: 400;
+      color: rgba(0,0,0,0.86); letter-spacing: -0.039px;
+    }
+
+    /* ── 속지 상세 바텀시트 (Figma 5843:403587) ── */
+    .ids-backdrop {
+      position: fixed; inset: 0; z-index: 5200; background: rgba(0,0,0,0.35);
+      opacity: 0; pointer-events: none; transition: opacity 0.24s ease;
+    }
+    .ids-backdrop.show { opacity: 1; pointer-events: auto; }
+    .ids-sheet {
+      position: fixed; left: 50%; bottom: 0; z-index: 5201;
+      width: 720px; max-width: calc(100vw - 32px); height: 88vh;
+      transform: translateX(-50%) translateY(100%);
+      background: #fff; border-radius: 28px 28px 0 0;
+      box-shadow: 0 -8px 40px rgba(0,0,0,0.18);
+      display: flex; flex-direction: column; overflow: hidden;
+      pointer-events: none;
+      transition: transform 0.34s cubic-bezier(0.32,0.72,0,1);
+    }
+    .ids-sheet.show { transform: translateX(-50%) translateY(0); pointer-events: auto; }
+    .ids-header {
+      position: relative; flex-shrink: 0; height: 60px;
+      display: flex; align-items: center; padding: 0 16px;
+    }
+    .ids-close {
+      width: 38px; height: 38px; border: none; border-radius: 100px;
+      background: rgba(0,0,0,0.05); cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .ids-title {
+      position: absolute; left: 50%; transform: translateX(-50%);
+      font-family: 'Pretendard', sans-serif; font-size: 15px; font-weight: 600;
+      color: rgba(0,0,0,0.86); letter-spacing: -0.045px; white-space: nowrap;
+    }
+    .ids-body { flex: 1; min-height: 0; overflow-y: auto; padding: 0 24px 24px; }
+    .ids-body::-webkit-scrollbar { display: none; }
+    .ids-hero {
+      border-radius: 12px; overflow: hidden;
+      height: 380px; display: flex; align-items: center; justify-content: center;
+      padding: 28px; box-sizing: border-box;
+    }
+    .ids-hero-page {
+      position: relative; height: 100%; width: auto; aspect-ratio: 160 / 214;
+      background: #fff; border-radius: 6px; overflow: hidden;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.10);
+    }
+    .ids-hero-page.land { height: auto; width: 100%; aspect-ratio: 4 / 3; }
+    .ids-name {
+      margin-top: 22px;
+      font-family: 'Pretendard', sans-serif; font-size: 19px; font-weight: 700;
+      color: rgba(0,0,0,0.86); letter-spacing: -0.057px;
+    }
+    .ids-desc {
+      margin-top: 14px;
+      font-family: 'Pretendard', sans-serif; font-size: 13px; font-weight: 400;
+      color: rgba(0,0,0,0.55); letter-spacing: -0.039px; line-height: 1.7;
+    }
+    .ids-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
+    .ids-tag {
+      padding: 8px 14px; border: 1px solid rgba(0,0,0,0.12); border-radius: 100px;
+      font-family: 'Pretendard', sans-serif; font-size: 12px; font-weight: 500;
+      color: rgba(0,0,0,0.7); letter-spacing: -0.036px;
+    }
+    .ids-sec {
+      margin-top: 28px; padding-top: 22px; border-top: 1px solid rgba(0,0,0,0.08);
+      font-family: 'Pretendard', sans-serif; font-size: 14px; font-weight: 700;
+      color: rgba(0,0,0,0.86); letter-spacing: -0.042px;
+    }
+    .ids-sec-body {
+      margin-top: 12px;
+      font-family: 'Pretendard', sans-serif; font-size: 13px; font-weight: 400;
+      color: rgba(0,0,0,0.55); letter-spacing: -0.039px; line-height: 1.7;
+    }
+    .ids-cta-wrap { flex-shrink: 0; padding: 12px 24px 24px; background: #fff; }
+    .ids-cta {
+      width: 100%; height: 56px; border: none; border-radius: 14px;
+      background: rgba(0,0,0,0.86); color: #fff; cursor: pointer;
+      font-family: 'Pretendard', sans-serif; font-size: 16px; font-weight: 600;
+      letter-spacing: -0.048px; -webkit-tap-highlight-color: transparent;
+    }
+    .ids-cta:hover { background: rgba(0,0,0,0.75); }
+
+    /* ── 색상/표지 선택 팝업 (Figma 5843:412452 / 404056) ── */
+    .nwz-backdrop {
+      position: fixed; inset: 0; z-index: 5300; background: rgba(0,0,0,0.35);
+      opacity: 0; pointer-events: none; transition: opacity 0.2s ease;
+    }
+    .nwz-backdrop.show { opacity: 1; pointer-events: auto; }
+    .nwz-popup {
+      position: fixed; left: 50%; top: 50%; z-index: 5301;
+      transform: translate(-50%, calc(-50% + 16px));
+      width: 620px; max-width: calc(100vw - 32px); height: 640px; max-height: 82vh;
+      background: #fff; border-radius: 28px;
+      box-shadow: 0 15px 75px rgba(0,0,0,0.18);
+      display: flex; flex-direction: column; overflow: hidden;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.2s ease, transform 0.22s cubic-bezier(0.34,1.1,0.64,1);
+    }
+    .nwz-popup.show { opacity: 1; pointer-events: auto; transform: translate(-50%, -50%); }
+    .nwz-header {
+      position: relative; flex-shrink: 0; height: 64px;
+      display: flex; align-items: center; justify-content: space-between; padding: 0 20px;
+    }
+    .nwz-title {
+      position: absolute; left: 50%; transform: translateX(-50%);
+      font-family: 'Pretendard', sans-serif; font-size: 15px; font-weight: 600;
+      color: rgba(0,0,0,0.86); letter-spacing: -0.045px; white-space: nowrap;
+    }
+    .nwz-nav {
+      width: 38px; height: 38px; border: none; border-radius: 100px;
+      display: flex; align-items: center; justify-content: center; cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      background: rgba(0,0,0,0.05); color: rgba(0,0,0,0.86);
+      font-size: 24px; line-height: 1;
+    }
+    .nwz-next { background: rgba(0,0,0,0.86); color: #fff; }
+    .nwz-next:hover { background: rgba(0,0,0,0.75); }
+    .nwz-chips { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 24px 4px; flex-shrink: 0; }
+    .nwz-body { flex: 1; min-height: 0; overflow-y: auto; padding: 16px 24px 28px; }
+    .nwz-body::-webkit-scrollbar { display: none; }
+    .nwz-grid { display: grid; grid-template-columns: repeat(3, 1fr); column-gap: 20px; row-gap: 24px; }
+    .nwz-cell { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+    .nwz-thumbwrap { position: relative; width: 100%; }
+    .nwz-thumb {
+      position: relative; width: 100%; aspect-ratio: 160 / 214;
+      border-radius: 4px; overflow: hidden; background: #fff;
+      box-shadow: 0 0 1px rgba(0,0,0,0.5), 0 4px 6px rgba(0,0,0,0.04);
+    }
+    .nwz-cell.sel .nwz-thumb { outline: 2px solid rgba(0,0,0,0.86); outline-offset: 0; }
+    .nwz-check {
+      position: absolute; top: -10px; right: -10px; z-index: 3;
+      width: 26px; height: 26px; border-radius: 30px; background: rgba(0,0,0,0.86);
+      display: none; align-items: center; justify-content: center;
+    }
+    .nwz-cell.sel .nwz-check { display: flex; }
+    .nwz-name {
+      margin-top: 10px; text-align: center;
+      font-family: 'Pretendard', sans-serif; font-size: 12px; font-weight: 500;
+      color: rgba(0,0,0,0.86); letter-spacing: -0.036px;
+    }
+    /* 표지 미리보기 — 왼쪽 본체 + 오른쪽 책등 */
+    .nwz-cover { position: relative; width: 100%; aspect-ratio: 160/214; border-radius: 4px 8px 8px 4px; overflow: hidden; }
+    .nwz-cover-spine { position: absolute; top: 0; bottom: 0; right: 0; width: 15%; background: rgba(0,0,0,0.25); }
+    .nwz-cover-label {
+      position: absolute; left: 12%; bottom: 12%;
+      font-family: 'Pretendard', sans-serif; font-size: 10px; font-weight: 700; line-height: 1.3;
+      color: rgba(255,255,255,0.92); letter-spacing: 0.2px;
+    }
+
   </style>
 </head>
 <body>
@@ -3064,6 +3389,93 @@
     <button class="fab-add-btn" id="hsAddBtn" aria-label="새 노트">
       <i data-lucide="plus" style="width:30px;height:30px;color:#fff;"></i>
     </button>
+  </div>
+
+
+  <!-- ═══ 새 노트 만들기 플로우 ═══════════════════════════════════ -->
+  <!-- 홈 + 버튼 메뉴 (노트 / 폴더) -->
+  <div class="hsm-menu" id="hsAddMenu" onclick="event.stopPropagation()">
+    <button class="hsm-row" id="hsmNote" type="button">
+      <i data-lucide="notebook-pen" style="width:20px;height:20px;color:rgba(0,0,0,0.86);"></i><span>노트</span>
+    </button>
+    <button class="hsm-row" id="hsmFolder" type="button">
+      <i data-lucide="folder" style="width:20px;height:20px;color:rgba(0,0,0,0.86);"></i><span>폴더</span>
+    </button>
+  </div>
+
+  <!-- 1) 새 노트 추가 (Figma 5843:403428) -->
+  <div class="nnf-screen" id="newNoteScreen">
+    <div class="nnf-header">
+      <button class="nnf-back" id="nnfBack1" aria-label="뒤로">‹</button>
+      <span class="nnf-title">새 노트 추가</span>
+    </div>
+    <div class="nn2-top">
+      <button class="nn2-big" type="button">
+        <div class="nn2-big-t">기본/템플릿 노트</div>
+        <div class="nn2-big-s">다양한 템플릿을 이용하여 자유롭게 기록</div>
+        <div class="nn2-big-pages"><i></i><i></i></div>
+      </button>
+      <button class="nn2-big" type="button">
+        <div class="nn2-big-t">PDF로 추가</div>
+        <div class="nn2-big-s">내가 가진 파일을 등록하여 노트 생성</div>
+        <div class="nn2-big-pages"><i></i><i></i></div>
+      </button>
+    </div>
+    <div class="nn2-sec">
+      <div class="nn2-sec-t">스마트 노트</div>
+      <div class="nn2-sec-s">공부 시간, 일정, 투두 등 자동 연동 및 기록</div>
+    </div>
+    <div class="nn2-grid" id="nn2Grid"></div>
+  </div>
+
+  <!-- 2) 속지 목록 (Figma 5843:403470) -->
+  <div class="nnf-screen" id="insertBrowseScreen">
+    <div class="nnf-header">
+      <button class="nnf-back" id="nnfBack2" aria-label="뒤로">‹</button>
+      <span class="nnf-title" id="ibTitle"></span>
+    </div>
+    <div class="ib-hero">
+      <div class="ib-hero-txt">
+        <div class="ib-hero-t" id="ibHeroT"></div>
+        <div class="ib-hero-s" id="ibHeroS"></div>
+      </div>
+      <div class="ib-hero-pages"><div id="ibHeroP1"></div><div id="ibHeroP2"></div></div>
+    </div>
+    <div class="ib-filters">
+      <div id="ibChips" style="display:flex;gap:8px;"></div>
+      <div class="ib-orient" id="ibOrient"></div>
+    </div>
+    <div class="ib-grid" id="ibGrid"></div>
+  </div>
+
+  <!-- 3) 속지 상세 바텀시트 (Figma 5843:403587) -->
+  <div class="ids-backdrop" id="idsBackdrop"></div>
+  <div class="ids-sheet" id="idsSheet">
+    <div class="ids-header">
+      <button class="ids-close" id="idsClose" aria-label="닫기"><i data-lucide="x" style="width:20px;height:20px;color:rgba(0,0,0,0.6);"></i></button>
+      <span class="ids-title" id="idsTitle"></span>
+    </div>
+    <div class="ids-body">
+      <div class="ids-hero" id="idsHero"><div class="ids-hero-page" id="idsHeroPage"></div></div>
+      <div class="ids-name" id="idsName"></div>
+      <div class="ids-desc" id="idsDesc"></div>
+      <div class="ids-tags" id="idsTags"></div>
+      <div class="ids-sec">상세 설명</div>
+      <div class="ids-sec-body" id="idsDetail"></div>
+    </div>
+    <div class="ids-cta-wrap"><button class="ids-cta" id="idsUse">이 속지 사용</button></div>
+  </div>
+
+  <!-- 4·5) 색상 선택 → 표지 선택 팝업 (Figma 5843:412452 / 404056) -->
+  <div class="nwz-backdrop" id="nwzBackdrop"></div>
+  <div class="nwz-popup" id="nwzPopup">
+    <div class="nwz-header">
+      <button class="nwz-nav" id="nwzPrev" aria-label="이전"></button>
+      <span class="nwz-title" id="nwzTitle"></span>
+      <button class="nwz-nav nwz-next" id="nwzNext" aria-label="다음">→</button>
+    </div>
+    <div class="nwz-chips" id="nwzChips"></div>
+    <div class="nwz-body"><div class="nwz-grid" id="nwzGrid"></div></div>
   </div>
 
 <script src="components/date-picker.js"></script>
@@ -6193,6 +6605,274 @@
 
     window.openGhostSettingsPanel = openGhostSettingsPanel;
   })();
+
+  // ══════════════════════════════════════════════════════════════════
+  // 새 노트 만들기 플로우
+  //   홈 + → [노트/폴더] → 새 노트 추가 → 노트 타입 → 속지 목록
+  //   → 속지 상세 시트 → (이 속지 사용) → 색상 선택 → 표지 선택 → 노트 생성
+  // ══════════════════════════════════════════════════════════════════
+  (function () {
+    // ── 데이터 ────────────────────────────────────────────────
+    const NOTE_TYPES = [
+      { id: 'planner',  name: '플래너',  bg: '#efefef',
+        desc: '일 단위의 공부 시간, 할일 관리 노트.\n할일, 일정, 공부 시간 자동 연동.' },
+      { id: 'timeline', name: '타임라인', bg: '#cfe0ef',
+        desc: '하루의 흐름을 시간 순으로 기록하는 노트.\n집중 구간과 쉬는 구간이 한눈에 보여요.' },
+      { id: 'todo',     name: '할 일',    bg: '#ccd6c4',
+        desc: '오늘 해야 할 일을 모아 관리하는 노트.\n체크리스트로 진행 상황을 확인해요.' },
+      { id: 'routine',  name: '루틴',     bg: '#e5d5b8',
+        desc: '매일 반복하는 습관을 기록하는 노트.\n주 단위로 달성률을 볼 수 있어요.' },
+    ];
+
+    // 속지 목록. group = 상단 칩(일간/주간/월간), orient = 세로형/가로형
+    const INSERTS = [
+      { id: 'i1', name: '열품타 기본 플래너',       group: '일간', orient: 'portrait',  tint: '#ff6b1a', unlocked: true },
+      { id: 'i2', name: '베이직 데일리 플래너',      group: '일간', orient: 'portrait',  tint: '#ffffff', unlocked: true },
+      { id: 'i3', name: '멍뭉이 데일리 플래너',      group: '일간', orient: 'portrait',  tint: '#f6efe6', unlocked: false },
+      { id: 'i4', name: '고양이 데일리 플래너',      group: '일간', orient: 'portrait',  tint: '#e9c7fe', unlocked: false },
+      { id: 'i5', name: '타임라인 플래너',           group: '일간', orient: 'portrait',  tint: '#ffffff', unlocked: false },
+      { id: 'i6', name: '3분할 데일리 플래너 (가로 전용)', group: '일간', orient: 'landscape', tint: '#eef1f4', unlocked: false },
+      { id: 'i7', name: '위클리 스프레드',           group: '주간', orient: 'portrait',  tint: '#e6f0ff', unlocked: true },
+      { id: 'i8', name: '주간 타임블록 (가로 전용)',  group: '주간', orient: 'landscape', tint: '#fff3a4', unlocked: false },
+      { id: 'i9', name: '먼슬리 그리드',             group: '월간', orient: 'portrait',  tint: '#e8f5ea', unlocked: true },
+    ];
+    const INSERT_TAGS = ['공부 시간 연동', '할 일 관리', '10분 타임 테이블', 'D-day'];
+    const INSERT_DESC = '매일 함께해주는 감성 플래너. 과목별로 할일을 체크리스트로 정리하고, 오늘 공부한 시간은 자동으로 기록돼요. D-day로 다가오는 시험이나 일정을 챙기고, 하루하루 쌓이는 기록은 잔디 형태로 한눈에 확인할 수 있어요.';
+    const INSERT_DETAIL = '과목을 추가하면 그 아래로 할 일을 자유롭게 붙일 수 있어요. 타이머를 돌리면 해당 과목의 공부 시간이 자동으로 누적되고, 오른쪽 타임 테이블에 10분 단위로 색이 채워집니다. 상단의 D-day와 총 공부시간은 매일 자동으로 갱신돼요.';
+
+    const INSERT_COLORS = [
+      { id: 'base',   name: '기본',   color: '#ffffff' },
+      { id: 'blue',   name: '블루',   color: '#c7e0fe' },
+      { id: 'yellow', name: '옐로우', color: '#fff3a4' },
+      { id: 'green',  name: '그린',   color: '#d9f2cd' },
+    ];
+    const COVER_TABS = ['컬러', '패턴', '스티커', '재질', '내가 만든'];
+
+    // ── 상태 ──────────────────────────────────────────────────
+    const st = { type: null, group: '일간', orient: '전체', insert: null, color: 'base', cover: null, step: 0 };
+
+    // ── DOM ───────────────────────────────────────────────────
+    const $ = id => document.getElementById(id);
+    const addMenu = $('hsAddMenu');
+    const nnScreen = $('newNoteScreen'), ibScreen = $('insertBrowseScreen');
+    const idsSheet = $('idsSheet'), idsBackdrop = $('idsBackdrop');
+    const nwzPopup = $('nwzPopup'), nwzBackdrop = $('nwzBackdrop');
+
+    // 속지 미리보기는 기존 스터디 카드 템플릿을 축소해 그린다
+    function paintPage(el, item, tintColor) {
+      el.innerHTML = '';
+      const src = buildStudyCardEl();
+      if (item.orient === 'landscape') { src.style.width = '800px'; src.style.height = '600px'; src.dataset.orient = 'landscape'; }
+      renderMp2Thumb(src, el);
+      const tint = tintColor || item.tint;
+      if (tint && tint !== '#ffffff') {
+        const t = document.createElement('div');
+        t.style.cssText = `position:absolute;inset:0;mix-blend-mode:multiply;opacity:0.55;pointer-events:none;background:${tint};`;
+        el.appendChild(t);
+      }
+    }
+
+    function showScreen(el, on) { el.classList.toggle('show', on); }
+
+    // ── 홈 + 버튼 메뉴 ────────────────────────────────────────
+    function openAddMenu(btn) {
+      const r = btn.getBoundingClientRect();
+      addMenu.classList.add('show');
+      const mr = addMenu.getBoundingClientRect();
+      addMenu.style.left = Math.max(12, r.right - mr.width) + 'px';
+      addMenu.style.top = (r.top - mr.height - 12) + 'px';
+      $('popScrim')?.classList.add('show');
+    }
+    function closeAddMenu() { addMenu.classList.remove('show'); $('popScrim')?.classList.remove('show'); }
+    document.addEventListener('click', () => closeAddMenu());
+
+    // 기존 FAB 핸들러(옛 nnMenu)를 대체한다 — 버튼을 복제해 이전 리스너를 떼어낸다
+    const oldFab = $('hsAddBtn');
+    const fab = oldFab.cloneNode(true);
+    oldFab.replaceWith(fab);
+    fab.addEventListener('click', (e) => {
+      e.stopPropagation();
+      addMenu.classList.contains('show') ? closeAddMenu() : openAddMenu(fab);
+    });
+    $('hsmFolder').addEventListener('click', () => { closeAddMenu(); window.toast?.show('폴더 만들기는 준비 중이에요'); });
+    $('hsmNote').addEventListener('click', () => { closeAddMenu(); openNewNote(); });
+
+    // ── 1) 새 노트 추가 ───────────────────────────────────────
+    function openNewNote() {
+      const grid = $('nn2Grid');
+      grid.innerHTML = '';
+      NOTE_TYPES.forEach(t => {
+        const cell = document.createElement('div');
+        cell.className = 'nn2-cell';
+        cell.innerHTML = `<div class="nn2-thumb" style="background:${t.bg};"><div style="position:relative;height:74%;aspect-ratio:160/214;background:#fff;border-radius:3px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.10);"></div></div><div class="nn2-name">${t.name}</div>`;
+        cell.addEventListener('click', () => openInsertBrowse(t));
+        grid.appendChild(cell);
+        const pg = cell.querySelector('.nn2-thumb > div');
+        setTimeout(() => paintPage(pg, { orient: 'portrait' }, null), 0);
+      });
+      showScreen(nnScreen, true);
+      if (window.lucide) lucide.createIcons({ nodes: [nnScreen] });
+    }
+    $('nnfBack1').addEventListener('click', () => showScreen(nnScreen, false));
+
+    // ── 2) 속지 목록 ──────────────────────────────────────────
+    function openInsertBrowse(type) {
+      st.type = type; st.group = '일간'; st.orient = '전체';
+      $('ibTitle').textContent = type.name;
+      $('ibHeroT').textContent = type.name;
+      $('ibHeroS').textContent = type.desc;
+      setTimeout(() => {
+        paintPage($('ibHeroP1'), { orient: 'portrait' }, null);
+        paintPage($('ibHeroP2'), { orient: 'portrait' }, null);
+      }, 0);
+      renderIbFilters();
+      renderIbGrid();
+      showScreen(ibScreen, true);
+    }
+    $('nnfBack2').addEventListener('click', () => showScreen(ibScreen, false));
+
+    function renderIbFilters() {
+      const chips = $('ibChips');
+      chips.innerHTML = '';
+      ['일간', '주간', '월간'].forEach(g => {
+        const b = document.createElement('button');
+        b.className = 'ib-chip' + (st.group === g ? ' on' : '');
+        b.textContent = `${g} 플래너`;
+        b.addEventListener('click', () => { st.group = g; renderIbFilters(); renderIbGrid(); });
+        chips.appendChild(b);
+      });
+      const orient = $('ibOrient');
+      orient.innerHTML = '';
+      ['전체', '가로형', '세로형'].forEach(o => {
+        const b = document.createElement('button');
+        b.className = 'ib-otab' + (st.orient === o ? ' on' : '');
+        b.textContent = o;
+        b.addEventListener('click', () => { st.orient = o; renderIbFilters(); renderIbGrid(); });
+        orient.appendChild(b);
+      });
+    }
+
+    function ibVisibleItems() {
+      return INSERTS.filter(it => it.group === st.group)
+        .filter(it => st.orient === '전체'
+          || (st.orient === '가로형' && it.orient === 'landscape')
+          || (st.orient === '세로형' && it.orient === 'portrait'));
+    }
+
+    function renderIbGrid() {
+      const grid = $('ibGrid');
+      grid.innerHTML = '';
+      ibVisibleItems().forEach(item => {
+        const cell = document.createElement('div');
+        cell.className = 'ib-cell';
+        cell.innerHTML = `<div class="ib-thumbwrap"><div class="ib-thumb${item.orient === 'landscape' ? ' land' : ''}"></div></div><div class="ib-name">${item.name}</div>`;
+        cell.addEventListener('click', () => openInsertDetail(item));
+        grid.appendChild(cell);
+        // paintPage가 썸네일 내용을 비우므로 잠금 배지는 그 뒤에 얹는다
+        setTimeout(() => {
+          const th = cell.querySelector('.ib-thumb');
+          paintPage(th, item);
+          if (!item.unlocked) {
+            const lock = document.createElement('div');
+            lock.className = 'ib-lock';
+            lock.innerHTML = '<i data-lucide="lock" style="width:12px;height:12px;color:#fff;"></i>';
+            th.appendChild(lock);
+            if (window.lucide) lucide.createIcons({ nodes: [lock] });
+          }
+        }, 0);
+      });
+      if (window.lucide) lucide.createIcons({ nodes: [grid] });
+    }
+
+    // ── 3) 속지 상세 바텀시트 ─────────────────────────────────
+    function openInsertDetail(item) {
+      st.insert = item;
+      $('idsTitle').textContent = item.name;
+      $('idsName').textContent = item.name;
+      $('idsDesc').textContent = INSERT_DESC;
+      $('idsDetail').textContent = INSERT_DETAIL;
+      $('idsHero').style.background = item.tint === '#ffffff' ? 'rgba(0,0,0,0.05)' : item.tint;
+      const page = $('idsHeroPage');
+      page.classList.toggle('land', item.orient === 'landscape');
+      setTimeout(() => paintPage(page, item, null), 0);
+      $('idsTags').innerHTML = INSERT_TAGS.map(t => `<span class="ids-tag">${t}</span>`).join('');
+      idsBackdrop.classList.add('show');
+      idsSheet.classList.add('show');
+      if (window.lucide) lucide.createIcons({ nodes: [idsSheet] });
+    }
+    function closeInsertDetail() { idsBackdrop.classList.remove('show'); idsSheet.classList.remove('show'); }
+    $('idsClose').addEventListener('click', closeInsertDetail);
+    idsBackdrop.addEventListener('click', closeInsertDetail);
+
+    // "이 속지 사용" → 시트를 내리고, 다 내려간 뒤 색상 선택 팝업을 띄운다
+    $('idsUse').addEventListener('click', () => {
+      closeInsertDetail();
+      setTimeout(() => openWizard(0), 360);
+    });
+
+    // ── 4·5) 색상 선택 → 표지 선택 ────────────────────────────
+    let coverTab = '컬러';
+    function openWizard(step) {
+      st.step = step;
+      renderWizard();
+      nwzBackdrop.classList.add('show');
+      nwzPopup.classList.add('show');
+    }
+    function closeWizard() { nwzBackdrop.classList.remove('show'); nwzPopup.classList.remove('show'); }
+    nwzBackdrop.addEventListener('click', closeWizard);
+
+    function renderWizard() {
+      const prev = $('nwzPrev'), grid = $('nwzGrid'), chips = $('nwzChips');
+      grid.innerHTML = ''; chips.innerHTML = '';
+      if (st.step === 0) {
+        $('nwzTitle').textContent = '색상 선택 (1/3)';
+        prev.innerHTML = '<i data-lucide="x" style="width:20px;height:20px;color:rgba(0,0,0,0.6);"></i>';
+        prev.onclick = closeWizard;
+        INSERT_COLORS.forEach(c => {
+          const cell = document.createElement('div');
+          cell.className = 'nwz-cell' + (st.color === c.id ? ' sel' : '');
+          cell.innerHTML = `<div class="nwz-thumbwrap"><div class="nwz-thumb"></div><div class="nwz-check"><i data-lucide="check" style="width:14px;height:14px;color:#fff;"></i></div></div><div class="nwz-name">${c.name}</div>`;
+          cell.addEventListener('click', () => { st.color = c.id; renderWizard(); });
+          grid.appendChild(cell);
+          setTimeout(() => paintPage(cell.querySelector('.nwz-thumb'), st.insert || { orient: 'portrait' }, c.color), 0);
+        });
+      } else {
+        $('nwzTitle').textContent = '표지 선택';
+        prev.innerHTML = '‹';
+        prev.onclick = () => openWizard(0);
+        COVER_TABS.forEach(t => {
+          const b = document.createElement('button');
+          b.className = 'ib-chip' + (coverTab === t ? ' on' : '');
+          b.textContent = t;
+          b.addEventListener('click', () => { coverTab = t; renderWizard(); });
+          chips.appendChild(b);
+        });
+        NW_COVERS.forEach(c => {
+          const cell = document.createElement('div');
+          cell.className = 'nwz-cell' + (st.cover === c.id ? ' sel' : '');
+          const bg = coverTab === '패턴' ? patternCSS('dot', c.bg) : c.bg;
+          cell.innerHTML = `<div class="nwz-thumbwrap"><div class="nwz-cover" style="background:${bg};"><div class="nwz-cover-spine"></div><div class="nwz-cover-label">DAILY<br>PLANNER</div></div><div class="nwz-check"><i data-lucide="check" style="width:14px;height:14px;color:#fff;"></i></div></div><div class="nwz-name">${c.name}</div>`;
+          cell.addEventListener('click', () => { st.cover = c.id; renderWizard(); });
+          grid.appendChild(cell);
+        });
+      }
+      if (window.lucide) lucide.createIcons({ nodes: [nwzPopup] });
+    }
+
+    // 다음: 색상 → 표지 → 노트 생성
+    $('nwzNext').addEventListener('click', () => {
+      if (st.step === 0) { openWizard(1); return; }
+      const cover = NW_COVERS.find(c => c.id === st.cover) || NW_COVERS[0];
+      const noteType = st.type?.id === 'planner' ? 'scroll' : 'scroll';
+      closeWizard();
+      showScreen(ibScreen, false);
+      showScreen(nnScreen, false);
+      openTabFromHome(st.type ? `${st.type.name} 노트` : '새 노트',
+        NW_TYPE_ICON['데일리'] || 'notebook-pen', 'note', noteType);
+      window.toast?.show('노트가 만들어졌습니다');
+    });
+  })();
+
 </script>
 </body>
 </html>
