@@ -100,67 +100,45 @@
       position: relative;
       z-index: 10;
     }
-    /* 타이머 버튼 (Figma 6382:859771 studyStartEndButton)
-       주황 알약 + 안쪽에 번지는 두 개의 블러 글로우 + 흰 플레이 아이콘 + 흰 시간 */
+    /* 공부 버튼 = 탭 (Figma 6389:867522 / 867534 / 867527)
+         기본(공부 전) · .running(공부중·미선택): 유리 버튼
+         .selected(공부중·선택): 흰 배경 + 진한 글자 */
     .study-btn {
       position: relative;
       padding: 5px 11px;
-      background: rgba(255,85,47,0.86);
       border-radius: 12px;
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      overflow: hidden;
-      flex-shrink: 0;
-      cursor: pointer;
+      display: flex; align-items: center; gap: 4px;
+      flex-shrink: 0; cursor: pointer;
+      color: rgba(0,0,0,0.59);
+      background: rgba(255,255,255,0.5);
+      border: 1px solid #fff;
+      backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+      filter: drop-shadow(0 20px 25px rgba(0,0,0,0.25));
+      transition: background .2s ease, color .2s ease, box-shadow .2s ease;
     }
-    /* 오른쪽 아래 진한 글로우 · 왼쪽 위 밝은 글로우 */
-    .study-btn::before, .study-btn::after {
-      content: ''; position: absolute; height: 20px;
-      filter: blur(7px); pointer-events: none;
+    /* 선택 상태 — 불투명 흰 배경, 진한 글자 */
+    .study-btn.selected {
+      background: #fff; border-color: transparent;
+      color: rgba(0,0,0,0.86);
+      backdrop-filter: none; -webkit-backdrop-filter: none;
+      filter: none; box-shadow: 0 20px 50px rgba(0,0,0,0.25);
     }
-    .study-btn::before { right: 0; bottom: 0; width: 50px; background: rgba(230,42,0,0.7); }
-    .study-btn::after  { left: 17px; top: 0;  width: 33px; background: #ff7b34; }
-    .study-btn > * { position: relative; z-index: 1; }
+    .sb-icon { width: 14px; height: 14px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+    .sb-dot { width: 8px; height: 8px; border-radius: 40px; background: #7243ff; }
     .study-btn-time {
       font-family: 'Pretendard', sans-serif;
       font-size: 15px; font-weight: 500;
-      color: #fff; letter-spacing: -0.045px; line-height: 1.4;
+      color: inherit; letter-spacing: -0.045px; line-height: 1.4;
       font-variant-numeric: tabular-nums; white-space: nowrap;
     }
-    /* 공부를 시작하면 버튼이 왼쪽으로 작아지며 사라진다 */
-    .study-btn-wrap {
-      transform-origin: left center;
-      transition: transform .42s cubic-bezier(.4,0,.2,1),
-                  opacity .3s ease,
-                  max-width .42s cubic-bezier(.4,0,.2,1),
-                  margin-right .42s cubic-bezier(.4,0,.2,1),
-                  padding-right .42s cubic-bezier(.4,0,.2,1);
-      max-width: 240px;
+    .sb-pause {
+      width: 14px; height: 14px; flex-shrink: 0; padding: 0;
+      border: none; background: none; cursor: pointer; color: inherit;
+      display: flex; align-items: center; justify-content: center;
+      -webkit-tap-highlight-color: transparent;
     }
-    .study-btn-wrap.collapsed {
-      transform: scaleX(0); opacity: 0;
-      max-width: 0; margin-right: 0; padding-right: 0;
-      pointer-events: none;
-    }
+    .sb-pause[hidden] { display: none; }
 
-    /* 공부 탭 (Figma 6382:865545) — 아이콘·라벨·X 대신 보라 점 + 시간 + 일시정지 */
-    /* 버튼이 다 접힌 뒤, 왼쪽에서 오른쪽으로 폭이 늘어나며 등장한다.
-       scaleX는 곡선·글자가 찌그러지므로 max-width를 늘려 내용을 왼쪽부터 드러낸다.
-       (종료할 때는 .entering을 다시 붙여 같은 길로 줄어든다) */
-    .tab-study {
-      overflow: hidden; max-width: 220px;
-      transition: max-width .38s cubic-bezier(.4,0,.2,1), opacity .22s ease;
-    }
-    .tab-study.entering { max-width: 0; opacity: 0; }
-    .tab-study .tab-inner { gap: 4px; }
-    .st-dot-wrap { width: 16px; height: 16px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
-    .st-dot { width: 12px; height: 12px; border-radius: 20px; background: #9f6fff; }
-    .tab-study .tab-label,
-    .tab-study .tab-label.dim {
-      font-size: 14px; font-weight: 500; letter-spacing: -0.042px;
-      color: rgba(0,0,0,0.4); font-variant-numeric: tabular-nums;
-    }
 
     /* 홈 탭 — 아이콘만 들어가고 양옆 여백 없이 아이콘 폭에 딱 맞춘다 */
     .tab-home .tab-inner { width: auto; justify-content: center; gap: 0; padding: 0; }
@@ -3099,8 +3077,11 @@
       <!-- 타이머 버튼 — 탭 컨테이너 맨 앞(홈 탭보다 앞). 누르면 공부 탭이 열리고 버튼은 숨는다 -->
       <div class="study-btn-wrap" id="studyBtnWrap">
         <div class="study-btn" id="studyTimerBtn">
-          <i data-lucide="play" style="width:14px;height:14px;flex-shrink:0;fill:#fff;stroke:none;"></i>
+          <span class="sb-icon" id="sbIcon"></span>
           <span class="study-btn-time" id="studyTimerTime">00:00:00</span>
+          <button class="sb-pause" id="sbPause" aria-label="공부 종료" hidden>
+            <i data-lucide="pause" style="width:14px;height:14px;fill:currentColor;stroke:none;"></i>
+          </button>
         </div>
       </div>
       <!-- Tab labels -->
@@ -5820,29 +5801,52 @@
     if (window.lucide) lucide.createIcons({ nodes: [grid] });
   })();
 
-  let studyEnding = false;
-  function updateStudyBtn() {
-    const open = !!tabLabels.querySelector('.tab[data-study="1"]');
-    // 종료 연출 중에는 탭이 다 사라진 뒤 endStudy가 직접 되살린다
-    if (!open && studyEnding) return;
-    studyBtnWrap.classList.toggle('collapsed', open);
-    if (!open) document.getElementById('studyTimerTime').textContent = '00:00:00';
+  // ══ 공부 버튼 = 탭 ══════════════════════════════════════════
+  // 별도 탭을 만들지 않는다. 이 버튼 자체가 하나의 탭처럼 동작한다.
+  //   공부 전        : 유리 버튼(비활성 느낌) + 플레이 아이콘
+  //   공부중·미선택  : 유리 버튼 + 보라 점 + 시간 + 일시정지
+  //   공부중·선택    : 흰 배경 버튼 + 진한 글자 (공부 화면 표시)
+  // 다른 탭을 누르면 선택만 풀리고 시간은 계속 흐른다.
+  let studyRunning = false, studySelected = false;
+
+  const PLAY_SVG  = '<i data-lucide="play" style="width:14px;height:14px;fill:currentColor;stroke:none;"></i>';
+  const DOT_HTML  = '<span class="sb-dot"></span>';
+
+  function renderStudyBtn() {
+    studyBtn.classList.toggle('running', studyRunning);
+    studyBtn.classList.toggle('selected', studySelected);
+    const ic = document.getElementById('sbIcon');
+    ic.innerHTML = studyRunning ? DOT_HTML : PLAY_SVG;
+    document.getElementById('sbPause').hidden = !studyRunning;
+    if (window.lucide) lucide.createIcons({ nodes: [ic] });
   }
 
-  // 공부 종료도 시작과 마찬가지로 한 동작씩 차례로:
-  //   1) 탭이 사라지고  2) 잠깐 쉬었다가  3) 타이머 버튼이 다시 펼쳐진다
-  function endStudy(tabEl) {
-    if (studyEnding) return;
-    studyEnding = true;
+  // 공부 화면을 이 버튼이 대표하므로, 선택되면 모든 탭을 비활성으로 돌린다
+  function selectStudy() {
+    studySelected = true;
+    setTabActive(null); // 안에서 updateView가 불리며 공부 화면이 뜬다
+    renderStudyBtn();
+  }
+
+  function endStudy() {
     stopStudyTimer();
-    tabEl.classList.add('entering'); // 등장의 역방향
-    afterTransition(tabEl, () => {
-      removeTab(tabEl);
-      setTimeout(() => { studyEnding = false; updateStudyBtn(); }, 220);
-    }, 480);
+    studyRunning = false;
+    const wasSelected = studySelected;
+    studySelected = false;
+    document.getElementById('studyTimerTime').textContent = '00:00:00';
+    renderStudyBtn();
+    // 선택 상태였다면 갈 곳이 없으므로 홈 탭으로 보낸다
+    if (wasSelected) setTabActive(homeTab || tabLabels.querySelector('.tab'));
+    else updateView();
   }
 
-  // ── 공부 타이머 — 탭과 공부 화면의 시간이 함께 흘러간다 ──
+  studyBtn.addEventListener('click', (e) => {
+    if (e.target.closest('#sbPause')) { e.stopPropagation(); endStudy(); return; }
+    if (!studyRunning) { studyRunning = true; startStudyTimer(); }
+    selectStudy();
+  });
+
+  // ── 공부 타이머 — 버튼과 공부 화면의 시간이 함께 흘러간다 ──
   let studySec = 0, studyTick = null;
   function fmtStudy(sec) {
     const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s2 = sec % 60;
@@ -5850,8 +5854,7 @@
   }
   function paintStudyTime() {
     const t = fmtStudy(studySec);
-    const tabT = tabLabels.querySelector('.tab-study .tab-label');
-    if (tabT) tabT.textContent = t;
+    document.getElementById('studyTimerTime').textContent = t;
     const svT = document.getElementById('svTime');
     if (svT) svT.textContent = t;
   }
@@ -5861,54 +5864,8 @@
     studyTick = setInterval(() => { studySec++; paintStudyTime(); }, 1000);
   }
   function stopStudyTimer() { clearInterval(studyTick); studyTick = null; studySec = 0; }
-  window.stopStudyTimer = stopStudyTimer;
 
-  // 트랜지션이 끝난 뒤에 다음 단계로 넘어가기 위한 헬퍼 (끝 이벤트 + 안전장치 타임아웃)
-  function afterTransition(el, cb, fallback) {
-    let done = false;
-    const fin = () => { if (done) return; done = true; el.removeEventListener('transitionend', onEnd); cb(); };
-    const onEnd = (e) => { if (e.target === el) fin(); };
-    el.addEventListener('transitionend', onEnd);
-    setTimeout(fin, fallback || 400);
-  }
-
-  // 공부 시작은 세 동작을 겹치지 않고 차례로 진행한다.
-  //   1) 타이머 버튼이 왼쪽으로 접혀 사라진다
-  //   2) 접힘이 끝나면 홈 탭 옆에 공부 탭이 등장한다
-  //   3) 등장이 끝나면 시간이 흐르기 시작한다
-  let studyStarting = false;
-  studyBtn.addEventListener('click', () => {
-    const existing = tabLabels.querySelector('.tab[data-study="1"]');
-    if (existing) { setTabActive(existing); return; }
-    if (studyStarting) return;
-    studyStarting = true;
-
-    studyBtnWrap.classList.add('collapsed'); // 1)
-    afterTransition(studyBtnWrap, () => setTimeout(() => { // 버튼이 사라지고 잠깐 쉰 뒤에
-      addHomeTab('공부', 'timer', 'quick');  // 2)
-      const created = tabLabels.querySelector('.tab.active');
-      if (!created) { studyStarting = false; return; }
-      created.dataset.study = '1';
-      created.classList.add('tab-study', 'entering');
-      if (homeTab) tabLabels.insertBefore(created, homeTab.nextSibling);
-
-      // 탭 내용을 Figma 공부 탭 구성으로 교체 (보라 점 + 시간 + 일시정지)
-      const inner = created.querySelector('.tab-inner');
-      inner.innerHTML = `
-        <span class="st-dot-wrap"><span class="st-dot"></span></span>
-        <span class="tab-label">0:00:00</span>
-        <i data-lucide="pause" style="width:16px;height:16px;flex-shrink:0;color:rgba(0,0,0,0.86);"></i>`;
-      if (window.lucide) lucide.createIcons({ nodes: [inner] });
-
-      refreshTabLayout();
-      updateView(); // 공부 표시를 단 뒤 다시 그려야 전용 화면이 뜬다
-
-      requestAnimationFrame(() => requestAnimationFrame(() => {
-        created.classList.remove('entering');
-        afterTransition(created, () => { startStudyTimer(); studyStarting = false; }, 480); // 3)
-      }));
-    }, 220), 520);
-  });
+  renderStudyBtn(); // 최초 상태(공부 전) 그리기
 
   // ── Tab management ─────────────────────────────────────
 
@@ -5921,8 +5878,7 @@
     const closeEl  = tab.classList.contains('tab-home') ? null : tabInner?.lastElementChild;
     if (closeEl && (e.target === closeEl || closeEl.contains(e.target))) {
       e.stopPropagation();
-      if (tab.classList.contains('tab-study')) endStudy(tab);
-      else removeTab(tab);
+      removeTab(tab);
       return;
     }
     setTabActive(tab);
@@ -5943,6 +5899,8 @@
   }
 
   function setTabActive(tab) {
+    // 실제 탭을 고르면 공부 버튼의 선택 상태만 풀린다 — 타이머는 계속 돈다
+    if (tab && studySelected) { studySelected = false; renderStudyBtn(); }
     tabLabels.querySelectorAll('.tab').forEach(t => {
       const isTarget = t === tab;
       t.classList.toggle('active', isTarget);
@@ -5972,9 +5930,6 @@
     tabEl.remove();
     const remaining = Array.from(tabLabels.querySelectorAll('.tab'));
 
-    if (!tabLabels.querySelector('.tab[data-study="1"]')) { stopStudyTimer(); studyStarting = false; }
-    updateStudyBtn(); // 공부 탭을 닫았으면 타이머 버튼이 다시 보인다
-
     if (remaining.length === 0) {
       openHomeScreen();
       updateView();
@@ -6003,12 +5958,12 @@
     const tabName   = activeTab?.dataset.tabName  || '';
 
     // 홈은 별도 화면이 아니라 홈 탭이 활성일 때 보이는 이 탭의 화면이다
-    homeScreen.classList.toggle('hs-visible', !!isHome);
-    // 공부 탭은 툴바·캔버스 대신 전용 화면을 쓴다
-    const isStudy = activeTab?.dataset.study === '1';
+    homeScreen.classList.toggle('hs-visible', !!isHome && !studySelected);
+    // 공부 버튼이 선택되어 있으면 툴바·캔버스 대신 공부 화면을 쓴다
+    const isStudy = studySelected;
     studyView.classList.toggle('show', !!isStudy);
 
-    const chromeless = isHome || isQuick;
+    const chromeless = isHome || isQuick || isStudy;
     toolbar.style.display        = chromeless ? 'none' : '';
     workspaceEl.style.height     = chromeless ? 'calc(100vh - 36px)' : 'calc(100vh - 86px)';
     viewPlaceholder.style.display = (isQuick && !isStudy) ? 'flex' : 'none';
