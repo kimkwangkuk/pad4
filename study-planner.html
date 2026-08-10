@@ -2960,14 +2960,14 @@
       z-index: 300; display: none;
       padding: 8px; box-sizing: border-box;
       background: #fff; /* Figma 프레임 배경이 흰색 — 캔버스 회색과 같으면 여백이 안 보인다 */
-      /* 바깥 흰 프레임도 둥글다. 안쪽 16px + 패딩 8px = 24px 라 두 라운드가 동심원으로 맞는다 */
-      border-radius: 24px; overflow: hidden;
+      /* 바깥 흰 프레임: 상단 좌우만 16px, 하단은 각지게 */
+      border-radius: 16px 16px 0 0; overflow: hidden;
       font-family: 'Pretendard', sans-serif; color: #fff;
     }
     .study-view.show { display: block; }
     .sv-panel {
       position: relative; width: 100%; height: 100%;
-      border-radius: 16px; overflow: hidden auto;
+      border-radius: 12px; overflow: hidden auto; /* 안쪽 패널은 네 모서리 모두 12px */
       background: #14213d url('assets/study-bg.png') center top / cover no-repeat;
     }
     .sv-panel::-webkit-scrollbar { display: none; }
