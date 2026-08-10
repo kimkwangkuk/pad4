@@ -100,23 +100,32 @@
       position: relative;
       z-index: 10;
     }
-    /* 타이머 버튼 — 아이콘 + 0:00:00 이 들어가는 알약 */
+    /* 타이머 버튼 (Figma 6382:859771 studyStartEndButton)
+       주황 알약 + 안쪽에 번지는 두 개의 블러 글로우 + 흰 플레이 아이콘 + 흰 시간 */
     .study-btn {
-      height: 30px;
-      padding: 0 10px;
-      background: white;
+      position: relative;
+      padding: 5px 11px;
+      background: rgba(255,85,47,0.86);
       border-radius: 12px;
       display: flex;
       align-items: center;
-      gap: 5px;
+      gap: 4px;
       overflow: hidden;
       flex-shrink: 0;
       cursor: pointer;
     }
+    /* 오른쪽 아래 진한 글로우 · 왼쪽 위 밝은 글로우 */
+    .study-btn::before, .study-btn::after {
+      content: ''; position: absolute; height: 20px;
+      filter: blur(7px); pointer-events: none;
+    }
+    .study-btn::before { right: 0; bottom: 0; width: 50px; background: rgba(230,42,0,0.7); }
+    .study-btn::after  { left: 17px; top: 0;  width: 33px; background: #ff7b34; }
+    .study-btn > * { position: relative; z-index: 1; }
     .study-btn-time {
       font-family: 'Pretendard', sans-serif;
-      font-size: 13px; font-weight: 600;
-      color: rgba(0,0,0,0.86); letter-spacing: -0.039px;
+      font-size: 15px; font-weight: 500;
+      color: #fff; letter-spacing: -0.045px; line-height: 1.4;
       font-variant-numeric: tabular-nums; white-space: nowrap;
     }
     /* 공부 탭이 열려 있는 동안에는 버튼을 감춘다 */
@@ -2953,8 +2962,8 @@
       <!-- 타이머 버튼 — 탭 컨테이너 맨 앞(홈 탭보다 앞). 누르면 공부 탭이 열리고 버튼은 숨는다 -->
       <div class="study-btn-wrap" id="studyBtnWrap">
         <div class="study-btn" id="studyTimerBtn">
-          <i data-lucide="play" style="width:13px;height:13px;flex-shrink:0;fill:rgba(0,0,0,0.86);stroke:none;"></i>
-          <span class="study-btn-time" id="studyTimerTime">0:00:00</span>
+          <i data-lucide="play" style="width:14px;height:14px;flex-shrink:0;fill:#fff;stroke:none;"></i>
+          <span class="study-btn-time" id="studyTimerTime">00:00:00</span>
         </div>
       </div>
       <!-- Tab labels -->
