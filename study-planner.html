@@ -2960,6 +2960,8 @@
       z-index: 300; display: none;
       padding: 8px; box-sizing: border-box;
       background: #fff; /* Figma 프레임 배경이 흰색 — 캔버스 회색과 같으면 여백이 안 보인다 */
+      /* 바깥 흰 프레임도 둥글다. 안쪽 16px + 패딩 8px = 24px 라 두 라운드가 동심원으로 맞는다 */
+      border-radius: 24px; overflow: hidden;
       font-family: 'Pretendard', sans-serif; color: #fff;
     }
     .study-view.show { display: block; }
