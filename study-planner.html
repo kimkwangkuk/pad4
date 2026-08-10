@@ -2954,15 +2954,21 @@
 
     /* ══ 공부 탭 화면 (Figma 6382:861492) ═════════════════════════
        타이머 버튼으로 공부를 시작하면 툴바·캔버스 대신 이 화면이 뜬다 */
+    /* 바깥은 8px 여백(캔버스 배경색), 안쪽 패널이 라운드로 잘린다 */
     .study-view {
       position: fixed; top: 36px; left: 0; right: 0; bottom: 0;
       z-index: 300; display: none;
-      overflow-y: auto; overflow-x: hidden;
-      background: #14213d url('assets/study-bg.png') center top / cover no-repeat;
+      padding: 8px; box-sizing: border-box;
+      background: var(--bg);
       font-family: 'Pretendard', sans-serif; color: #fff;
     }
     .study-view.show { display: block; }
-    .study-view::-webkit-scrollbar { display: none; }
+    .sv-panel {
+      position: relative; width: 100%; height: 100%;
+      border-radius: 16px; overflow: hidden auto;
+      background: #14213d url('assets/study-bg.png') center top / cover no-repeat;
+    }
+    .sv-panel::-webkit-scrollbar { display: none; }
     .sv-illust {
       position: absolute; left: 50%; top: 96px; width: 180px; height: 180px;
       transform: translateX(-50%); pointer-events: none;
@@ -3659,6 +3665,7 @@
 
   <!-- 공부 탭 화면 (Figma 6382:861492) — 툴바·캔버스를 대체한다 -->
   <div class="study-view" id="studyView">
+   <div class="sv-panel">
     <div class="sv-illust"></div>
     <div class="sv-inner">
       <div class="sv-top">
@@ -3703,6 +3710,7 @@
         <button class="sv-more">더보기<i data-lucide="chevron-down" style="width:16px;height:16px;"></i></button>
       </div>
     </div>
+   </div>
   </div>
 
 <script src="components/date-picker.js"></script>
