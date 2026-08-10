@@ -2951,6 +2951,104 @@
     }
     .nwz-name-input::placeholder { color: rgba(0,0,0,0.3); }
 
+
+    /* ══ 공부 탭 화면 (Figma 6382:861492) ═════════════════════════
+       타이머 버튼으로 공부를 시작하면 툴바·캔버스 대신 이 화면이 뜬다 */
+    .study-view {
+      position: fixed; top: 36px; left: 0; right: 0; bottom: 0;
+      z-index: 300; display: none;
+      overflow-y: auto; overflow-x: hidden;
+      background: #14213d url('assets/study-bg.png') center top / cover no-repeat;
+      font-family: 'Pretendard', sans-serif; color: #fff;
+    }
+    .study-view.show { display: block; }
+    .study-view::-webkit-scrollbar { display: none; }
+    .sv-illust {
+      position: absolute; left: 50%; top: 96px; width: 180px; height: 180px;
+      transform: translateX(-50%); pointer-events: none;
+      background: url('assets/study-witch.png') center / contain no-repeat;
+    }
+    .sv-inner { position: relative; z-index: 1; padding: 0 20px 40px; }
+    .sv-top { height: 60px; display: flex; align-items: center; padding: 0 4px; }
+    .sv-date { font-size: 20px; font-weight: 700; letter-spacing: -0.06px; }
+    .sv-top-icons { margin-left: auto; display: flex; gap: 6px; }
+    .sv-ic {
+      width: 38px; height: 38px; border: none; background: none; border-radius: 100px;
+      display: flex; align-items: center; justify-content: center; cursor: pointer;
+      color: #fff; -webkit-tap-highlight-color: transparent;
+    }
+    .sv-ic:hover { background: rgba(255,255,255,0.14); }
+    .sv-time-row { display: flex; align-items: flex-start; gap: 20px; padding: 12px 4px 0; }
+    .sv-time-main { flex: 1; min-width: 0; }
+    .sv-avatar {
+      width: 70px; height: 70px; border-radius: 16px; overflow: hidden;
+      background: rgba(255,255,255,0.16) url('assets/study-witch.png') center / 150% no-repeat;
+    }
+    .sv-label { margin-top: 22px; font-size: 14px; font-weight: 500; color: rgba(255,255,255,0.82); }
+    .sv-time { margin-top: 2px; font-size: 40px; font-weight: 700; letter-spacing: -1px; font-variant-numeric: tabular-nums; }
+    .sv-stats { display: flex; gap: 5px; margin-top: 16px; }
+    .sv-stat { width: 84px; }
+    .sv-stat-l { font-size: 12px; font-weight: 500; color: rgba(255,255,255,0.6); }
+    .sv-stat-v { font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; }
+    .sv-pause {
+      width: 46px; height: 46px; flex-shrink: 0; margin-top: 62px;
+      border: none; border-radius: 100px; cursor: pointer;
+      background: rgba(255,255,255,0.22);
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; backdrop-filter: blur(6px);
+    }
+    .sv-pause:hover { background: rgba(255,255,255,0.32); }
+    .sv-task {
+      margin-top: 22px; height: 70px; border-radius: 16px;
+      background: rgba(255,255,255,0.14); backdrop-filter: blur(12px);
+      display: flex; align-items: center; gap: 12px; padding: 0 20px;
+      border: 1px solid rgba(255,255,255,0.10);
+    }
+    .sv-task-ic {
+      width: 26px; height: 26px; border-radius: 7px; flex-shrink: 0;
+      background: rgba(255,255,255,0.2);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .sv-task-txt { flex: 1; min-width: 0; }
+    .sv-task-t { font-size: 14px; font-weight: 600; }
+    .sv-task-s { font-size: 12px; font-weight: 400; color: rgba(255,255,255,0.65); margin-top: 2px; }
+    .sv-task-state { font-size: 12px; font-weight: 500; color: rgba(255,255,255,0.6); flex-shrink: 0; }
+    .sv-group {
+      margin-top: 12px; border-radius: 20px; padding: 20px 18px 18px;
+      background: rgba(10,20,45,0.34); backdrop-filter: blur(14px);
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+    .sv-g-title-row { display: flex; align-items: center; gap: 12px; }
+    .sv-g-title { flex: 1; min-width: 0; font-size: 17px; font-weight: 700; letter-spacing: -0.051px; }
+    .sv-dots { display: flex; gap: 8px; flex-shrink: 0; }
+    .sv-dots i { width: 5px; height: 5px; border-radius: 5px; background: rgba(255,255,255,0.35); display: block; }
+    .sv-dots i:first-child { background: #fff; }
+    .sv-g-info { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+    .sv-g-count { font-size: 13px; font-weight: 600; }
+    .sv-g-state { font-size: 13px; font-weight: 400; color: rgba(255,255,255,0.6); }
+    .sv-g-avatars { display: flex; gap: 6px; margin-left: 6px; }
+    .sv-g-avatars span {
+      width: 24px; height: 24px; border-radius: 24px; display: block;
+      background: rgba(255,255,255,0.25); border: 1px solid rgba(255,255,255,0.25);
+    }
+    .sv-members { display: grid; grid-template-columns: repeat(4, 1fr); row-gap: 30px; margin-top: 26px; }
+    .sv-member { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+    .sv-member.off { opacity: 0.42; }
+    .sv-m-ic {
+      width: 60px; height: 60px; border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      color: rgba(255,255,255,0.9);
+    }
+    .sv-m-name { font-size: 12px; font-weight: 500; text-align: center; max-width: 92px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .sv-m-time { font-size: 12px; font-weight: 400; color: rgba(255,255,255,0.72); font-variant-numeric: tabular-nums; }
+    .sv-more {
+      margin: 22px auto 0; display: flex; align-items: center; gap: 3px;
+      border: none; background: none; cursor: pointer;
+      font-family: 'Pretendard', sans-serif; font-size: 13px; font-weight: 500;
+      color: rgba(255,255,255,0.75);
+    }
+
   </style>
 </head>
 <body>
@@ -3555,6 +3653,55 @@
       </div>
       <div class="nwz-name-label">노트 이름</div>
       <input class="nwz-name-input" id="nwzNameInput" type="text" placeholder="DAILY PLANNER">
+    </div>
+  </div>
+
+
+  <!-- 공부 탭 화면 (Figma 6382:861492) — 툴바·캔버스를 대체한다 -->
+  <div class="study-view" id="studyView">
+    <div class="sv-illust"></div>
+    <div class="sv-inner">
+      <div class="sv-top">
+        <span class="sv-date" id="svDate">1월 5일</span>
+        <div class="sv-top-icons">
+          <button class="sv-ic" aria-label="전환"><i data-lucide="repeat-2" style="width:24px;height:24px;"></i></button>
+          <button class="sv-ic" aria-label="패널"><i data-lucide="panel-right" style="width:24px;height:24px;"></i></button>
+        </div>
+      </div>
+      <div class="sv-time-row">
+        <div class="sv-time-main">
+          <div class="sv-avatar"></div>
+          <div class="sv-label">현재 집중 시간</div>
+          <div class="sv-time" id="svTime">1:24:58</div>
+          <div class="sv-stats">
+            <div class="sv-stat"><div class="sv-stat-l">오늘</div><div class="sv-stat-v">4:34:42</div></div>
+            <div class="sv-stat"><div class="sv-stat-l">Work</div><div class="sv-stat-v">1:34:42</div></div>
+          </div>
+        </div>
+        <button class="sv-pause" id="svPause" aria-label="일시정지">
+          <i data-lucide="pause" style="width:20px;height:20px;fill:#fff;stroke:none;"></i>
+        </button>
+      </div>
+      <div class="sv-task">
+        <div class="sv-task-ic"><i data-lucide="calendar" style="width:15px;height:15px;"></i></div>
+        <div class="sv-task-txt">
+          <div class="sv-task-t">새로운 이벤트</div>
+          <div class="sv-task-s">오전 09:00~12:00</div>
+        </div>
+        <span class="sv-task-state">진행중</span>
+      </div>
+      <div class="sv-group">
+        <div class="sv-g-title-row">
+          <div class="sv-g-title">직장인분들은 같이 발전합시다</div>
+          <div class="sv-dots"><i></i><i></i><i></i></div>
+        </div>
+        <div class="sv-g-info">
+          <span class="sv-g-count">8명</span><span class="sv-g-state">공부중</span>
+          <div class="sv-g-avatars"><span></span><span></span><span></span></div>
+        </div>
+        <div class="sv-members" id="svMembers"></div>
+        <button class="sv-more">더보기<i data-lucide="chevron-down" style="width:16px;height:16px;"></i></button>
+      </div>
     </div>
   </div>
 
@@ -5611,6 +5758,27 @@
   function closeHomeScreen() { homeScreen.classList.remove('hs-visible'); }
 
   // 타이머 버튼 — 누르면 공부 탭이 생기고 그 탭으로 포커스, 버튼은 사라진다
+  const studyView = document.getElementById('studyView');
+
+  // 공부 화면의 그룹 멤버 그리드 (더미)
+  const SV_MEMBERS = [
+    ['꽃길만걷자', 1], ['CloudFloati…', 1], ['강물처럼', 0], ['단풍잎사랑🍁', 1],
+    ['별밤달빛', 1], ['햇살가득☀', 1], ['SummerSea', 1], ['겨울아이', 0],
+    ['푸른하늘', 1], ['OceanLove…', 1], ['LikeTheWind', 1], ['노을빛미소', 1],
+    ['바람소리', 0], ['달빛조각', 1], ['새벽공기', 1], ['별헤는밤', 0],
+  ];
+  (function renderStudyMembers() {
+    const grid = document.getElementById('svMembers');
+    if (!grid) return;
+    grid.innerHTML = SV_MEMBERS.map(([name, on]) => `
+      <div class="sv-member${on ? '' : ' off'}">
+        <div class="sv-m-ic"><i data-lucide="bed" style="width:34px;height:34px;"></i></div>
+        <div class="sv-m-name">${name}</div>
+        <div class="sv-m-time">12:23:43</div>
+      </div>`).join('');
+    if (window.lucide) lucide.createIcons({ nodes: [grid] });
+  })();
+
   function updateStudyBtn() {
     const open = !!tabLabels.querySelector('.tab[data-study="1"]');
     studyBtnWrap.classList.toggle('hidden', open);
@@ -5622,6 +5790,7 @@
     const created = tabLabels.querySelector('.tab.active');
     if (created) created.dataset.study = '1';
     updateStudyBtn();
+    updateView(); // 공부 표시를 단 뒤 다시 그려야 전용 화면이 뜬다
   });
 
   // ── Tab management ─────────────────────────────────────
@@ -5716,12 +5885,15 @@
 
     // 홈은 별도 화면이 아니라 홈 탭이 활성일 때 보이는 이 탭의 화면이다
     homeScreen.classList.toggle('hs-visible', !!isHome);
+    // 공부 탭은 툴바·캔버스 대신 전용 화면을 쓴다
+    const isStudy = activeTab?.dataset.study === '1';
+    studyView.classList.toggle('show', !!isStudy);
 
     const chromeless = isHome || isQuick;
     toolbar.style.display        = chromeless ? 'none' : '';
     workspaceEl.style.height     = chromeless ? 'calc(100vh - 36px)' : 'calc(100vh - 86px)';
-    viewPlaceholder.style.display = isQuick ? 'flex' : 'none';
-    viewPlaceholderLabel.textContent = isQuick ? tabName : '';
+    viewPlaceholder.style.display = (isQuick && !isStudy) ? 'flex' : 'none';
+    viewPlaceholderLabel.textContent = (isQuick && !isStudy) ? tabName : '';
 
     if (!chromeless) setCanvasMode(noteType, activeTab);
   }
