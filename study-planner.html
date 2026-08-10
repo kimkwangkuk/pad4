@@ -128,8 +128,31 @@
       color: #fff; letter-spacing: -0.045px; line-height: 1.4;
       font-variant-numeric: tabular-nums; white-space: nowrap;
     }
-    /* 공부 탭이 열려 있는 동안에는 버튼을 감춘다 */
-    .study-btn-wrap.hidden { display: none; }
+    /* 공부를 시작하면 버튼이 왼쪽으로 작아지며 사라진다 */
+    .study-btn-wrap {
+      transform-origin: left center;
+      transition: transform .26s cubic-bezier(.4,0,.2,1),
+                  opacity .18s ease,
+                  max-width .26s cubic-bezier(.4,0,.2,1),
+                  margin-right .26s cubic-bezier(.4,0,.2,1),
+                  padding-right .26s cubic-bezier(.4,0,.2,1);
+      max-width: 240px;
+    }
+    .study-btn-wrap.collapsed {
+      transform: scaleX(0); opacity: 0;
+      max-width: 0; margin-right: 0; padding-right: 0;
+      pointer-events: none;
+    }
+
+    /* 공부 탭 (Figma 6382:865545) — 아이콘·라벨·X 대신 보라 점 + 시간 + 일시정지 */
+    .tab-study .tab-inner { gap: 4px; }
+    .st-dot-wrap { width: 16px; height: 16px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+    .st-dot { width: 12px; height: 12px; border-radius: 20px; background: #9f6fff; }
+    .tab-study .tab-label,
+    .tab-study .tab-label.dim {
+      font-size: 14px; font-weight: 500; letter-spacing: -0.042px;
+      color: rgba(0,0,0,0.4); font-variant-numeric: tabular-nums;
+    }
 
     /* 홈 탭 — 아이콘만 들어가고 양옆 여백 없이 아이콘 폭에 딱 맞춘다 */
     .tab-home .tab-inner { width: auto; justify-content: center; gap: 0; padding: 0; }
@@ -5791,16 +5814,57 @@
 
   function updateStudyBtn() {
     const open = !!tabLabels.querySelector('.tab[data-study="1"]');
-    studyBtnWrap.classList.toggle('hidden', open);
+    studyBtnWrap.classList.toggle('collapsed', open);
+    if (!open) document.getElementById('studyTimerTime').textContent = '00:00:00';
   }
+
+  // ── 공부 타이머 — 탭과 공부 화면의 시간이 함께 흘러간다 ──
+  let studySec = 0, studyTick = null;
+  function fmtStudy(sec) {
+    const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s2 = sec % 60;
+    return `${h}:${String(m).padStart(2, '0')}:${String(s2).padStart(2, '0')}`;
+  }
+  function paintStudyTime() {
+    const t = fmtStudy(studySec);
+    const tabT = tabLabels.querySelector('.tab-study .tab-label');
+    if (tabT) tabT.textContent = t;
+    const svT = document.getElementById('svTime');
+    if (svT) svT.textContent = t;
+  }
+  function startStudyTimer() {
+    studySec = 0; paintStudyTime();
+    clearInterval(studyTick);
+    studyTick = setInterval(() => { studySec++; paintStudyTime(); }, 1000);
+  }
+  function stopStudyTimer() { clearInterval(studyTick); studyTick = null; studySec = 0; }
+  window.stopStudyTimer = stopStudyTimer;
+
   studyBtn.addEventListener('click', () => {
     const existing = tabLabels.querySelector('.tab[data-study="1"]');
     if (existing) { setTabActive(existing); return; }
+
+    updateStudyBtn.__pending = true;
+    studyBtnWrap.classList.add('collapsed'); // 먼저 버튼이 왼쪽으로 접히고
+
     addHomeTab('공부', 'timer', 'quick');
     const created = tabLabels.querySelector('.tab.active');
-    if (created) created.dataset.study = '1';
-    updateStudyBtn();
-    updateView(); // 공부 표시를 단 뒤 다시 그려야 전용 화면이 뜬다
+    if (!created) return;
+    created.dataset.study = '1';
+    created.classList.add('tab-study');
+    // 홈 탭 바로 오른쪽에 놓는다
+    if (homeTab) tabLabels.insertBefore(created, homeTab.nextSibling);
+
+    // 탭 내용을 Figma 공부 탭 구성으로 교체 (보라 점 + 시간 + 일시정지)
+    const inner = created.querySelector('.tab-inner');
+    inner.innerHTML = `
+      <span class="st-dot-wrap"><span class="st-dot"></span></span>
+      <span class="tab-label">0:00:00</span>
+      <i data-lucide="pause" style="width:16px;height:16px;flex-shrink:0;color:rgba(0,0,0,0.86);"></i>`;
+    if (window.lucide) lucide.createIcons({ nodes: [inner] });
+
+    refreshTabLayout();
+    updateView();     // 공부 표시를 단 뒤 다시 그려야 전용 화면이 뜬다
+    startStudyTimer();
   });
 
   // ── Tab management ─────────────────────────────────────
@@ -5864,6 +5928,7 @@
     tabEl.remove();
     const remaining = Array.from(tabLabels.querySelectorAll('.tab'));
 
+    if (!tabLabels.querySelector('.tab[data-study="1"]')) stopStudyTimer();
     updateStudyBtn(); // 공부 탭을 닫았으면 타이머 버튼이 다시 보인다
 
     if (remaining.length === 0) {
