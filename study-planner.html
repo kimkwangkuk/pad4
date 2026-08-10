@@ -5815,10 +5815,26 @@
     if (window.lucide) lucide.createIcons({ nodes: [grid] });
   })();
 
+  let studyEnding = false;
   function updateStudyBtn() {
     const open = !!tabLabels.querySelector('.tab[data-study="1"]');
+    // 종료 연출 중에는 탭이 다 사라진 뒤 endStudy가 직접 되살린다
+    if (!open && studyEnding) return;
     studyBtnWrap.classList.toggle('collapsed', open);
     if (!open) document.getElementById('studyTimerTime').textContent = '00:00:00';
+  }
+
+  // 공부 종료도 시작과 마찬가지로 한 동작씩 차례로:
+  //   1) 탭이 사라지고  2) 잠깐 쉬었다가  3) 타이머 버튼이 다시 펼쳐진다
+  function endStudy(tabEl) {
+    if (studyEnding) return;
+    studyEnding = true;
+    stopStudyTimer();
+    tabEl.classList.add('entering'); // 등장의 역방향
+    afterTransition(tabEl, () => {
+      removeTab(tabEl);
+      setTimeout(() => { studyEnding = false; updateStudyBtn(); }, 220);
+    }, 480);
   }
 
   // ── 공부 타이머 — 탭과 공부 화면의 시간이 함께 흘러간다 ──
@@ -5900,7 +5916,8 @@
     const closeEl  = tab.classList.contains('tab-home') ? null : tabInner?.lastElementChild;
     if (closeEl && (e.target === closeEl || closeEl.contains(e.target))) {
       e.stopPropagation();
-      removeTab(tab);
+      if (tab.classList.contains('tab-study')) endStudy(tab);
+      else removeTab(tab);
       return;
     }
     setTabActive(tab);
