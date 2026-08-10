@@ -145,6 +145,9 @@
     }
 
     /* 공부 탭 (Figma 6382:865545) — 아이콘·라벨·X 대신 보라 점 + 시간 + 일시정지 */
+    /* 버튼이 다 접힌 뒤에 등장한다 */
+    .tab-study { transition: opacity .2s ease, transform .24s cubic-bezier(.4,0,.2,1); }
+    .tab-study.entering { opacity: 0; transform: translateX(-12px); }
     .tab-study .tab-inner { gap: 4px; }
     .st-dot-wrap { width: 16px; height: 16px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
     .st-dot { width: 12px; height: 12px; border-radius: 20px; background: #9f6fff; }
@@ -5839,32 +5842,51 @@
   function stopStudyTimer() { clearInterval(studyTick); studyTick = null; studySec = 0; }
   window.stopStudyTimer = stopStudyTimer;
 
+  // 트랜지션이 끝난 뒤에 다음 단계로 넘어가기 위한 헬퍼 (끝 이벤트 + 안전장치 타임아웃)
+  function afterTransition(el, cb, fallback) {
+    let done = false;
+    const fin = () => { if (done) return; done = true; el.removeEventListener('transitionend', onEnd); cb(); };
+    const onEnd = (e) => { if (e.target === el) fin(); };
+    el.addEventListener('transitionend', onEnd);
+    setTimeout(fin, fallback || 400);
+  }
+
+  // 공부 시작은 세 동작을 겹치지 않고 차례로 진행한다.
+  //   1) 타이머 버튼이 왼쪽으로 접혀 사라진다
+  //   2) 접힘이 끝나면 홈 탭 옆에 공부 탭이 등장한다
+  //   3) 등장이 끝나면 시간이 흐르기 시작한다
+  let studyStarting = false;
   studyBtn.addEventListener('click', () => {
     const existing = tabLabels.querySelector('.tab[data-study="1"]');
     if (existing) { setTabActive(existing); return; }
+    if (studyStarting) return;
+    studyStarting = true;
 
-    updateStudyBtn.__pending = true;
-    studyBtnWrap.classList.add('collapsed'); // 먼저 버튼이 왼쪽으로 접히고
+    studyBtnWrap.classList.add('collapsed'); // 1)
+    afterTransition(studyBtnWrap, () => {
+      addHomeTab('공부', 'timer', 'quick');  // 2)
+      const created = tabLabels.querySelector('.tab.active');
+      if (!created) { studyStarting = false; return; }
+      created.dataset.study = '1';
+      created.classList.add('tab-study', 'entering');
+      if (homeTab) tabLabels.insertBefore(created, homeTab.nextSibling);
 
-    addHomeTab('공부', 'timer', 'quick');
-    const created = tabLabels.querySelector('.tab.active');
-    if (!created) return;
-    created.dataset.study = '1';
-    created.classList.add('tab-study');
-    // 홈 탭 바로 오른쪽에 놓는다
-    if (homeTab) tabLabels.insertBefore(created, homeTab.nextSibling);
+      // 탭 내용을 Figma 공부 탭 구성으로 교체 (보라 점 + 시간 + 일시정지)
+      const inner = created.querySelector('.tab-inner');
+      inner.innerHTML = `
+        <span class="st-dot-wrap"><span class="st-dot"></span></span>
+        <span class="tab-label">0:00:00</span>
+        <i data-lucide="pause" style="width:16px;height:16px;flex-shrink:0;color:rgba(0,0,0,0.86);"></i>`;
+      if (window.lucide) lucide.createIcons({ nodes: [inner] });
 
-    // 탭 내용을 Figma 공부 탭 구성으로 교체 (보라 점 + 시간 + 일시정지)
-    const inner = created.querySelector('.tab-inner');
-    inner.innerHTML = `
-      <span class="st-dot-wrap"><span class="st-dot"></span></span>
-      <span class="tab-label">0:00:00</span>
-      <i data-lucide="pause" style="width:16px;height:16px;flex-shrink:0;color:rgba(0,0,0,0.86);"></i>`;
-    if (window.lucide) lucide.createIcons({ nodes: [inner] });
+      refreshTabLayout();
+      updateView(); // 공부 표시를 단 뒤 다시 그려야 전용 화면이 뜬다
 
-    refreshTabLayout();
-    updateView();     // 공부 표시를 단 뒤 다시 그려야 전용 화면이 뜬다
-    startStudyTimer();
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        created.classList.remove('entering');
+        afterTransition(created, () => { startStudyTimer(); studyStarting = false; }, 320); // 3)
+      }));
+    }, 320);
   });
 
   // ── Tab management ─────────────────────────────────────
@@ -5928,7 +5950,7 @@
     tabEl.remove();
     const remaining = Array.from(tabLabels.querySelectorAll('.tab'));
 
-    if (!tabLabels.querySelector('.tab[data-study="1"]')) stopStudyTimer();
+    if (!tabLabels.querySelector('.tab[data-study="1"]')) { stopStudyTimer(); studyStarting = false; }
     updateStudyBtn(); // 공부 탭을 닫았으면 타이머 버튼이 다시 보인다
 
     if (remaining.length === 0) {
