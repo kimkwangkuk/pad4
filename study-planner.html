@@ -145,9 +145,14 @@
     }
 
     /* 공부 탭 (Figma 6382:865545) — 아이콘·라벨·X 대신 보라 점 + 시간 + 일시정지 */
-    /* 버튼이 다 접힌 뒤에 등장한다 */
-    .tab-study { transition: opacity .32s ease, transform .38s cubic-bezier(.4,0,.2,1); }
-    .tab-study.entering { opacity: 0; transform: translateX(-14px); }
+    /* 버튼이 다 접힌 뒤, 왼쪽에서 오른쪽으로 폭이 늘어나며 등장한다.
+       scaleX는 곡선·글자가 찌그러지므로 max-width를 늘려 내용을 왼쪽부터 드러낸다.
+       (종료할 때는 .entering을 다시 붙여 같은 길로 줄어든다) */
+    .tab-study {
+      overflow: hidden; max-width: 220px;
+      transition: max-width .38s cubic-bezier(.4,0,.2,1), opacity .22s ease;
+    }
+    .tab-study.entering { max-width: 0; opacity: 0; }
     .tab-study .tab-inner { gap: 4px; }
     .st-dot-wrap { width: 16px; height: 16px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
     .st-dot { width: 12px; height: 12px; border-radius: 20px; background: #9f6fff; }
