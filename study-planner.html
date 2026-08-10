@@ -100,18 +100,30 @@
       position: relative;
       z-index: 10;
     }
+    /* 타이머 버튼 — 아이콘 + 0:00:00 이 들어가는 알약 */
     .study-btn {
-      width: 30px;
       height: 30px;
+      padding: 0 10px;
       background: white;
       border-radius: 12px;
       display: flex;
       align-items: center;
-      justify-content: center;
+      gap: 5px;
       overflow: hidden;
       flex-shrink: 0;
       cursor: pointer;
     }
+    .study-btn-time {
+      font-family: 'Pretendard', sans-serif;
+      font-size: 13px; font-weight: 600;
+      color: rgba(0,0,0,0.86); letter-spacing: -0.039px;
+      font-variant-numeric: tabular-nums; white-space: nowrap;
+    }
+    /* 공부 탭이 열려 있는 동안에는 버튼을 감춘다 */
+    .study-btn-wrap.hidden { display: none; }
+
+    /* 홈 탭 — 아이콘만 들어가므로 다른 탭보다 좁다 */
+    .tab-home .tab-inner { width: 44px; justify-content: center; gap: 0; }
     .tab-labels {
       display: flex;
       align-items: center;
@@ -2273,8 +2285,8 @@
     /* ─── HOME SCREEN ──────────────────────────────── */
     .home-screen {
       position: fixed;
-      inset: 0;
-      z-index: 500;
+      top: 36px; left: 0; right: 0; bottom: 0; /* 탭 바 아래 — 홈도 탭의 한 화면이다 */
+      z-index: 400;
       background: white;
       overflow-y: auto;
       overflow-x: hidden;
@@ -2938,14 +2950,24 @@
   <!-- TAB BAR (36px) -->
   <div class="tab-bar">
     <div class="tabs-section">
-      <!-- studyStartEndButton -->
-      <div class="study-btn-wrap">
-        <div class="study-btn">
-          <img src="assets/tab-study-btn.svg" style="width:16px;height:16px;">
+      <!-- 타이머 버튼 — 탭 컨테이너 맨 앞(홈 탭보다 앞). 누르면 공부 탭이 열리고 버튼은 숨는다 -->
+      <div class="study-btn-wrap" id="studyBtnWrap">
+        <div class="study-btn" id="studyTimerBtn">
+          <img src="assets/tab-study-btn.svg" style="width:14px;height:14px;flex-shrink:0;">
+          <span class="study-btn-time" id="studyTimerTime">0:00:00</span>
         </div>
       </div>
       <!-- Tab labels -->
       <div class="tab-labels">
+        <!-- 홈 탭 — 항상 맨 앞에 고정. 다른 탭과 같은 디자인이되 아이콘만 표시한다 -->
+        <div class="tab tab-home" data-tab-type="home" data-tab-name="홈">
+          <img class="tab-curve" src="assets/tab-inactive-left.svg" style="width:29px;height:36px;flex-shrink:0;display:block;">
+          <div class="tab-inner dim">
+            <i data-lucide="house" style="width:16px;height:16px;flex-shrink:0;color:rgba(0,0,0,0.4);"></i>
+          </div>
+          <img class="tab-curve" src="assets/tab-inactive-right.svg" style="width:29px;height:36px;flex-shrink:0;display:block;transform:scaleX(-1);">
+          <div class="tab-shadow"><img src="assets/tab-shadow.svg" style="position:absolute;inset:0;width:100%;height:100%;"></div>
+        </div>
         <!-- Active tab: 나의 하루 기록 노트 -->
         <div class="tab active" style="z-index:7;margin-right:0;">
           <img class="tab-curve" src="assets/tab-active-left.svg" style="width:29px;height:36px;flex-shrink:0;display:block;">
@@ -5570,17 +5592,28 @@
     else if (e.key === 'Escape') closeRenamePopup();
   });
 
-  // ── Home screen show / hide ────────────────────────────
-  studyBtn.addEventListener('click', () => {
-    if (homeScreen.classList.contains('hs-visible')) {
-      closeHomeScreen();
-    } else {
-      openHomeScreen();
-    }
-  });
+  // ── 홈 탭 / 타이머 버튼 ────────────────────────────────
+  const homeTab = tabLabels.querySelector('.tab-home');
+  const studyBtnWrap = document.getElementById('studyBtnWrap');
 
-  function openHomeScreen()  { homeScreen.classList.add('hs-visible'); }
+  // 홈은 이제 탭이다. 아래 두 함수는 홈 탭을 켜고/끄는 얇은 래퍼로 남긴다
+  // (기존 호출부 openTabFromHome 등이 그대로 동작하도록).
+  function openHomeScreen()  { if (homeTab) setTabActive(homeTab); }
   function closeHomeScreen() { homeScreen.classList.remove('hs-visible'); }
+
+  // 타이머 버튼 — 누르면 공부 탭이 생기고 그 탭으로 포커스, 버튼은 사라진다
+  function updateStudyBtn() {
+    const open = !!tabLabels.querySelector('.tab[data-study="1"]');
+    studyBtnWrap.classList.toggle('hidden', open);
+  }
+  studyBtn.addEventListener('click', () => {
+    const existing = tabLabels.querySelector('.tab[data-study="1"]');
+    if (existing) { setTabActive(existing); return; }
+    addHomeTab('공부', 'timer', 'quick');
+    const created = tabLabels.querySelector('.tab.active');
+    if (created) created.dataset.study = '1';
+    updateStudyBtn();
+  });
 
   // ── Tab management ─────────────────────────────────────
 
@@ -5589,7 +5622,8 @@
     const tab = e.target.closest('.tab');
     if (!tab) return;
     const tabInner = tab.querySelector('.tab-inner');
-    const closeEl  = tabInner?.lastElementChild;
+    // 홈 탭은 아이콘 하나뿐이라 닫기 버튼이 없다 — 항상 활성화만 한다
+    const closeEl  = tab.classList.contains('tab-home') ? null : tabInner?.lastElementChild;
     if (closeEl && (e.target === closeEl || closeEl.contains(e.target))) {
       e.stopPropagation();
       removeTab(tab);
@@ -5600,6 +5634,9 @@
 
   // Recalculate z-indices and margins after any tab change
   function refreshTabLayout() {
+    // 홈 탭은 항상 맨 앞
+    const home = tabLabels.querySelector('.tab-home');
+    if (home && tabLabels.firstElementChild !== home) tabLabels.insertBefore(home, tabLabels.firstElementChild);
     const tabs = Array.from(tabLabels.querySelectorAll('.tab'));
     const n = tabs.length;
     tabs.forEach((tab, i) => {
@@ -5639,6 +5676,8 @@
     tabEl.remove();
     const remaining = Array.from(tabLabels.querySelectorAll('.tab'));
 
+    updateStudyBtn(); // 공부 탭을 닫았으면 타이머 버튼이 다시 보인다
+
     if (remaining.length === 0) {
       openHomeScreen();
       updateView();
@@ -5661,16 +5700,21 @@
 
   function updateView() {
     const activeTab = tabLabels.querySelector('.tab.active');
+    const isHome    = activeTab?.dataset.tabType === 'home';
     const isQuick   = activeTab?.dataset.tabType === 'quick';
     const noteType  = activeTab?.dataset.noteType || 'scroll'; // scroll/calendar/weekly/monthly
     const tabName   = activeTab?.dataset.tabName  || '';
 
-    toolbar.style.display        = isQuick ? 'none' : '';
-    workspaceEl.style.height     = isQuick ? 'calc(100vh - 36px)' : 'calc(100vh - 86px)';
+    // 홈은 별도 화면이 아니라 홈 탭이 활성일 때 보이는 이 탭의 화면이다
+    homeScreen.classList.toggle('hs-visible', !!isHome);
+
+    const chromeless = isHome || isQuick;
+    toolbar.style.display        = chromeless ? 'none' : '';
+    workspaceEl.style.height     = chromeless ? 'calc(100vh - 36px)' : 'calc(100vh - 86px)';
     viewPlaceholder.style.display = isQuick ? 'flex' : 'none';
     viewPlaceholderLabel.textContent = isQuick ? tabName : '';
 
-    if (!isQuick) setCanvasMode(noteType, activeTab);
+    if (!chromeless) setCanvasMode(noteType, activeTab);
   }
 
   function openTabFromHome(name, icon, type, noteType) {
