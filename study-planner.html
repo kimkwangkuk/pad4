@@ -93,10 +93,12 @@
       display: flex;
       flex-direction: column;
       align-items: flex-start;
+      justify-content: flex-start; /* 탭 바 위쪽에 붙인다 */
       align-self: stretch;
       flex-shrink: 0;
       margin-right: -10px;
       padding-right: 2px;
+      padding-top: 3px;
       position: relative;
       z-index: 10;
     }
@@ -105,7 +107,7 @@
          .selected(공부중·선택): 흰 배경 + 진한 글자 */
     .study-btn {
       position: relative;
-      padding: 5px 11px;
+      padding: 3px 10px;
       border-radius: 12px;
       display: flex; align-items: center; gap: 4px;
       flex-shrink: 0; cursor: pointer;
@@ -154,6 +156,7 @@
       flex-shrink: 0;
       isolation: isolate;
       position: relative;
+      z-index: 11; /* 공부 버튼(z-index:10)보다 위 — 홈 탭이 버튼을 덮는다 */
     }
     .tab {
       display: flex;
