@@ -176,17 +176,17 @@
       margin-right: -30px;
       cursor: pointer;
       user-select: none;
-      max-width: 400px;
       transform-origin: left center;
       transition: max-width 0.24s cubic-bezier(0.4, 0, 0.2, 1),
                   margin-right 0.24s cubic-bezier(0.4, 0, 0.2, 1),
                   transform 0.24s cubic-bezier(0.4, 0, 0.2, 1),
-                  opacity 0.18s ease;
+                  opacity 0.2s ease;
     }
-    /* 닫는 탭 — 왼쪽으로 접히며 사라지고, 오른쪽 탭들이 그만큼 당겨진다 */
+    /* 닫는 탭 — 왼쪽으로 밀리며 접혀 사라지고, 오른쪽 탭들이 그만큼 당겨진다.
+       (시작 max-width는 removeTab에서 실제 탭 폭으로 잡아준다) */
     .tab.closing {
-      max-width: 0; margin-right: 0;
-      transform: scaleX(0.85); opacity: 0;
+      transform: translateX(-16px) scaleX(0.72);
+      opacity: 0;
       overflow: hidden; pointer-events: none;
     }
     .tab:last-child { margin-right: 0; }
@@ -5972,9 +5972,13 @@
     const tabs     = Array.from(tabLabels.querySelectorAll('.tab:not(.closing)'));
     const wasActive = tabEl.classList.contains('active');
     const idx      = tabs.indexOf(tabEl);
-    // 왼쪽으로 접히며 사라진 다음에 실제로 지운다 — 그 사이 레이아웃 계산에서는 제외
+    // 왼쪽으로 밀리며 접혀 사라진 다음에 실제로 지운다 — 그 사이 레이아웃 계산에서는 제외.
+    // 실제 폭에서 0으로 줄어들도록 시작값을 먼저 고정한다 (인라인이라 클래스보다 우선)
+    tabEl.style.maxWidth = tabEl.offsetWidth + 'px';
+    void tabEl.offsetWidth; // 리플로우 — 시작값 확정
     tabEl.classList.add('closing');
     tabEl.classList.remove('active');
+    tabEl.style.maxWidth = '0px';
     tabEl.style.marginRight = '0'; // 인라인으로 걸린 -30px을 애니메이션으로 풀어준다
     setTimeout(() => tabEl.remove(), 260);
     const remaining = tabs.filter(t => t !== tabEl);
