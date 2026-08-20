@@ -101,6 +101,20 @@
       padding-top: 3px;
       position: relative;
       z-index: 10;
+      /* 스플릿뷰에서는 공부 화면 안에 타이머가 있으므로 탭 바의 타이머는 접어서 숨긴다 */
+      max-width: 240px;
+      transform-origin: left center;
+      transition: max-width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                  margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                  padding-right 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                  transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                  opacity 0.2s ease;
+    }
+    /* 접히거나 펴지는 동안에만 클립 — 평소에는 버튼 그림자를 자르지 않는다 */
+    .study-btn-wrap.clip, .study-btn-wrap.collapsed { overflow: hidden; }
+    .study-btn-wrap.collapsed {
+      max-width: 0; margin-right: 0; padding-right: 0;
+      transform: scale(0.8); opacity: 0; pointer-events: none;
     }
     /* 공부 버튼 = 탭 (Figma 6389:867522 / 867534 / 867527)
          기본(공부 전) · .running(공부중·미선택): 유리 버튼
@@ -235,40 +249,26 @@
       pointer-events: none;
     }
 
-    /* ─── TOOLBAR  (50px) ────────────────────────── */
-    .toolbar {
-      /* 노트 탭도 공부 화면처럼 프레임만 남긴다 — 상단 툴바는 화면에서 뺀다 */
-      display: none;
-      height: 50px;
-      background: white;
-      border-radius: 12px 12px 0 0;
-      border-bottom: 1px solid rgba(0,0,0,0.08);
-      box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.05);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 6px;
-    }
-    .tb-left { display: flex; align-items: center; }
-    .tb-center {
-      display: flex; align-items: center; gap: 1px;
-      position: absolute;
-      left: 50%;
-      transform: translateX(-50%);
-    }
-    .tb-right { display: flex; align-items: center; gap: 4px; }
-    .tb-btn {
-      width: 38px; height: 38px;
+    /* ─── 페이지 패널 플로팅 버튼 ─────────────────────
+       상단 툴바를 없앤 대신, 노트 프레임 안 좌상단에 뜨는 유리 버튼 하나만 남긴다.
+       사이드 패널(z-index 100)보다 위에 있어야 패널을 다시 닫을 수 있다 */
+    .note-fab {
+      position: absolute; left: 14px; top: 14px; z-index: 200;
+      width: 40px; height: 40px; padding: 0;
       display: flex; align-items: center; justify-content: center;
-      border-radius: 12px; cursor: pointer;
-      color: rgba(0,0,0,0.86);
-      transition: background 0.1s;
-      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.8); border-radius: 12px;
+      background: rgba(255,255,255,0.5);
+      backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+      box-shadow: 0 4px 25px rgba(0,0,0,0.12);
+      color: rgba(0,0,0,0.86); cursor: pointer;
+      transition: background 0.15s ease, box-shadow 0.15s ease;
     }
-    .tb-btn:hover { background: rgba(0,0,0,0.05); }
-    .tb-btn.active { background: rgba(0,0,0,0.08); }
-    .tb-btn.panel-open { background: rgba(0,0,0,0.05); }
-    .tb-sep { width: 1px; height: 22px; background: #e0e0e0; margin: 0 2px; }
+    .note-fab:hover { background: rgba(255,255,255,0.72); }
+    /* 패널이 열려 있으면 패널 헤더 위에 얹혀 보이므로 유리 대신 평평하게 */
+    .note-fab.on {
+      background: rgba(0,0,0,0.05); border-color: transparent;
+      backdrop-filter: none; -webkit-backdrop-filter: none; box-shadow: none;
+    }
 
     /* ─── WORKSPACE — 공부 화면과 같은 흰 프레임 (탭 바 바로 아래) ──
        바깥 8px이 흰 프레임, 안쪽 .ws-frame이 12px 라운드로 잘린다 */
@@ -410,7 +410,7 @@
        딤드 없이 캔버스 좌상단에 그 자리에서 뜨고, 날짜를 누르면 체크 버튼 없이 바로 그
        페이지로 이동한다(DatePicker의 instantSelect 옵션 사용). */
     .cal-inline-panel {
-      position: absolute; left: 16px; top: 16px; z-index: 130;
+      position: absolute; left: 14px; top: 62px; z-index: 130; /* 플로팅 패널 버튼 아래 */
       opacity: 0;
       transform: translateY(-8px) scale(0.98);
       transform-origin: top left;
@@ -2335,7 +2335,17 @@
       scrollbar-width: none;
       opacity: 0;
       pointer-events: none;
-      transition: opacity 0.22s ease;
+      transition: opacity 0.22s ease,
+                  left 0.32s cubic-bezier(0.4, 0, 0.2, 1),
+                  top 0.32s cubic-bezier(0.4, 0, 0.2, 1),
+                  right 0.32s cubic-bezier(0.4, 0, 0.2, 1),
+                  bottom 0.32s cubic-bezier(0.4, 0, 0.2, 1),
+                  border-radius 0.32s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    /* 스플릿뷰 — 홈 탭도 흰 프레임 안 오른쪽 절반에 라운드 패널로 뜬다 */
+    .home-screen.split {
+      left: calc(50% + 4px); right: 8px; top: 44px; bottom: 8px;
+      border-radius: 12px;
     }
     .home-screen::-webkit-scrollbar { display: none; }
     .home-screen.hs-visible {
@@ -3151,36 +3161,17 @@
     <div class="tab-fade"></div>
   </div>
 
-  <!-- TOOLBAR (50px) — centered tool groups mirror Figma layout -->
-  <div class="toolbar" style="position:relative;">
-    <div class="tb-left">
-      <div class="tb-btn" id="panelToggleBtn">
-        <i data-lucide="panel-left" style="width:18px;height:18px;"></i>
-      </div>
-    </div>
-    <div class="tb-center">
-      <div class="tb-btn" id="toolPencil"><i data-lucide="pencil"         style="width:22px;height:22px;"></i></div>
-      <div class="tb-btn"        id="toolPenLine"><i data-lucide="pen-line"       style="width:22px;height:22px;"></i></div>
-      <div class="tb-btn"        id="toolEraser"><i data-lucide="eraser"         style="width:22px;height:22px;"></i></div>
-      <div class="tb-btn">       <i data-lucide="message-circle" style="width:22px;height:22px;"></i></div>
-      <div class="tb-btn" id="toolSticker"><i data-lucide="smile" style="width:22px;height:22px;"></i></div>
-      <div class="tb-btn">       <i data-lucide="image"          style="width:22px;height:22px;"></i></div>
-      <div class="tb-sep"></div>
-      <div class="tb-btn" id="toolUndo"><i data-lucide="undo-2"         style="width:22px;height:22px;"></i></div>
-      <div class="tb-btn" id="toolRedo"><i data-lucide="redo-2"         style="width:22px;height:22px;"></i></div>
-    </div>
-    <div class="tb-right">
-      <div class="tb-btn"><i data-lucide="upload"          style="width:22px;height:22px;"></i></div>
-      <div class="tb-btn"><i data-lucide="more-horizontal" style="width:22px;height:22px;"></i></div>
-    </div>
-  </div>
-
-  <!-- MAIN AREA (898px) -->
+  <!-- MAIN AREA -->
   <!-- UI Kit link -->
   <a href="ui-kit.html" style="position:fixed;bottom:24px;right:24px;z-index:9999;background:rgba(0,0,0,0.86);color:white;font-family:'Pretendard',sans-serif;font-size:13px;font-weight:600;padding:10px 16px;border-radius:20px;text-decoration:none;box-shadow:0 4px 12px rgba(0,0,0,0.2);">UI Kit →</a>
 
   <div class="workspace" id="workspace">
    <div class="ws-frame" id="wsFrame">
+
+    <!-- 페이지 패널 열기 — 툴바를 없앤 대신 프레임 안에 뜨는 플로팅 버튼 -->
+    <button class="note-fab" id="notePanelFab" type="button" aria-label="페이지 패널">
+      <i data-lucide="panel-left" style="width:20px;height:20px;"></i>
+    </button>
 
     <!-- Placeholder for non-note tabs (타이머, 그룹 등) -->
     <div id="viewPlaceholder" class="view-placeholder" style="display:none;">
@@ -4171,7 +4162,7 @@
       // 주/달 단위 페이지 목록을 패널에 보여준다.
       if (mode === 'calendar') {
         sidePanel.close();
-        panelToggleBtn.classList.remove('panel-open');
+        panelToggleBtn.classList.remove('on');
       }
       document.getElementById('spHeaderTitle').textContent = '페이지';
       closeCalInlinePanel(); // 탭 전환 시 이전 탭에서 열려있던 인라인 캘린더는 닫아둔다
@@ -4440,11 +4431,11 @@
     }
     picker.refresh();
     calInlinePanel.classList.add('visible');
-    panelToggleBtn.classList.add('panel-open');
+    panelToggleBtn.classList.add('on');
   }
   function closeCalInlinePanel() {
     calInlinePanel.classList.remove('visible');
-    panelToggleBtn.classList.remove('panel-open');
+    panelToggleBtn.classList.remove('on');
   }
   function toggleCalInlinePanel(tabEl) {
     if (calInlinePanel.classList.contains('visible')) closeCalInlinePanel();
@@ -4876,9 +4867,9 @@
     datePicker.open();
   });
 
-  // ── Toolbar side panel toggle ──────────────────────────────
+  // ── 페이지 패널 토글 (프레임 안 플로팅 버튼) ────────────────
   const sidePanel = new SidePanel(document.getElementById('sidePanel'));
-  const panelToggleBtn = document.getElementById('panelToggleBtn');
+  const panelToggleBtn = document.getElementById('notePanelFab');
   panelToggleBtn.addEventListener('click', () => {
     const activeTabEl = tabLabels.querySelector('.tab.active');
     if (activeTabEl && activeTabEl.dataset.noteType === 'calendar') {
@@ -4886,7 +4877,7 @@
       return;
     }
     sidePanel.toggle();
-    panelToggleBtn.classList.toggle('panel-open', sidePanel.isOpen());
+    panelToggleBtn.classList.toggle('on', sidePanel.isOpen());
   });
 
   // ── Shop screens ──────────────────────────────────────────
@@ -5854,8 +5845,11 @@
     if (window.lucide) lucide.createIcons({ nodes: [ic] });
   }
 
-  // 공부 화면을 이 버튼이 대표하므로, 선택되면 모든 탭을 비활성으로 돌린다
+  // 공부 화면을 이 버튼이 대표하므로, 선택되면 모든 탭을 비활성으로 돌린다.
+  // 스플릿뷰에서 오른쪽에 띄울 탭이므로 직전 탭을 기억해 둔다.
+  let lastTab = null;
   function selectStudy() {
+    lastTab = tabLabels.querySelector('.tab.active') || lastTab;
     studySelected = true;
     setTabActive(null); // 안에서 updateView가 불리며 공부 화면이 뜬다
     renderStudyBtn();
@@ -5872,6 +5866,9 @@
     if (wasSelected) setTabActive(homeTab || tabLabels.querySelector('.tab'));
     else updateView();
   }
+
+  // 스플릿 중에는 탭 바 타이머가 접혀 있으므로, 공부 화면 안의 버튼으로도 공부를 끌 수 있다
+  document.getElementById('svPause').addEventListener('click', () => endStudy());
 
   studyBtn.addEventListener('click', (e) => {
     if (e.target.closest('#sbPause')) { e.stopPropagation(); endStudy(); return; }
@@ -5932,8 +5929,9 @@
   }
 
   function setTabActive(tab) {
-    // 실제 탭을 고르면 공부 버튼의 선택 상태만 풀린다 — 타이머는 계속 돈다
-    if (tab && studySelected) { studySelected = false; renderStudyBtn(); }
+    // 실제 탭을 고르면 공부 버튼의 선택 상태만 풀린다 — 타이머는 계속 돈다.
+    // 스플릿뷰에서는 왼쪽 공부 화면을 유지한 채 오른쪽 탭만 바뀐다.
+    if (tab && studySelected && !splitOn) { studySelected = false; renderStudyBtn(); }
     tabLabels.querySelectorAll('.tab').forEach(t => {
       const isTarget = t === tab;
       t.classList.toggle('active', isTarget);
@@ -5986,17 +5984,28 @@
   // 공부 화면 우측 상단 패널 버튼을 누르면 공부 화면이 흰 프레임 안에서 왼쪽 절반으로
   // 좁아지고, 오른쪽에 노트 탭(캔버스)이 스플릿뷰처럼 드러난다. 다시 누르면 되돌아온다.
   const svPanelBtn = document.getElementById('svPanelBtn');
-  let splitOn = false;
+  let splitOn = false, studyBtnClipT = null;
   function setSplit(on) {
     on = !!on;
     if (on === splitOn) return;
+    // 스플릿을 풀기 전에 오른쪽에 떠 있던 탭을 기억해 둔다 (다음 스플릿에서 그대로 복귀)
+    if (!on) lastTab = tabLabels.querySelector('.tab.active') || lastTab;
     splitOn = on;
     studyView.classList.toggle('split', on);
     workspaceEl.classList.toggle('split', on);
     svPanelBtn.classList.toggle('on', on);
+    homeScreen.classList.toggle('split', on);
+    // 스플릿 중에는 공부 화면 안에 타이머가 있으므로 탭 바의 타이머는 접어서 숨긴다
+    studyBtnWrap.classList.add('clip');
+    studyBtnWrap.classList.toggle('collapsed', on);
+    clearTimeout(studyBtnClipT);
+    if (!on) studyBtnClipT = setTimeout(() => studyBtnWrap.classList.remove('clip'), 320);
     // 좁아진 폭에 카드가 다 들어오도록 캔버스를 축소했다가, 풀리면 원래 배율로 되돌린다
     const paneW = workspaceEl.clientWidth / 2 - 12; // 절반 - (가운데 4 + 바깥 8)
     if (window.canvasZoom) window.canvasZoom.setSplit(on, paneW);
+    // 오른쪽에 뜬 탭은 선택된 상태로 보인다. 스플릿을 풀면 공부 화면만 남으므로 선택 해제.
+    if (on) setTabActive((lastTab && lastTab.isConnected) ? lastTab : (homeTab || tabLabels.querySelector('.tab')));
+    else if (studySelected) setTabActive(null);
   }
   svPanelBtn.addEventListener('click', () => setSplit(!splitOn));
 
@@ -6007,16 +6016,19 @@
     const noteType  = activeTab?.dataset.noteType || 'scroll'; // scroll/calendar/weekly/monthly
     const tabName   = activeTab?.dataset.tabName  || '';
 
-    // 홈은 별도 화면이 아니라 홈 탭이 활성일 때 보이는 이 탭의 화면이다
-    homeScreen.classList.toggle('hs-visible', !!isHome && !studySelected);
-    // 공부 버튼이 선택되어 있으면 툴바·캔버스 대신 공부 화면을 쓴다
-    const isStudy = studySelected;
+    // 공부 버튼이 선택되어 있으면 캔버스 대신 공부 화면을 쓴다.
+    // 단 스플릿뷰에서는 공부 화면(좌)과 선택한 탭(우)이 함께 보인다.
+    const isStudy   = studySelected;
+    const showTab   = !isStudy || splitOn; // 탭 화면(홈·노트·플레이스홀더)을 그릴지
     studyView.classList.toggle('show', !!isStudy);
+    // 홈은 별도 화면이 아니라 홈 탭이 활성일 때 보이는 이 탭의 화면이다
+    homeScreen.classList.toggle('hs-visible', !!isHome && showTab);
 
-    // 툴바가 없어졌으므로 노트도 공부 화면과 같은 프레임 하나뿐이다 — 높이 전환도 필요 없다
-    const isNote = !(isHome || isQuick || isStudy);
-    viewPlaceholder.style.display = (isQuick && !isStudy) ? 'flex' : 'none';
-    viewPlaceholderLabel.textContent = (isQuick && !isStudy) ? tabName : '';
+    const isNote = showTab && !isHome && !isQuick;
+    // 페이지 패널 플로팅 버튼은 노트 화면에서만 뜬다 (홈·플레이스홀더에는 패널이 없다)
+    panelToggleBtn.style.display = isNote ? '' : 'none';
+    viewPlaceholder.style.display = (isQuick && showTab) ? 'flex' : 'none';
+    viewPlaceholderLabel.textContent = (isQuick && showTab) ? tabName : '';
     if (!isStudy) setSplit(false); // 공부 화면을 벗어나면 스플릿은 풀린다
 
     if (isNote) setCanvasMode(noteType, activeTab);
@@ -6148,32 +6160,10 @@
     document.body.classList.toggle('tool-pencil', tool === 'pencil');
     document.body.classList.toggle('tool-eraser', tool === 'eraser');
     document.body.classList.toggle('tool-hand',   tool === null);
-    document.getElementById('toolPencil').classList.toggle('active', tool === 'pencil');
-    document.getElementById('toolEraser').classList.toggle('active', tool === 'eraser');
-    document.getElementById('toolPenLine').classList.toggle('active', false);
     if (tool === 'pencil' || tool === 'eraser') {
       document.querySelectorAll('.om-backdrop:not(.om-hidden)').forEach(el => el.click());
     }
   }
-
-  document.getElementById('toolPencil').addEventListener('click', () => {
-    setDrawTool(drawTool === 'pencil' ? null : 'pencil');
-  });
-  document.getElementById('toolEraser').addEventListener('click', () => setDrawTool('eraser'));
-  document.getElementById('toolPenLine').addEventListener('click', () => setDrawTool(null));
-
-  document.getElementById('toolUndo').addEventListener('click', () => {
-    const cv = lastDrawCv; if (!cv) return;
-    const h = drawHist(cv); if (!h.undo.length) return;
-    h.redo.push(cv.getContext('2d').getImageData(0, 0, cv.width, cv.height));
-    cv.getContext('2d').putImageData(h.undo.pop(), 0, 0);
-  });
-  document.getElementById('toolRedo').addEventListener('click', () => {
-    const cv = lastDrawCv; if (!cv) return;
-    const h = drawHist(cv); if (!h.redo.length) return;
-    h.undo.push(cv.getContext('2d').getImageData(0, 0, cv.width, cv.height));
-    cv.getContext('2d').putImageData(h.redo.pop(), 0, 0);
-  });
 
   function canvasPointer(e) {
     const rect = drawCv.getBoundingClientRect();
@@ -6347,9 +6337,6 @@
 
   const stickerPicker = new StickerPicker();
   stickerPicker.onSelect = placeSticker;
-  document.getElementById('toolSticker').addEventListener('click', function() {
-    stickerPicker.toggle(this);
-  });
 
   // ── Canvas pinch / trackpad zoom ─────────────────────────
   (function() {
