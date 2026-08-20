@@ -237,6 +237,8 @@
 
     /* ─── TOOLBAR  (50px) ────────────────────────── */
     .toolbar {
+      /* 노트 탭도 공부 화면처럼 프레임만 남긴다 — 상단 툴바는 화면에서 뺀다 */
+      display: none;
       height: 50px;
       background: white;
       border-radius: 12px 12px 0 0;
@@ -268,12 +270,29 @@
     .tb-btn.panel-open { background: rgba(0,0,0,0.05); }
     .tb-sep { width: 1px; height: 22px; background: #e0e0e0; margin: 0 2px; }
 
-    /* ─── WORKSPACE (898px, clips panel slide-in) ── */
+    /* ─── WORKSPACE — 공부 화면과 같은 흰 프레임 (탭 바 바로 아래) ──
+       바깥 8px이 흰 프레임, 안쪽 .ws-frame이 12px 라운드로 잘린다 */
     .workspace {
-      height: calc(100vh - 86px);
+      height: calc(100vh - 36px);
       position: relative;
       overflow: hidden;
+      padding: 8px;
+      background: #fff;
+      border-radius: 16px 16px 0 0;
+      transition: padding-left 0.32s cubic-bezier(0.4, 0, 0.2, 1);
     }
+    /* 안쪽 패널 — 캔버스(회색)가 라운드로 잘린다.
+       사이드 패널·인라인 캘린더·오늘 버튼도 모두 이 안에서만 움직인다 */
+    .ws-frame {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      border-radius: 12px;
+      overflow: hidden;
+      background: var(--bg);
+    }
+    /* 스플릿뷰 — 노트는 오른쪽 절반으로 좁아진다 (가운데 8px = 4+4 흰 간격) */
+    .workspace.split { padding-left: calc(50% + 4px); }
 
     /* ─── MAIN CONTENT AREA  (fills workspace) ───── */
     .main-area {
@@ -2977,8 +2996,14 @@
       /* 바깥 흰 프레임: 상단 좌우만 16px, 하단은 각지게 */
       border-radius: 16px 16px 0 0; overflow: hidden;
       font-family: 'Pretendard', sans-serif; color: #fff;
+      transition: right 0.32s cubic-bezier(0.4, 0, 0.2, 1),
+                  padding-right 0.32s cubic-bezier(0.4, 0, 0.2, 1),
+                  border-radius 0.32s cubic-bezier(0.4, 0, 0.2, 1);
     }
     .study-view.show { display: block; }
+    /* 스플릿뷰 — 우측 상단 패널 버튼으로 토글. 공부 화면이 왼쪽 절반으로 좁아지고
+       비워진 오른쪽에 노트 탭이 드러난다 */
+    .study-view.split { right: 50%; padding-right: 4px; border-radius: 16px 0 0 0; }
     .sv-panel {
       position: relative; width: 100%; height: 100%;
       border-radius: 12px; overflow: hidden auto; /* 안쪽 패널은 네 모서리 모두 12px */
@@ -3000,6 +3025,7 @@
       color: #fff; -webkit-tap-highlight-color: transparent;
     }
     .sv-ic:hover { background: rgba(255,255,255,0.14); }
+    .sv-ic.on { background: rgba(255,255,255,0.22); }
     .sv-time-row { display: flex; align-items: flex-start; gap: 20px; padding: 12px 4px 0; }
     .sv-time-main { flex: 1; min-width: 0; }
     .sv-avatar {
@@ -3154,6 +3180,7 @@
   <a href="ui-kit.html" style="position:fixed;bottom:24px;right:24px;z-index:9999;background:rgba(0,0,0,0.86);color:white;font-family:'Pretendard',sans-serif;font-size:13px;font-weight:600;padding:10px 16px;border-radius:20px;text-decoration:none;box-shadow:0 4px 12px rgba(0,0,0,0.2);">UI Kit →</a>
 
   <div class="workspace" id="workspace">
+   <div class="ws-frame" id="wsFrame">
 
     <!-- Placeholder for non-note tabs (타이머, 그룹 등) -->
     <div id="viewPlaceholder" class="view-placeholder" style="display:none;">
@@ -3239,6 +3266,7 @@
       </div>
     </div>
 
+   </div><!-- /ws-frame -->
   </div><!-- /workspace -->
 
   <!-- SHOP SCREEN -->
@@ -3691,7 +3719,7 @@
         <span class="sv-date" id="svDate">1월 5일</span>
         <div class="sv-top-icons">
           <button class="sv-ic" aria-label="전환"><i data-lucide="repeat-2" style="width:24px;height:24px;"></i></button>
-          <button class="sv-ic" aria-label="패널"><i data-lucide="panel-right" style="width:24px;height:24px;"></i></button>
+          <button class="sv-ic" id="svPanelBtn" aria-label="스플릿뷰"><i data-lucide="panel-right" style="width:24px;height:24px;"></i></button>
         </div>
       </div>
       <div class="sv-time-row">
@@ -4430,7 +4458,7 @@
   // ── Scroll to center a card ────────────────────────────────
   const mainArea = document.querySelector('.main-area');
   const CARD_H = 875; // 콘텐츠 800 + 하단 광고 75
-  function CENTER_OFFSET() { return Math.max(0, (document.querySelector('.workspace').clientHeight - CARD_H) / 2); }
+  function CENTER_OFFSET() { return Math.max(0, (document.querySelector('.ws-frame').clientHeight - CARD_H) / 2); }
 
   function scrollToCard(idx, smooth) {
     const cards = canvasScroll.querySelectorAll('.card');
@@ -5949,11 +5977,28 @@
     }
   }
 
-  // ── View switching (toolbar + placeholder) ─────────────
-  const toolbar          = document.querySelector('.toolbar');
+  // ── View switching (placeholder) ───────────────────────
   const workspaceEl      = document.getElementById('workspace');
   const viewPlaceholder  = document.getElementById('viewPlaceholder');
   const viewPlaceholderLabel = document.getElementById('viewPlaceholderLabel');
+
+  // ── 스플릿뷰 ─────────────────────────────────────────────
+  // 공부 화면 우측 상단 패널 버튼을 누르면 공부 화면이 흰 프레임 안에서 왼쪽 절반으로
+  // 좁아지고, 오른쪽에 노트 탭(캔버스)이 스플릿뷰처럼 드러난다. 다시 누르면 되돌아온다.
+  const svPanelBtn = document.getElementById('svPanelBtn');
+  let splitOn = false;
+  function setSplit(on) {
+    on = !!on;
+    if (on === splitOn) return;
+    splitOn = on;
+    studyView.classList.toggle('split', on);
+    workspaceEl.classList.toggle('split', on);
+    svPanelBtn.classList.toggle('on', on);
+    // 좁아진 폭에 카드가 다 들어오도록 캔버스를 축소했다가, 풀리면 원래 배율로 되돌린다
+    const paneW = workspaceEl.clientWidth / 2 - 12; // 절반 - (가운데 4 + 바깥 8)
+    if (window.canvasZoom) window.canvasZoom.setSplit(on, paneW);
+  }
+  svPanelBtn.addEventListener('click', () => setSplit(!splitOn));
 
   function updateView() {
     const activeTab = tabLabels.querySelector('.tab.active');
@@ -5968,13 +6013,13 @@
     const isStudy = studySelected;
     studyView.classList.toggle('show', !!isStudy);
 
-    const chromeless = isHome || isQuick || isStudy;
-    toolbar.style.display        = chromeless ? 'none' : '';
-    workspaceEl.style.height     = chromeless ? 'calc(100vh - 36px)' : 'calc(100vh - 86px)';
+    // 툴바가 없어졌으므로 노트도 공부 화면과 같은 프레임 하나뿐이다 — 높이 전환도 필요 없다
+    const isNote = !(isHome || isQuick || isStudy);
     viewPlaceholder.style.display = (isQuick && !isStudy) ? 'flex' : 'none';
     viewPlaceholderLabel.textContent = (isQuick && !isStudy) ? tabName : '';
+    if (!isStudy) setSplit(false); // 공부 화면을 벗어나면 스플릿은 풀린다
 
-    if (!chromeless) setCanvasMode(noteType, activeTab);
+    if (isNote) setCanvasMode(noteType, activeTab);
   }
 
   function openTabFromHome(name, icon, type, noteType) {
@@ -6322,6 +6367,19 @@
       wrap.style.transform = `scale(${zoom})`;
       spacer.style.height = Math.max(0, naturalH * (zoom - 1)) + 'px';
     }
+
+    // 스플릿뷰: 좁아진 폭(paneW)에 카드가 다 들어오도록 축소하고, 풀리면 원래 배율로 복귀
+    let preSplitZoom = 1;
+    window.canvasZoom = {
+      setSplit(on, paneW) {
+        if (!on) { applyZoom(preSplitZoom); return; }
+        preSplitZoom = zoom;
+        let maxW = 0;
+        wrap.querySelectorAll('.card').forEach(c => { maxW = Math.max(maxW, c.offsetWidth); });
+        const avail = paneW - 32; // 카드 좌우 여백
+        if (maxW > 0 && avail > 0) applyZoom(Math.min(preSplitZoom, avail / maxW));
+      }
+    };
 
     // ── Prevent browser pinch-zoom page-wide (iOS Safari ignores viewport user-scalable)
     document.addEventListener('touchmove', e => {
