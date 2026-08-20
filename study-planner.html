@@ -176,6 +176,18 @@
       margin-right: -30px;
       cursor: pointer;
       user-select: none;
+      max-width: 400px;
+      transform-origin: left center;
+      transition: max-width 0.24s cubic-bezier(0.4, 0, 0.2, 1),
+                  margin-right 0.24s cubic-bezier(0.4, 0, 0.2, 1),
+                  transform 0.24s cubic-bezier(0.4, 0, 0.2, 1),
+                  opacity 0.18s ease;
+    }
+    /* 닫는 탭 — 왼쪽으로 접히며 사라지고, 오른쪽 탭들이 그만큼 당겨진다 */
+    .tab.closing {
+      max-width: 0; margin-right: 0;
+      transform: scaleX(0.85); opacity: 0;
+      overflow: hidden; pointer-events: none;
     }
     .tab:last-child { margin-right: 0; }
     .tab.active { z-index: 8; }
@@ -279,7 +291,6 @@
       padding: 8px;
       background: #fff;
       border-radius: 16px 16px 0 0;
-      transition: padding-left 0.32s cubic-bezier(0.4, 0, 0.2, 1);
     }
     /* 안쪽 패널 — 캔버스(회색)가 라운드로 잘린다.
        사이드 패널·인라인 캘린더·오늘 버튼도 모두 이 안에서만 움직인다 */
@@ -290,9 +301,13 @@
       border-radius: 12px;
       overflow: hidden;
       background: var(--bg);
+      /* 흰 프레임 위에서도 패널 경계가 보이도록 연한 구분선 */
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,0.07);
+      /* 스플릿 진입/해제는 오른쪽에서 밀려 들어오고 나간다 */
+      transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1);
     }
-    /* 스플릿뷰 — 노트는 오른쪽 절반으로 좁아진다 (가운데 8px = 4+4 흰 간격) */
-    .workspace.split { padding-left: calc(50% + 4px); }
+    /* 스플릿뷰 — 공부 화면이 왼쪽 30%, 노트는 오른쪽 70% (가운데 8px = 4+4 흰 간격) */
+    .workspace.split { padding-left: calc(30% + 4px); }
 
     /* ─── MAIN CONTENT AREA  (fills workspace) ───── */
     .main-area {
@@ -2336,16 +2351,14 @@
       opacity: 0;
       pointer-events: none;
       transition: opacity 0.22s ease,
-                  left 0.32s cubic-bezier(0.4, 0, 0.2, 1),
-                  top 0.32s cubic-bezier(0.4, 0, 0.2, 1),
-                  right 0.32s cubic-bezier(0.4, 0, 0.2, 1),
-                  bottom 0.32s cubic-bezier(0.4, 0, 0.2, 1),
-                  border-radius 0.32s cubic-bezier(0.4, 0, 0.2, 1);
+                  transform 0.32s cubic-bezier(0.4, 0, 0.2, 1);
     }
-    /* 스플릿뷰 — 홈 탭도 흰 프레임 안 오른쪽 절반에 라운드 패널로 뜬다 */
+    /* 스플릿뷰 — 홈 탭도 흰 프레임 안 오른쪽 70%에 라운드 패널로 뜬다.
+       홈은 프레임과 똑같이 하얘서 경계가 안 보이므로 연한 구분선을 둘러준다 */
     .home-screen.split {
-      left: calc(50% + 4px); right: 8px; top: 44px; bottom: 8px;
+      left: calc(30% + 4px); right: 8px; top: 44px; bottom: 8px;
       border-radius: 12px;
+      box-shadow: 0 0 0 1px rgba(0,0,0,0.07);
     }
     .home-screen::-webkit-scrollbar { display: none; }
     .home-screen.hs-visible {
@@ -3013,7 +3026,7 @@
     .study-view.show { display: block; }
     /* 스플릿뷰 — 우측 상단 패널 버튼으로 토글. 공부 화면이 왼쪽 절반으로 좁아지고
        비워진 오른쪽에 노트 탭이 드러난다 */
-    .study-view.split { right: 50%; padding-right: 4px; border-radius: 16px 0 0 0; }
+    .study-view.split { right: 70%; padding-right: 4px; border-radius: 16px 0 0 0; }
     .sv-panel {
       position: relative; width: 100%; height: 100%;
       border-radius: 12px; overflow: hidden auto; /* 안쪽 패널은 네 모서리 모두 12px */
@@ -4871,7 +4884,7 @@
   const sidePanel = new SidePanel(document.getElementById('sidePanel'));
   const panelToggleBtn = document.getElementById('notePanelFab');
   panelToggleBtn.addEventListener('click', () => {
-    const activeTabEl = tabLabels.querySelector('.tab.active');
+    const activeTabEl = tabLabels.querySelector('.tab.active:not(.closing)');
     if (activeTabEl && activeTabEl.dataset.noteType === 'calendar') {
       toggleCalInlinePanel(activeTabEl); // 캘린더 노트: 딤드 팝업 대신 좌상단 인라인 캘린더를 토글
       return;
@@ -5795,7 +5808,7 @@
   });
 
   // ── 홈 탭 / 타이머 버튼 ────────────────────────────────
-  const homeTab = tabLabels.querySelector('.tab-home');
+  const homeTab = tabLabels.querySelector('.tab-home:not(.closing)');
   const studyBtnWrap = document.getElementById('studyBtnWrap');
 
   // 홈은 이제 탭이다. 아래 두 함수는 홈 탭을 켜고/끄는 얇은 래퍼로 남긴다
@@ -5849,7 +5862,7 @@
   // 스플릿뷰에서 오른쪽에 띄울 탭이므로 직전 탭을 기억해 둔다.
   let lastTab = null;
   function selectStudy() {
-    lastTab = tabLabels.querySelector('.tab.active') || lastTab;
+    lastTab = tabLabels.querySelector('.tab.active:not(.closing)') || lastTab;
     studySelected = true;
     setTabActive(null); // 안에서 updateView가 불리며 공부 화면이 뜬다
     renderStudyBtn();
@@ -5863,7 +5876,7 @@
     document.getElementById('studyTimerTime').textContent = '00:00:00';
     renderStudyBtn();
     // 선택 상태였다면 갈 곳이 없으므로 홈 탭으로 보낸다
-    if (wasSelected) setTabActive(homeTab || tabLabels.querySelector('.tab'));
+    if (wasSelected) setTabActive(homeTab || tabLabels.querySelector('.tab:not(.closing)'));
     else updateView();
   }
 
@@ -5917,9 +5930,9 @@
   // Recalculate z-indices and margins after any tab change
   function refreshTabLayout() {
     // 홈 탭은 항상 맨 앞
-    const home = tabLabels.querySelector('.tab-home');
+    const home = tabLabels.querySelector('.tab-home:not(.closing)');
     if (home && tabLabels.firstElementChild !== home) tabLabels.insertBefore(home, tabLabels.firstElementChild);
-    const tabs = Array.from(tabLabels.querySelectorAll('.tab'));
+    const tabs = Array.from(tabLabels.querySelectorAll('.tab:not(.closing)'));
     const n = tabs.length;
     tabs.forEach((tab, i) => {
       // Active tab always on top; others: leftmost highest
@@ -5932,7 +5945,7 @@
     // 실제 탭을 고르면 공부 버튼의 선택 상태만 풀린다 — 타이머는 계속 돈다.
     // 스플릿뷰에서는 왼쪽 공부 화면을 유지한 채 오른쪽 탭만 바뀐다.
     if (tab && studySelected && !splitOn) { studySelected = false; renderStudyBtn(); }
-    tabLabels.querySelectorAll('.tab').forEach(t => {
+    tabLabels.querySelectorAll('.tab:not(.closing)').forEach(t => {
       const isTarget = t === tab;
       t.classList.toggle('active', isTarget);
       t.querySelector('.tab-inner')?.classList.toggle('dim', !isTarget);
@@ -5955,11 +5968,16 @@
   }
 
   function removeTab(tabEl) {
-    const tabs     = Array.from(tabLabels.querySelectorAll('.tab'));
+    if (tabEl.classList.contains('closing')) return;
+    const tabs     = Array.from(tabLabels.querySelectorAll('.tab:not(.closing)'));
     const wasActive = tabEl.classList.contains('active');
     const idx      = tabs.indexOf(tabEl);
-    tabEl.remove();
-    const remaining = Array.from(tabLabels.querySelectorAll('.tab'));
+    // 왼쪽으로 접히며 사라진 다음에 실제로 지운다 — 그 사이 레이아웃 계산에서는 제외
+    tabEl.classList.add('closing');
+    tabEl.classList.remove('active');
+    tabEl.style.marginRight = '0'; // 인라인으로 걸린 -30px을 애니메이션으로 풀어준다
+    setTimeout(() => tabEl.remove(), 260);
+    const remaining = tabs.filter(t => t !== tabEl);
 
     if (remaining.length === 0) {
       openHomeScreen();
@@ -5984,33 +6002,71 @@
   // 공부 화면 우측 상단 패널 버튼을 누르면 공부 화면이 흰 프레임 안에서 왼쪽 절반으로
   // 좁아지고, 오른쪽에 노트 탭(캔버스)이 스플릿뷰처럼 드러난다. 다시 누르면 되돌아온다.
   const svPanelBtn = document.getElementById('svPanelBtn');
-  let splitOn = false, studyBtnClipT = null;
-  function setSplit(on) {
+  const wsFrame    = document.getElementById('wsFrame');
+  let splitOn = false, studyBtnClipT = null, splitT = null;
+
+  // 우측 패널(노트 캔버스·홈)은 프레임 밖 오른쪽에서 밀려 들어온다.
+  // 폭 자체는 즉시 70%로 잡고, 움직임만 transform으로 준다.
+  const SPLIT_OUT = 'translateX(calc(100% + 16px))';
+  function rightPanes() { return [wsFrame, homeScreen]; }
+  function slideRightPaneIn() {
+    rightPanes().forEach(el => { el.style.transition = 'none'; el.style.transform = SPLIT_OUT; });
+    void wsFrame.offsetWidth; // 리플로우 — 시작 위치를 확정시킨다
+    rightPanes().forEach(el => { el.style.transition = ''; el.style.transform = 'none'; });
+  }
+  function slideRightPaneOut() {
+    rightPanes().forEach(el => { el.style.transition = ''; el.style.transform = SPLIT_OUT; });
+  }
+  function resetRightPane() {
+    rightPanes().forEach(el => { el.style.transition = 'none'; el.style.transform = 'none'; });
+    void wsFrame.offsetWidth;
+    rightPanes().forEach(el => { el.style.transition = ''; });
+  }
+  // instant=true : 공부 화면 자체가 사라져서 스플릿이 풀리는 경우 —
+  //                 밀어낼 필요 없이 곧바로 전체 폭으로 되돌린다
+  function setSplit(on, instant) {
     on = !!on;
     if (on === splitOn) return;
     // 스플릿을 풀기 전에 오른쪽에 떠 있던 탭을 기억해 둔다 (다음 스플릿에서 그대로 복귀)
-    if (!on) lastTab = tabLabels.querySelector('.tab.active') || lastTab;
+    if (!on) lastTab = tabLabels.querySelector('.tab.active:not(.closing)') || lastTab;
     splitOn = on;
     studyView.classList.toggle('split', on);
-    workspaceEl.classList.toggle('split', on);
     svPanelBtn.classList.toggle('on', on);
-    homeScreen.classList.toggle('split', on);
+    clearTimeout(splitT);
+    if (on) {
+      // 폭은 즉시 잡고, 오른쪽 프레임 밖에서 제자리로 밀어 넣는다
+      workspaceEl.classList.add('split');
+      homeScreen.classList.add('split');
+      slideRightPaneIn();
+    } else if (instant) {
+      workspaceEl.classList.remove('split');
+      homeScreen.classList.remove('split');
+      resetRightPane();
+    } else {
+      // 오른쪽으로 밀어낸 뒤에야 전체 폭으로 되돌린다
+      slideRightPaneOut();
+      splitT = setTimeout(() => {
+        workspaceEl.classList.remove('split');
+        homeScreen.classList.remove('split');
+        resetRightPane();
+      }, 330);
+    }
     // 스플릿 중에는 공부 화면 안에 타이머가 있으므로 탭 바의 타이머는 접어서 숨긴다
     studyBtnWrap.classList.add('clip');
     studyBtnWrap.classList.toggle('collapsed', on);
     clearTimeout(studyBtnClipT);
     if (!on) studyBtnClipT = setTimeout(() => studyBtnWrap.classList.remove('clip'), 320);
     // 좁아진 폭에 카드가 다 들어오도록 캔버스를 축소했다가, 풀리면 원래 배율로 되돌린다
-    const paneW = workspaceEl.clientWidth / 2 - 12; // 절반 - (가운데 4 + 바깥 8)
+    const paneW = workspaceEl.clientWidth * 0.7 - 12; // 우측 70% - (가운데 4 + 바깥 8)
     if (window.canvasZoom) window.canvasZoom.setSplit(on, paneW);
     // 오른쪽에 뜬 탭은 선택된 상태로 보인다. 스플릿을 풀면 공부 화면만 남으므로 선택 해제.
-    if (on) setTabActive((lastTab && lastTab.isConnected) ? lastTab : (homeTab || tabLabels.querySelector('.tab')));
+    if (on) setTabActive((lastTab && lastTab.isConnected) ? lastTab : (homeTab || tabLabels.querySelector('.tab:not(.closing)')));
     else if (studySelected) setTabActive(null);
   }
   svPanelBtn.addEventListener('click', () => setSplit(!splitOn));
 
   function updateView() {
-    const activeTab = tabLabels.querySelector('.tab.active');
+    const activeTab = tabLabels.querySelector('.tab.active:not(.closing)');
     const isHome    = activeTab?.dataset.tabType === 'home';
     const isQuick   = activeTab?.dataset.tabType === 'quick';
     const noteType  = activeTab?.dataset.noteType || 'scroll'; // scroll/calendar/weekly/monthly
@@ -6029,7 +6085,7 @@
     panelToggleBtn.style.display = isNote ? '' : 'none';
     viewPlaceholder.style.display = (isQuick && showTab) ? 'flex' : 'none';
     viewPlaceholderLabel.textContent = (isQuick && showTab) ? tabName : '';
-    if (!isStudy) setSplit(false); // 공부 화면을 벗어나면 스플릿은 풀린다
+    if (!isStudy) setSplit(false, true); // 공부 화면을 벗어나면 스플릿도 곧바로 풀린다
 
     if (isNote) setCanvasMode(noteType, activeTab);
   }
@@ -6041,7 +6097,7 @@
 
   function addHomeTab(name, icon, type, noteType) {
     // Deactivate current active tab
-    const prevActive = tabLabels.querySelector('.tab.active');
+    const prevActive = tabLabels.querySelector('.tab.active:not(.closing)');
     if (prevActive) setTabActive(null); // clear all active states first
 
     // Build new active tab element
