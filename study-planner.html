@@ -2941,6 +2941,55 @@
       font-family: 'Pretendard', sans-serif; font-size: 14px; font-weight: 500;
       color: rgba(0,0,0,0.86); letter-spacing: -0.042px; white-space: nowrap;
     }
+    /* 색상 선택 — 구분선 + 라벨 + 박스(스와치 / 구분선 / 밝기 모드) */
+    .ids-colors {
+      margin-top: 6px; padding-top: 20px;
+      border-top: 1px solid rgba(0,0,0,0.08);
+    }
+    .ids-sec-label {
+      margin-bottom: 16px;
+      font-family: 'Pretendard', sans-serif; font-size: 15px; font-weight: 500;
+      color: rgba(0,0,0,0.59); letter-spacing: -0.045px; line-height: 1.4;
+    }
+    .ids-color-box {
+      border: 1px solid rgba(0,0,0,0.12); border-radius: 16px;
+      padding: 20px 24px;
+    }
+    .ids-swatches { display: flex; flex-wrap: wrap; gap: 18px; }
+    /* 스와치 — 왼쪽 위는 다크, 오른쪽 아래는 그 색(밝기 모드 두 벌을 한 칸에) */
+    .ids-sw {
+      width: 36px; height: 36px; padding: 0; border: none; border-radius: 10px;
+      cursor: pointer; -webkit-tap-highlight-color: transparent;
+      background: linear-gradient(135deg, #1c1c1e 0 50%, var(--sw) 50% 100%);
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,0.08);
+    }
+    .ids-sw.sel { outline: 2px solid rgba(0,0,0,0.86); outline-offset: 2px; }
+    .ids-box-line { height: 1px; background: rgba(0,0,0,0.08); margin: 16px 0; }
+    .ids-mode { position: relative; display: flex; align-items: center; justify-content: space-between; height: 22px; }
+    .ids-mode-label {
+      font-family: 'Pretendard', sans-serif; font-size: 15px; font-weight: 400;
+      color: rgba(0,0,0,0.86); letter-spacing: -0.045px;
+    }
+    .ids-mode-btn {
+      display: flex; align-items: center; gap: 2px; padding: 0; border: none; background: none;
+      cursor: pointer; -webkit-tap-highlight-color: transparent;
+      font-family: 'Pretendard', sans-serif; font-size: 15px; font-weight: 400;
+      color: rgba(0,0,0,0.86); letter-spacing: -0.045px;
+    }
+    .ids-mode-menu {
+      position: absolute; right: 0; top: 28px; z-index: 2;
+      min-width: 120px; padding: 6px; border-radius: 14px; background: #fff;
+      box-shadow: 0 8px 28px rgba(0,0,0,0.16), 0 0 0 1px rgba(0,0,0,0.06);
+      display: flex; flex-direction: column;
+    }
+    .ids-mode-menu[hidden] { display: none; }
+    .ids-mode-menu button {
+      height: 36px; padding: 0 10px; border: none; background: none; border-radius: 10px;
+      text-align: left; cursor: pointer;
+      font-family: 'Pretendard', sans-serif; font-size: 15px; font-weight: 400;
+      color: rgba(0,0,0,0.86); letter-spacing: -0.045px;
+    }
+    .ids-mode-menu button:hover { background: rgba(0,0,0,0.05); }
     .ids-cta-wrap { flex-shrink: 0; padding: 20px; background: #fff; }
     .ids-cta {
       width: 100%; height: 48px; border: none; border-radius: 16px;
@@ -3741,6 +3790,25 @@
           <div class="ids-desc" id="idsDesc"></div>
         </div>
         <div class="ids-tags" id="idsTags"></div>
+        <div class="ids-colors">
+          <div class="ids-sec-label">색상 선택</div>
+          <div class="ids-color-box">
+            <div class="ids-swatches" id="idsSwatches"></div>
+            <div class="ids-box-line"></div>
+            <div class="ids-mode">
+              <span class="ids-mode-label">밝기 모드</span>
+              <button class="ids-mode-btn" id="idsModeBtn" type="button">
+                <span id="idsModeVal">자동</span>
+                <i data-lucide="chevron-down" style="width:18px;height:18px;color:rgba(0,0,0,0.59);"></i>
+              </button>
+              <div class="ids-mode-menu" id="idsModeMenu" hidden>
+                <button type="button" data-mode="자동">자동</button>
+                <button type="button" data-mode="밝게">밝게</button>
+                <button type="button" data-mode="어둡게">어둡게</button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
       <div class="ids-cta-wrap"><button class="ids-cta" id="idsUse">이 템플릿으로 노트 생성</button></div>
     </div>
@@ -7230,14 +7298,17 @@
 
     const INSERT_COLORS = [
       { id: 'base',   name: '기본',   color: '#ffffff' },
+      { id: 'gray',   name: '그레이', color: '#e9e9e9' },
       { id: 'blue',   name: '블루',   color: '#c7e0fe' },
-      { id: 'yellow', name: '옐로우', color: '#fff3a4' },
+      { id: 'purple', name: '퍼플',   color: '#ddd0fb' },
       { id: 'green',  name: '그린',   color: '#d9f2cd' },
+      { id: 'yellow', name: '옐로우', color: '#fff3a4' },
+      { id: 'pink',   name: '핑크',   color: '#fbcfe8' },
     ];
     const COVER_TABS = ['컬러', '패턴', '스티커', '재질', '내가 만든'];
 
     // ── 상태 ──────────────────────────────────────────────────
-    const st = { type: null, group: '일간', orient: '전체', insert: null, color: 'base', cover: null, step: 0 };
+    const st = { type: null, group: '일간', orient: '전체', insert: null, color: 'base', mode: '자동', cover: null, step: 0 };
 
     // ── DOM ───────────────────────────────────────────────────
     const $ = id => document.getElementById(id);
@@ -7383,10 +7454,42 @@
       page.classList.toggle('land', item.orient === 'landscape');
       setTimeout(() => paintPage(page, item, null), 0);
       $('idsTags').innerHTML = INSERT_TAGS.map(t => `<span class="ids-tag">${t}</span>`).join('');
+      renderIdsColors();
+      $('idsModeMenu').hidden = true;
       idsBackdrop.classList.add('show');
       idsSheet.classList.add('show');
       if (window.lucide) lucide.createIcons({ nodes: [idsSheet] });
     }
+    // 색상 스와치 — 고른 색은 왼쪽 미리보기에도 바로 반영된다
+    function renderIdsColors() {
+      $('idsSwatches').innerHTML = INSERT_COLORS.map(c =>
+        `<button type="button" class="ids-sw${st.color === c.id ? ' sel' : ''}" data-color="${c.id}"` +
+        ` style="--sw:${c.color};" aria-label="${c.name}"></button>`).join('');
+    }
+    $('idsSwatches').addEventListener('click', e => {
+      const sw = e.target.closest('.ids-sw');
+      if (!sw || !st.insert) return;
+      st.color = sw.dataset.color;
+      renderIdsColors();
+      const col = INSERT_COLORS.find(c => c.id === st.color);
+      paintPage($('idsHeroPage'), st.insert, col ? col.color : null);
+    });
+
+    // 밝기 모드 드롭다운 (자동 / 밝게 / 어둡게)
+    $('idsModeBtn').addEventListener('click', e => {
+      e.stopPropagation();
+      const m = $('idsModeMenu');
+      m.hidden = !m.hidden;
+    });
+    $('idsModeMenu').addEventListener('click', e => {
+      const b = e.target.closest('button[data-mode]');
+      if (!b) return;
+      st.mode = b.dataset.mode;
+      $('idsModeVal').textContent = st.mode;
+      $('idsModeMenu').hidden = true;
+    });
+    idsSheet.addEventListener('click', () => { $('idsModeMenu').hidden = true; });
+
     function closeInsertDetail() { idsBackdrop.classList.remove('show'); idsSheet.classList.remove('show'); }
     $('idsClose').addEventListener('click', closeInsertDetail);
     idsBackdrop.addEventListener('click', closeInsertDetail);
