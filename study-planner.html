@@ -149,8 +149,6 @@
       align-items: stretch; gap: 0;
     }
     .study-btn.running .sb-curve { display: block; }
-    /* 선택된 공부 탭은 홈 탭(.tab-labels, z-index 11)보다 앞에 온다 */
-    .study-btn-wrap.front { z-index: 12; }
     .study-btn.running .sb-body {
       height: 36px; padding: 0 2px;
       background: #f2f2f2; color: rgba(0,0,0,0.4);
@@ -172,15 +170,13 @@
     .tab-home .tab-inner { width: auto; justify-content: center; gap: 0; padding: 0; }
     /* 홈 탭 왼쪽(공부 버튼과 맞닿는 쪽)에는 곡선 그림자를 두지 않는다 */
     .tab-home .tab-shadow { display: none; }
+    /* 겹침 순서는 타이머 탭까지 한 줄로 따진다(활성이 맨 위, 나머지는 왼쪽이 위).
+       그래서 이 그룹에는 stacking context를 만들지 않는다 — z-index는 JS가 탭마다 준다 */
     .tab-labels {
       display: flex;
       align-items: center;
       flex-shrink: 0;
-      isolation: isolate;
       position: relative;
-      z-index: 11; /* 공부 버튼(z-index:10)보다 위 — 홈 탭이 버튼을 덮는다 */
-      /* 스플릿 전환 시 타이머 탭 폭이 늘어나며 이 그룹이 오른쪽으로 밀려간다 */
-      transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1);
     }
     /* 스플릿뷰 — 타이머 탭이 왼쪽 패널(25%) 폭을 꽉 채우고, 그 오른쪽 8px 간격
        다음부터 나머지 탭들이 시작한다 (= 우측 패널의 왼쪽 모서리) */
@@ -5956,8 +5952,6 @@
     studyBtn.classList.toggle('selected', studySelected);
     // 공부를 시작하면 알약 버튼이 다른 탭과 같은 탭 모양이 된다
     studyBtnWrap.classList.toggle('as-tab', studyRunning);
-    // 선택된 탭이 항상 앞 — 공부 탭이 선택이면 홈 탭보다 위로 올린다
-    studyBtnWrap.classList.toggle('front', studySelected);
     const prefix = studySelected ? 'active' : 'inactive';
     document.getElementById('sbCurveL').src = `assets/tab-${prefix}-left.svg`;
     document.getElementById('sbCurveR').src = `assets/tab-${prefix}-right.svg`;
@@ -6044,12 +6038,14 @@
     const n = tabs.length;
     tabs.forEach((tab, i) => {
       // Active tab always on top; others: leftmost highest
-      tab.style.zIndex     = tab.classList.contains('active') ? String(n + 1) : String(n - i);
+      tab.style.zIndex     = tab.classList.contains('active') ? String(n + 2) : String(n - i);
       tab.style.marginRight = i === n - 1 ? '0' : '-30px';
       // 오른쪽 탭이 활성이면 그 탭이 내 우측 곡선 위로 겹친다 — 그 자리에 그림자를 깐다
       const coveredRight = !!tabs[i + 1] && tabs[i + 1].classList.contains('active');
       tabShadowR(tab).classList.toggle('on', coveredRight);
     });
+    // 타이머 탭은 맨 왼쪽 탭이다 — 선택되면 최상단, 아니면 비활성 탭들보다 위(홈 탭 포함)
+    studyBtnWrap.style.zIndex = studySelected ? String(n + 3) : String(n + 1);
   }
 
   // 우측 그림자 레이어는 필요할 때 만들어 붙인다 (정적 탭·새로 만든 탭 모두 커버)
