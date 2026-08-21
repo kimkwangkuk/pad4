@@ -101,8 +101,8 @@
       padding-top: 3px;
       position: relative;
       z-index: 10;
-      transition: width 0.32s cubic-bezier(0.4, 0, 0.2, 1),
-                  margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      transition: width 0.34s cubic-bezier(0.32, 0.72, 0, 1),
+                  margin-right 0.34s cubic-bezier(0.32, 0.72, 0, 1);
     }
     /* 공부 버튼
          기본(공부 전)        : 유리 알약 버튼
@@ -6118,7 +6118,7 @@
   const svPanelBtn = document.getElementById('svPanelBtn');
   const wsFrame    = document.getElementById('wsFrame');
   const tabBar = document.querySelector('.tab-bar');
-  let splitOn = false, splitT = null;
+  let splitOn = false, splitT = null, wrapWT = null;
 
   // 우측 패널(노트 캔버스·홈)은 프레임 밖 오른쪽에서 밀려 들어온다.
   // 폭 자체는 즉시 75%로 잡고, 움직임만 transform으로 준다.
@@ -6167,8 +6167,21 @@
       }, 330);
     }
     // 탭 영역도 함께 갈라진다 — 타이머 탭이 왼쪽 패널 폭을 채우며 나머지 탭들을
-    // 우측 패널 모서리까지 밀어낸다 (폭 전환은 .study-btn-wrap의 width 트랜지션)
+    // 우측 패널 모서리까지 밀어낸다. width:auto ↔ calc()는 전환이 되지 않으므로
+    // 양쪽 끝을 실제 px로 잡아 애니메이션한 뒤 인라인 값을 지운다.
+    const wrapFrom = studyBtnWrap.offsetWidth;
     tabBar.classList.toggle('split', on);
+    if (!instant) {
+      studyBtnWrap.style.transition = 'none';
+      studyBtnWrap.style.width = '';                       // 바뀐 상태의 목표 폭
+      const wrapTo = studyBtnWrap.offsetWidth;
+      studyBtnWrap.style.width = wrapFrom + 'px';          // 현재 폭에서 시작
+      void studyBtnWrap.offsetWidth;                       // 리플로우
+      studyBtnWrap.style.transition = '';
+      studyBtnWrap.style.width = wrapTo + 'px';
+      clearTimeout(wrapWT);
+      wrapWT = setTimeout(() => { studyBtnWrap.style.width = ''; }, 380);
+    }
     // 좁아진 폭에 카드가 다 들어오도록 캔버스를 축소했다가, 풀리면 원래 배율로 되돌린다
     const paneW = workspaceEl.clientWidth * 0.75 - 12; // 우측 75% - (가운데 4 + 바깥 8)
     if (window.canvasZoom) window.canvasZoom.setSplit(on, paneW);
