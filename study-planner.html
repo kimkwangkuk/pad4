@@ -101,7 +101,8 @@
       padding-top: 3px;
       position: relative;
       z-index: 10;
-      transition: margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      transition: width 0.32s cubic-bezier(0.4, 0, 0.2, 1),
+                  margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
     /* 공부 버튼
          기본(공부 전)        : 유리 알약 버튼
@@ -178,9 +179,14 @@
       isolation: isolate;
       position: relative;
       z-index: 11; /* 공부 버튼(z-index:10)보다 위 — 홈 탭이 버튼을 덮는다 */
-      /* 스플릿뷰에서는 오른쪽 패널 위로 통째로 밀려간다 (이동량은 JS가 계산) */
+      /* 스플릿 전환 시 타이머 탭 폭이 늘어나며 이 그룹이 오른쪽으로 밀려간다 */
       transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1);
     }
+    /* 스플릿뷰 — 타이머 탭이 왼쪽 패널(25%) 폭을 꽉 채우고, 그 오른쪽 8px 간격
+       다음부터 나머지 탭들이 시작한다 (= 우측 패널의 왼쪽 모서리) */
+    .tab-bar.split .study-btn-wrap { width: calc(25vw - 16px); margin-right: 8px; }
+    .tab-bar.split .study-btn { width: 100%; }
+    .tab-bar.split .study-btn.running .sb-body { flex: 1 1 auto; min-width: 0; }
     /* 스플릿뷰 — 두 탭 그룹 사이 세로 구분선 (패널 사이 8px 간격의 가운데) */
     .tab-divider {
       position: absolute; left: 25vw; top: 9px;
@@ -6160,15 +6166,9 @@
         resetRightPane();
       }, 330);
     }
-    // 탭 영역도 함께 갈라진다 — 왼쪽엔 공부 탭만, 오른쪽 패널 위로 나머지 탭들이 밀려간다
+    // 탭 영역도 함께 갈라진다 — 타이머 탭이 왼쪽 패널 폭을 채우며 나머지 탭들을
+    // 우측 패널 모서리까지 밀어낸다 (폭 전환은 .study-btn-wrap의 width 트랜지션)
     tabBar.classList.toggle('split', on);
-    if (on) {
-      const target = window.innerWidth * 0.25 + 4;            // 우측 패널의 왼쪽 모서리
-      const cur    = tabLabels.getBoundingClientRect().left;  // 지금 탭 그룹의 시작점
-      tabLabels.style.transform = `translateX(${Math.max(0, target - cur)}px)`;
-    } else {
-      tabLabels.style.transform = '';
-    }
     // 좁아진 폭에 카드가 다 들어오도록 캔버스를 축소했다가, 풀리면 원래 배율로 되돌린다
     const paneW = workspaceEl.clientWidth * 0.75 - 12; // 우측 75% - (가운데 4 + 바깥 8)
     if (window.canvasZoom) window.canvasZoom.setSplit(on, paneW);
