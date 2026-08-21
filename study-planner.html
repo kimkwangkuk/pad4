@@ -101,8 +101,7 @@
       padding-top: 3px;
       position: relative;
       z-index: 10;
-      transition: padding 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-                  margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      transition: margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
     /* 공부 버튼
          기본(공부 전)        : 유리 알약 버튼
@@ -129,6 +128,10 @@
       box-shadow: 0 20px 50px rgba(0,0,0,0.25);
     }
     .sb-body { display: flex; align-items: center; gap: 4px; }
+    /* 알약 ↔ 탭 전환 — 아래로 내려가 사라지고, 바뀐 모습이 아래에서 올라온다 */
+    .study-btn.morphing {
+      transition: transform 0.16s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.14s ease;
+    }
     /* 공부 전(알약)에는 탭 곡선을 감춘다 — 뒤에 오는 .tab-curve보다 우선하도록 .study-btn을 붙인다 */
     .study-btn .sb-curve { display: none; }
     /* ── 공부 시작 후 = 탭 ── 알약 스타일을 벗고 탭 곡선 + 몸통으로 */
@@ -5866,6 +5869,28 @@
   const PLAY_SVG  = '<i data-lucide="play" style="width:14px;height:14px;fill:currentColor;stroke:none;"></i>';
   const DOT_HTML  = '<span class="sb-dot"></span>';
 
+  // 타이머 버튼 ↔ 공부 탭 — 지금 모습이 아래로 내려가 사라진 뒤, 바뀐 모습이 올라온다
+  let morphT = [];
+  function morphStudyBtn(onSwap) {
+    morphT.forEach(clearTimeout); morphT = [];
+    const el = studyBtn;
+    el.classList.add('morphing');
+    el.style.transform = 'translateY(16px)';
+    el.style.opacity   = '0';
+    morphT.push(setTimeout(() => {
+      if (onSwap) onSwap();
+      renderStudyBtn();                    // 여기서 알약 ↔ 탭이 바뀐다 (아직 안 보인다)
+      el.style.transition = 'none';        // 아래에서 다시 시작
+      el.style.transform  = 'translateY(16px)';
+      el.style.opacity    = '0';
+      void el.offsetWidth;                 // 리플로우 — 시작 위치 확정
+      el.style.transition = '';
+      el.style.transform  = '';
+      el.style.opacity    = '';
+      morphT.push(setTimeout(() => el.classList.remove('morphing'), 200));
+    }, 150));
+  }
+
   function renderStudyBtn() {
     studyBtn.classList.toggle('running', studyRunning);
     studyBtn.classList.toggle('selected', studySelected);
@@ -5884,11 +5909,11 @@
   // 공부 화면을 이 버튼이 대표하므로, 선택되면 모든 탭을 비활성으로 돌린다.
   // 스플릿뷰에서 오른쪽에 띄울 탭이므로 직전 탭을 기억해 둔다.
   let lastTab = null;
-  function selectStudy() {
+  function selectStudy(morph) {
     lastTab = tabLabels.querySelector('.tab.active:not(.closing)') || lastTab;
     studySelected = true;
     setTabActive(null); // 안에서 updateView가 불리며 공부 화면이 뜬다
-    renderStudyBtn();
+    if (morph) morphStudyBtn(); else renderStudyBtn();
   }
 
   function endStudy() {
@@ -5896,8 +5921,8 @@
     studyRunning = false;
     const wasSelected = studySelected;
     studySelected = false;
-    document.getElementById('studyTimerTime').textContent = '00:00:00';
-    renderStudyBtn();
+    // 탭이 아래로 내려가 닫히고, 그 자리에서 타이머 알약이 다시 올라온다
+    morphStudyBtn(() => { document.getElementById('studyTimerTime').textContent = '00:00:00'; });
     // 선택 상태였다면 갈 곳이 없으므로 홈 탭으로 보낸다
     if (wasSelected) setTabActive(homeTab || tabLabels.querySelector('.tab:not(.closing)'));
     else updateView();
@@ -5907,8 +5932,9 @@
   document.getElementById('svPause').addEventListener('click', () => endStudy());
 
   studyBtn.addEventListener('click', () => {
-    if (!studyRunning) { studyRunning = true; startStudyTimer(); }
-    selectStudy();
+    const starting = !studyRunning;
+    if (starting) { studyRunning = true; startStudyTimer(); }
+    selectStudy(starting); // 공부를 시작할 때만 알약 → 탭 전환 애니메이션
   });
 
   // ── 공부 타이머 — 버튼과 공부 화면의 시간이 함께 흘러간다 ──
