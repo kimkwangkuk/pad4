@@ -183,7 +183,7 @@
     }
     /* 스플릿뷰 — 두 탭 그룹 사이 세로 구분선 (패널 사이 8px 간격의 가운데) */
     .tab-divider {
-      position: absolute; left: 30vw; top: 9px;
+      position: absolute; left: 25vw; top: 9px;
       width: 1px; height: 18px;
       background: rgba(0,0,0,0.16);
       opacity: 0; pointer-events: none;
@@ -249,6 +249,18 @@
       width: 29px; height: 36px;
       pointer-events: none;
     }
+    /* 오른쪽 탭(활성 탭)이 내 우측 곡선을 덮을 때, 겹치는 자리에 깔리는 그라데이션.
+       왼쪽 그림자와 같은 에셋을 좌우 반전해서 쓴다 */
+    .tab-shadow-r {
+      position: absolute;
+      right: 0; top: 0;
+      width: 29px; height: 36px;
+      pointer-events: none;
+      transform: scaleX(-1);
+      opacity: 0;
+      transition: opacity 0.12s ease;
+    }
+    .tab-shadow-r.on { opacity: 1; }
     .tab-extra-btns {
       display: flex;
       align-items: center;
@@ -328,8 +340,8 @@
       /* 스플릿 진입/해제는 오른쪽에서 밀려 들어오고 나간다 */
       transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1);
     }
-    /* 스플릿뷰 — 공부 화면이 왼쪽 30%, 노트는 오른쪽 70% (가운데 8px = 4+4 흰 간격) */
-    .workspace.split { padding-left: calc(30% + 4px); }
+    /* 스플릿뷰 — 공부 화면이 왼쪽 25%, 노트는 오른쪽 75% (가운데 8px = 4+4 흰 간격) */
+    .workspace.split { padding-left: calc(25% + 4px); }
 
     /* ─── MAIN CONTENT AREA  (fills workspace) ───── */
     .main-area {
@@ -2375,10 +2387,10 @@
       transition: opacity 0.22s ease,
                   transform 0.32s cubic-bezier(0.4, 0, 0.2, 1);
     }
-    /* 스플릿뷰 — 홈 탭도 흰 프레임 안 오른쪽 70%에 라운드 패널로 뜬다.
+    /* 스플릿뷰 — 홈 탭도 흰 프레임 안 오른쪽 75%에 라운드 패널로 뜬다.
        홈은 프레임과 똑같이 하얘서 경계가 안 보이므로 연한 구분선을 둘러준다 */
     .home-screen.split {
-      left: calc(30% + 4px); right: 8px; top: 44px; bottom: 8px;
+      left: calc(25% + 4px); right: 8px; top: 44px; bottom: 8px;
       border-radius: 12px;
       box-shadow: 0 0 0 1px rgba(0,0,0,0.07);
     }
@@ -3048,7 +3060,7 @@
     .study-view.show { display: block; }
     /* 스플릿뷰 — 우측 상단 패널 버튼으로 토글. 공부 화면이 왼쪽 절반으로 좁아지고
        비워진 오른쪽에 노트 탭이 드러난다 */
-    .study-view.split { right: 70%; padding-right: 4px; border-radius: 16px 0 0 0; }
+    .study-view.split { right: 75%; padding-right: 4px; border-radius: 16px 0 0 0; }
     .sv-panel {
       position: relative; width: 100%; height: 100%;
       border-radius: 12px; overflow: hidden auto; /* 안쪽 패널은 네 모서리 모두 12px */
@@ -6015,7 +6027,22 @@
       // Active tab always on top; others: leftmost highest
       tab.style.zIndex     = tab.classList.contains('active') ? String(n + 1) : String(n - i);
       tab.style.marginRight = i === n - 1 ? '0' : '-30px';
+      // 오른쪽 탭이 활성이면 그 탭이 내 우측 곡선 위로 겹친다 — 그 자리에 그림자를 깐다
+      const coveredRight = !!tabs[i + 1] && tabs[i + 1].classList.contains('active');
+      tabShadowR(tab).classList.toggle('on', coveredRight);
     });
+  }
+
+  // 우측 그림자 레이어는 필요할 때 만들어 붙인다 (정적 탭·새로 만든 탭 모두 커버)
+  function tabShadowR(tab) {
+    let el = tab.querySelector('.tab-shadow-r');
+    if (!el) {
+      el = document.createElement('div');
+      el.className = 'tab-shadow-r';
+      el.innerHTML = '<img src="assets/tab-shadow.svg" style="position:absolute;inset:0;width:100%;height:100%;">';
+      tab.appendChild(el);
+    }
+    return el;
   }
 
   function setTabActive(tab) {
@@ -6088,7 +6115,7 @@
   let splitOn = false, splitT = null;
 
   // 우측 패널(노트 캔버스·홈)은 프레임 밖 오른쪽에서 밀려 들어온다.
-  // 폭 자체는 즉시 70%로 잡고, 움직임만 transform으로 준다.
+  // 폭 자체는 즉시 75%로 잡고, 움직임만 transform으로 준다.
   const SPLIT_OUT = 'translateX(calc(100% + 16px))';
   function rightPanes() { return [wsFrame, homeScreen]; }
   function slideRightPaneIn() {
@@ -6136,14 +6163,14 @@
     // 탭 영역도 함께 갈라진다 — 왼쪽엔 공부 탭만, 오른쪽 패널 위로 나머지 탭들이 밀려간다
     tabBar.classList.toggle('split', on);
     if (on) {
-      const target = window.innerWidth * 0.3 + 4;             // 우측 패널의 왼쪽 모서리
+      const target = window.innerWidth * 0.25 + 4;            // 우측 패널의 왼쪽 모서리
       const cur    = tabLabels.getBoundingClientRect().left;  // 지금 탭 그룹의 시작점
       tabLabels.style.transform = `translateX(${Math.max(0, target - cur)}px)`;
     } else {
       tabLabels.style.transform = '';
     }
     // 좁아진 폭에 카드가 다 들어오도록 캔버스를 축소했다가, 풀리면 원래 배율로 되돌린다
-    const paneW = workspaceEl.clientWidth * 0.7 - 12; // 우측 70% - (가운데 4 + 바깥 8)
+    const paneW = workspaceEl.clientWidth * 0.75 - 12; // 우측 75% - (가운데 4 + 바깥 8)
     if (window.canvasZoom) window.canvasZoom.setSplit(on, paneW);
     // 오른쪽에 뜬 탭은 선택된 상태로 보인다. 스플릿을 풀면 공부 화면만 남으므로 선택 해제.
     if (on) setTabActive((lastTab && lastTab.isConnected) ? lastTab : (homeTab || tabLabels.querySelector('.tab:not(.closing)')));
