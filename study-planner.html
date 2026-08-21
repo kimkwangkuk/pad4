@@ -129,8 +129,8 @@
       box-shadow: 0 20px 50px rgba(0,0,0,0.25);
     }
     .sb-body { display: flex; align-items: center; gap: 4px; }
-    /* 알약일 때는 탭 곡선을 감춘다 */
-    .sb-curve { display: none; }
+    /* 공부 전(알약)에는 탭 곡선을 감춘다 — 뒤에 오는 .tab-curve보다 우선하도록 .study-btn을 붙인다 */
+    .study-btn .sb-curve { display: none; }
     /* ── 공부 시작 후 = 탭 ── 알약 스타일을 벗고 탭 곡선 + 몸통으로 */
     .study-btn.running {
       padding: 0; border: none; border-radius: 0;
@@ -139,6 +139,8 @@
       align-items: stretch; gap: 0;
     }
     .study-btn.running .sb-curve { display: block; }
+    /* 선택된 공부 탭은 홈 탭(.tab-labels, z-index 11)보다 앞에 온다 */
+    .study-btn-wrap.front { z-index: 12; }
     .study-btn.running .sb-body {
       height: 36px; padding: 0 2px;
       background: #f2f2f2; color: rgba(0,0,0,0.4);
@@ -3143,12 +3145,12 @@
       <div class="study-btn-wrap" id="studyBtnWrap">
         <!-- 공부 전: 유리 알약 버튼 / 공부 시작 후(.running): 다른 탭과 같은 탭 모양 -->
         <div class="study-btn" id="studyTimerBtn">
-          <img class="tab-curve sb-curve" id="sbCurveL" src="assets/tab-inactive-left.svg" style="width:29px;height:36px;flex-shrink:0;display:block;">
+          <img class="tab-curve sb-curve" id="sbCurveL" src="assets/tab-inactive-left.svg">
           <div class="sb-body">
             <span class="sb-icon" id="sbIcon"></span>
             <span class="study-btn-time" id="studyTimerTime">00:00:00</span>
           </div>
-          <img class="tab-curve sb-curve" id="sbCurveR" src="assets/tab-inactive-right.svg" style="width:29px;height:36px;flex-shrink:0;display:block;transform:scaleX(-1);">
+          <img class="tab-curve sb-curve" id="sbCurveR" src="assets/tab-inactive-right.svg" style="transform:scaleX(-1);">
         </div>
       </div>
       <!-- Tab labels -->
@@ -5869,6 +5871,8 @@
     studyBtn.classList.toggle('selected', studySelected);
     // 공부를 시작하면 알약 버튼이 다른 탭과 같은 탭 모양이 된다
     studyBtnWrap.classList.toggle('as-tab', studyRunning);
+    // 선택된 탭이 항상 앞 — 공부 탭이 선택이면 홈 탭보다 위로 올린다
+    studyBtnWrap.classList.toggle('front', studySelected);
     const prefix = studySelected ? 'active' : 'inactive';
     document.getElementById('sbCurveL').src = `assets/tab-${prefix}-left.svg`;
     document.getElementById('sbCurveR').src = `assets/tab-${prefix}-right.svg`;
