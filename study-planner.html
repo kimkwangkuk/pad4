@@ -101,24 +101,13 @@
       padding-top: 3px;
       position: relative;
       z-index: 10;
-      /* 스플릿뷰에서는 공부 화면 안에 타이머가 있으므로 탭 바의 타이머는 접어서 숨긴다 */
-      max-width: 240px;
-      transform-origin: left center;
-      transition: max-width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-                  margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-                  padding-right 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-                  transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-                  opacity 0.2s ease;
+      transition: padding 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                  margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
-    /* 접히거나 펴지는 동안에만 클립 — 평소에는 버튼 그림자를 자르지 않는다 */
-    .study-btn-wrap.clip, .study-btn-wrap.collapsed { overflow: hidden; }
-    .study-btn-wrap.collapsed {
-      max-width: 0; margin-right: 0; padding-right: 0;
-      transform: scale(0.8); opacity: 0; pointer-events: none;
-    }
-    /* 공부 버튼 = 탭 (Figma 6389:867522 / 867534 / 867527)
-         기본(공부 전) · .running(공부중·미선택): 유리 버튼
-         .selected(공부중·선택): 흰 배경 + 진한 글자 */
+    /* 공부 버튼
+         기본(공부 전)        : 유리 알약 버튼
+         .running(공부 시작 후): 다른 탭과 똑같은 탭 모양 (곡선 + 몸통)
+         .selected            : 흰 몸통 + 진한 글자, 미선택은 흐린 몸통 */
     .study-btn {
       position: relative;
       padding: 3px 10px;
@@ -139,6 +128,24 @@
       backdrop-filter: none; -webkit-backdrop-filter: none;
       box-shadow: 0 20px 50px rgba(0,0,0,0.25);
     }
+    .sb-body { display: flex; align-items: center; gap: 4px; }
+    /* 알약일 때는 탭 곡선을 감춘다 */
+    .sb-curve { display: none; }
+    /* ── 공부 시작 후 = 탭 ── 알약 스타일을 벗고 탭 곡선 + 몸통으로 */
+    .study-btn.running {
+      padding: 0; border: none; border-radius: 0;
+      background: none; box-shadow: none;
+      backdrop-filter: none; -webkit-backdrop-filter: none;
+      align-items: stretch; gap: 0;
+    }
+    .study-btn.running .sb-curve { display: block; }
+    .study-btn.running .sb-body {
+      height: 36px; padding: 0 2px;
+      background: #f2f2f2; color: rgba(0,0,0,0.4);
+    }
+    .study-btn.running.selected .sb-body { background: #fff; color: rgba(0,0,0,0.86); }
+    /* 탭이 된 뒤에는 다른 탭처럼 탭 바 위쪽에 딱 붙고, 홈 탭과 곡선이 겹친다 */
+    .study-btn-wrap.as-tab { padding-top: 0; padding-right: 0; margin-right: -30px; }
     .sb-icon { width: 14px; height: 14px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
     .sb-dot { width: 8px; height: 8px; border-radius: 40px; background: #7243ff; }
     .study-btn-time {
@@ -147,13 +154,6 @@
       color: inherit; letter-spacing: -0.045px; line-height: 1.4;
       font-variant-numeric: tabular-nums; white-space: nowrap;
     }
-    .sb-pause {
-      width: 14px; height: 14px; flex-shrink: 0; padding: 0;
-      border: none; background: none; cursor: pointer; color: inherit;
-      display: flex; align-items: center; justify-content: center;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .sb-pause[hidden] { display: none; }
 
 
     /* 홈 탭 — 아이콘만 들어가고 양옆 여백 없이 아이콘 폭에 딱 맞춘다 */
@@ -167,7 +167,18 @@
       isolation: isolate;
       position: relative;
       z-index: 11; /* 공부 버튼(z-index:10)보다 위 — 홈 탭이 버튼을 덮는다 */
+      /* 스플릿뷰에서는 오른쪽 패널 위로 통째로 밀려간다 (이동량은 JS가 계산) */
+      transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1);
     }
+    /* 스플릿뷰 — 두 탭 그룹 사이 세로 구분선 (패널 사이 8px 간격의 가운데) */
+    .tab-divider {
+      position: absolute; left: 30vw; top: 9px;
+      width: 1px; height: 18px;
+      background: rgba(0,0,0,0.16);
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+    .tab-bar.split .tab-divider { opacity: 1; }
     .tab {
       display: flex;
       align-items: center;
@@ -3130,12 +3141,14 @@
     <div class="tabs-section">
       <!-- 타이머 버튼 — 탭 컨테이너 맨 앞(홈 탭보다 앞). 누르면 공부 탭이 열리고 버튼은 숨는다 -->
       <div class="study-btn-wrap" id="studyBtnWrap">
+        <!-- 공부 전: 유리 알약 버튼 / 공부 시작 후(.running): 다른 탭과 같은 탭 모양 -->
         <div class="study-btn" id="studyTimerBtn">
-          <span class="sb-icon" id="sbIcon"></span>
-          <span class="study-btn-time" id="studyTimerTime">00:00:00</span>
-          <button class="sb-pause" id="sbPause" aria-label="공부 종료" hidden>
-            <i data-lucide="pause" style="width:14px;height:14px;fill:currentColor;stroke:none;"></i>
-          </button>
+          <img class="tab-curve sb-curve" id="sbCurveL" src="assets/tab-inactive-left.svg" style="width:29px;height:36px;flex-shrink:0;display:block;">
+          <div class="sb-body">
+            <span class="sb-icon" id="sbIcon"></span>
+            <span class="study-btn-time" id="studyTimerTime">00:00:00</span>
+          </div>
+          <img class="tab-curve sb-curve" id="sbCurveR" src="assets/tab-inactive-right.svg" style="width:29px;height:36px;flex-shrink:0;display:block;transform:scaleX(-1);">
         </div>
       </div>
       <!-- Tab labels -->
@@ -3172,6 +3185,8 @@
     </div>
     <!-- Gradient fade -->
     <div class="tab-fade"></div>
+    <!-- 스플릿뷰에서 두 탭 그룹 사이에 놓이는 세로 구분선 -->
+    <div class="tab-divider" id="tabDivider"></div>
   </div>
 
   <!-- MAIN AREA -->
@@ -5852,9 +5867,13 @@
   function renderStudyBtn() {
     studyBtn.classList.toggle('running', studyRunning);
     studyBtn.classList.toggle('selected', studySelected);
+    // 공부를 시작하면 알약 버튼이 다른 탭과 같은 탭 모양이 된다
+    studyBtnWrap.classList.toggle('as-tab', studyRunning);
+    const prefix = studySelected ? 'active' : 'inactive';
+    document.getElementById('sbCurveL').src = `assets/tab-${prefix}-left.svg`;
+    document.getElementById('sbCurveR').src = `assets/tab-${prefix}-right.svg`;
     const ic = document.getElementById('sbIcon');
     ic.innerHTML = studyRunning ? DOT_HTML : PLAY_SVG;
-    document.getElementById('sbPause').hidden = !studyRunning;
     if (window.lucide) lucide.createIcons({ nodes: [ic] });
   }
 
@@ -5883,8 +5902,7 @@
   // 스플릿 중에는 탭 바 타이머가 접혀 있으므로, 공부 화면 안의 버튼으로도 공부를 끌 수 있다
   document.getElementById('svPause').addEventListener('click', () => endStudy());
 
-  studyBtn.addEventListener('click', (e) => {
-    if (e.target.closest('#sbPause')) { e.stopPropagation(); endStudy(); return; }
+  studyBtn.addEventListener('click', () => {
     if (!studyRunning) { studyRunning = true; startStudyTimer(); }
     selectStudy();
   });
@@ -6007,7 +6025,8 @@
   // 좁아지고, 오른쪽에 노트 탭(캔버스)이 스플릿뷰처럼 드러난다. 다시 누르면 되돌아온다.
   const svPanelBtn = document.getElementById('svPanelBtn');
   const wsFrame    = document.getElementById('wsFrame');
-  let splitOn = false, studyBtnClipT = null, splitT = null;
+  const tabBar = document.querySelector('.tab-bar');
+  let splitOn = false, splitT = null;
 
   // 우측 패널(노트 캔버스·홈)은 프레임 밖 오른쪽에서 밀려 들어온다.
   // 폭 자체는 즉시 70%로 잡고, 움직임만 transform으로 준다.
@@ -6055,11 +6074,15 @@
         resetRightPane();
       }, 330);
     }
-    // 스플릿 중에는 공부 화면 안에 타이머가 있으므로 탭 바의 타이머는 접어서 숨긴다
-    studyBtnWrap.classList.add('clip');
-    studyBtnWrap.classList.toggle('collapsed', on);
-    clearTimeout(studyBtnClipT);
-    if (!on) studyBtnClipT = setTimeout(() => studyBtnWrap.classList.remove('clip'), 320);
+    // 탭 영역도 함께 갈라진다 — 왼쪽엔 공부 탭만, 오른쪽 패널 위로 나머지 탭들이 밀려간다
+    tabBar.classList.toggle('split', on);
+    if (on) {
+      const target = window.innerWidth * 0.3 + 4;             // 우측 패널의 왼쪽 모서리
+      const cur    = tabLabels.getBoundingClientRect().left;  // 지금 탭 그룹의 시작점
+      tabLabels.style.transform = `translateX(${Math.max(0, target - cur)}px)`;
+    } else {
+      tabLabels.style.transform = '';
+    }
     // 좁아진 폭에 카드가 다 들어오도록 캔버스를 축소했다가, 풀리면 원래 배율로 되돌린다
     const paneW = workspaceEl.clientWidth * 0.7 - 12; // 우측 70% - (가운데 4 + 바깥 8)
     if (window.canvasZoom) window.canvasZoom.setSplit(on, paneW);
