@@ -3040,12 +3040,6 @@
     .nwz-grid { display: grid; grid-template-columns: repeat(3, 1fr); column-gap: 20px; row-gap: 24px; }
     .nwz-cell { cursor: pointer; -webkit-tap-highlight-color: transparent; }
     .nwz-thumbwrap { position: relative; width: 100%; }
-    .nwz-thumb {
-      position: relative; width: 100%; aspect-ratio: 160 / 214;
-      border-radius: 4px; overflow: hidden; background: #fff;
-      box-shadow: 0 0 1px rgba(0,0,0,0.5), 0 4px 6px rgba(0,0,0,0.04);
-    }
-    .nwz-cell.sel .nwz-thumb { outline: 2px solid rgba(0,0,0,0.86); outline-offset: 0; }
     .nwz-check {
       position: absolute; top: -10px; right: -10px; z-index: 3;
       width: 26px; height: 26px; border-radius: 30px; background: rgba(0,0,0,0.86);
@@ -7494,13 +7488,14 @@
     $('idsClose').addEventListener('click', closeInsertDetail);
     idsBackdrop.addEventListener('click', closeInsertDetail);
 
-    // "이 템플릿으로 노트 생성" → 팝업을 닫고, 닫힌 뒤 색상 선택 팝업을 띄운다
+    // "이 템플릿으로 노트 생성" → 팝업을 닫고, 닫힌 뒤 표지 선택으로 넘어간다
+    // (색상은 상세 팝업 안에서 이미 골랐으므로 별도 색상 선택 단계는 없다)
     $('idsUse').addEventListener('click', () => {
       closeInsertDetail();
       setTimeout(() => openWizard(0), 240);
     });
 
-    // ── 4·5) 색상 선택 → 표지 선택 ────────────────────────────
+    // ── 4) 표지 선택 → 5) 노트 이름 ───────────────────────────
     let coverTab = '컬러';
     function openWizard(step) {
       st.step = step;
@@ -7516,28 +7511,16 @@
       const next = $('nwzNext'), nameStep = $('nwzNameStep'), body = nwzPopup.querySelector('.nwz-body');
       grid.innerHTML = ''; chips.innerHTML = '';
       // 마지막 단계(노트 이름)만 그리드 대신 전용 화면을 쓰고, 다음 버튼도 확인(체크)으로 바뀐다
-      const isName = st.step === 2;
+      const isName = st.step === 1;
       body.style.display = isName ? 'none' : '';
       nameStep.style.display = isName ? 'flex' : 'none';
       next.innerHTML = isName
         ? '<i data-lucide="check" style="width:20px;height:20px;color:#fff;"></i>'
         : '<i data-lucide="arrow-right" style="width:20px;height:20px;color:#fff;"></i>';
       if (st.step === 0) {
-        $('nwzTitle').textContent = '색상 선택 (1/3)';
+        $('nwzTitle').textContent = '표지 선택';
         prev.innerHTML = '<i data-lucide="x" style="width:20px;height:20px;color:rgba(0,0,0,0.6);"></i>';
         prev.onclick = closeWizard;
-        INSERT_COLORS.forEach(c => {
-          const cell = document.createElement('div');
-          cell.className = 'nwz-cell' + (st.color === c.id ? ' sel' : '');
-          cell.innerHTML = `<div class="nwz-thumbwrap"><div class="nwz-thumb"></div><div class="nwz-check"><i data-lucide="check" style="width:14px;height:14px;color:#fff;"></i></div></div><div class="nwz-name">${c.name}</div>`;
-          cell.addEventListener('click', () => { st.color = c.id; renderWizard(); });
-          grid.appendChild(cell);
-          setTimeout(() => paintPage(cell.querySelector('.nwz-thumb'), st.insert || { orient: 'portrait' }, c.color), 0);
-        });
-      } else if (st.step === 1) {
-        $('nwzTitle').textContent = '표지 선택';
-        prev.innerHTML = '<i data-lucide="chevron-left" style="width:22px;height:22px;color:rgba(0,0,0,0.86);"></i>';
-        prev.onclick = () => openWizard(0);
         COVER_TABS.forEach(t => {
           const b = document.createElement('button');
           b.className = 'ib-chip' + (coverTab === t ? ' on' : '');
@@ -7554,10 +7537,10 @@
           grid.appendChild(cell);
         });
       } else {
-        // 3단계: 노트 이름 — 고른 표지+속지를 목업으로 보여주고 이름을 입력받는다
+        // 마지막 단계: 노트 이름 — 고른 표지+속지를 목업으로 보여주고 이름을 입력받는다
         $('nwzTitle').textContent = '노트 이름';
         prev.innerHTML = '<i data-lucide="chevron-left" style="width:22px;height:22px;color:rgba(0,0,0,0.86);"></i>';
-        prev.onclick = () => openWizard(1);
+        prev.onclick = () => openWizard(0);
         const cover = NW_COVERS.find(c => c.id === st.cover) || NW_COVERS[0];
         const heroCover = $('nwzHeroCover');
         heroCover.style.background = coverTab === '패턴' ? patternCSS('dot', cover.bg) : cover.bg;
@@ -7570,9 +7553,9 @@
       if (window.lucide) lucide.createIcons({ nodes: [nwzPopup] });
     }
 
-    // 다음: 색상 → 표지 → 노트 이름 → 노트 생성
+    // 다음: 표지 → 노트 이름 → 노트 생성 (색상은 속지 상세 팝업에서 고른다)
     $('nwzNext').addEventListener('click', () => {
-      if (st.step < 2) { openWizard(st.step + 1); return; }
+      if (st.step < 1) { openWizard(st.step + 1); return; }
       const input = $('nwzNameInput');
       const name = (input.value || '').trim() || input.placeholder;
       const cover = NW_COVERS.find(c => c.id === st.cover) || NW_COVERS[0];
