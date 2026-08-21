@@ -130,7 +130,7 @@
     .sb-body { display: flex; align-items: center; gap: 4px; }
     /* 알약 ↔ 탭 전환 — 아래로 내려가 사라지고, 바뀐 모습이 아래에서 올라온다 */
     .study-btn.morphing {
-      transition: transform 0.16s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.14s ease;
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.26s ease;
     }
     /* 공부 전(알약)에는 탭 곡선을 감춘다 — 뒤에 오는 .tab-curve보다 우선하도록 .study-btn을 붙인다 */
     .study-btn .sb-curve { display: none; }
@@ -5887,8 +5887,8 @@
       el.style.transition = '';
       el.style.transform  = '';
       el.style.opacity    = '';
-      morphT.push(setTimeout(() => el.classList.remove('morphing'), 200));
-    }, 150));
+      morphT.push(setTimeout(() => el.classList.remove('morphing'), 340));
+    }, 290));
   }
 
   function renderStudyBtn() {
