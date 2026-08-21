@@ -132,6 +132,12 @@
     .study-btn.morphing {
       transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.26s ease;
     }
+    /* 버튼이 내려가는 동안 자리도 함께 접혀 탭들이 왼쪽 끝까지 붙고,
+       새 모습이 올라오면서 다시 오른쪽으로 밀어낸다 */
+    .study-btn-wrap.morphing {
+      transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                  margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
     /* 공부 전(알약)에는 탭 곡선을 감춘다 — 뒤에 오는 .tab-curve보다 우선하도록 .study-btn을 붙인다 */
     .study-btn .sb-curve { display: none; }
     /* ── 공부 시작 후 = 탭 ── 알약 스타일을 벗고 탭 곡선 + 몸통으로 */
@@ -5873,21 +5879,44 @@
   let morphT = [];
   function morphStudyBtn(onSwap) {
     morphT.forEach(clearTimeout); morphT = [];
-    const el = studyBtn;
+    const el = studyBtn, wrap = studyBtnWrap;
+
+    // 지금 모습: 아래로 내려가며 사라지고, 그 자리(폭)도 0으로 접혀 탭들이 왼쪽 끝까지 붙는다
+    wrap.style.width = wrap.offsetWidth + 'px';
+    void wrap.offsetWidth;
+    wrap.classList.add('morphing');
     el.classList.add('morphing');
+    wrap.style.width       = '0px';
+    wrap.style.marginRight = '0px';
     el.style.transform = 'translateY(16px)';
     el.style.opacity   = '0';
+
     morphT.push(setTimeout(() => {
       if (onSwap) onSwap();
       renderStudyBtn();                    // 여기서 알약 ↔ 탭이 바뀐다 (아직 안 보인다)
-      el.style.transition = 'none';        // 아래에서 다시 시작
+
+      // 바뀐 모습의 자연 폭을 재고, 다시 0에서 펴면서 탭들을 오른쪽으로 밀어낸다
+      wrap.style.transition = 'none';
+      wrap.style.width = 'auto';
+      const w = wrap.offsetWidth;
+      wrap.style.width = '0px';
+      el.style.transition = 'none';        // 버튼은 아래에서 다시 시작
       el.style.transform  = 'translateY(16px)';
       el.style.opacity    = '0';
       void el.offsetWidth;                 // 리플로우 — 시작 위치 확정
+      wrap.style.transition  = '';
+      wrap.style.width       = w + 'px';
+      wrap.style.marginRight = '';         // 클래스 값(-10/-30)으로 되돌아가며 전환
       el.style.transition = '';
       el.style.transform  = '';
       el.style.opacity    = '';
-      morphT.push(setTimeout(() => el.classList.remove('morphing'), 340));
+
+      morphT.push(setTimeout(() => {
+        el.classList.remove('morphing');
+        wrap.classList.remove('morphing');
+        wrap.style.width = '';             // 다시 내용 폭에 맡긴다
+        wrap.style.marginRight = '';
+      }, 340));
     }, 290));
   }
 
