@@ -2774,13 +2774,14 @@
     .ib-hero, .ib-filters, .ib-grid {
       padding-left: var(--nnf-pad); padding-right: var(--nnf-pad);
     }
+    /* 목록 화면은 오른쪽에서 밀려 들어오고, 나갈 때는 다시 오른쪽으로 빠진다 */
     .nnf-screen {
       position: fixed; inset: 0; z-index: 900;
       background: #fff; overflow-y: auto;
-      opacity: 0; pointer-events: none;
-      transition: opacity 0.32s ease;
+      transform: translateX(100%); pointer-events: none;
+      transition: transform 0.38s cubic-bezier(0.32, 0.72, 0, 1);
     }
-    .nnf-screen.show { opacity: 1; pointer-events: auto; }
+    .nnf-screen.show { transform: translateX(0); pointer-events: auto; }
     .nnf-screen::-webkit-scrollbar { display: none; }
     .nnf-header {
       position: relative; height: 56px; flex-shrink: 0;
@@ -7686,7 +7687,7 @@
       const name = (input.value || '').trim() || input.placeholder;
       const cover = currentCover();
       closeWizard();
-      showScreen(ibScreen, false); // 목록 화면 뒤로가기 (0.2s 페이드)
+      showScreen(ibScreen, false); // 목록 화면이 오른쪽으로 빠지며 홈이 드러난다
       input.value = '';
 
       // 홈 목록에도 새 노트를 꽂아준다 — 표지 색은 방금 고른 값을 그대로 쓴다
@@ -7704,7 +7705,7 @@
       setTimeout(() => {
         insertHomeNote(cardEl);
         window.toast?.show('노트가 만들어졌습니다');
-      }, 380);
+      }, 430);
     });
 
     // 새 노트에는 오늘자 페이지 한 장이 미리 깔려 있다 — 고른 속지 방향·색을 그대로 반영한다
