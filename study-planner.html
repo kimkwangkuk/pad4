@@ -2778,7 +2778,7 @@
       position: fixed; inset: 0; z-index: 900;
       background: #fff; overflow-y: auto;
       opacity: 0; pointer-events: none;
-      transition: opacity 0.2s ease;
+      transition: opacity 0.32s ease;
     }
     .nnf-screen.show { opacity: 1; pointer-events: auto; }
     .nnf-screen::-webkit-scrollbar { display: none; }
@@ -7704,7 +7704,7 @@
       setTimeout(() => {
         insertHomeNote(cardEl);
         window.toast?.show('노트가 만들어졌습니다');
-      }, 230);
+      }, 380);
     });
 
     // 새 노트에는 오늘자 페이지 한 장이 미리 깔려 있다 — 고른 속지 방향·색을 그대로 반영한다
@@ -7819,7 +7819,7 @@
       setTimeout(() => {
         insertHomeNote(cardEl);
         window.toast?.show('폴더가 만들어졌습니다');
-      }, 220);
+      }, 380);
     });
 
     // 홈 그리드 맨 앞에 카드를 끼워 넣는다 — 새 카드는 떠오르고,
@@ -7843,18 +7843,18 @@
 
       requestAnimationFrame(() => {
         const ease = 'cubic-bezier(0.32, 0.72, 0, 1)';
-        cardEl.style.transition = `opacity 0.28s ease, transform 0.36s ${ease}`;
+        cardEl.style.transition = `opacity 0.42s ease, transform 0.62s ${ease}`;
         cardEl.style.opacity = '';
         cardEl.style.transform = '';
         kids.forEach(k => {
           if (!k.style.transform) return;
-          k.style.transition = `transform 0.36s ${ease}`;
+          k.style.transition = `transform 0.62s ${ease}`;
           k.style.transform = '';
         });
       });
       setTimeout(() => {
         [cardEl, ...kids].forEach(k => { k.style.transition = ''; k.style.transform = ''; k.style.opacity = ''; });
-      }, 420);
+      }, 700);
     }
   })();
 
