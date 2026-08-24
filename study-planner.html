@@ -2701,12 +2701,12 @@
       color: rgba(0,0,0,0.86); letter-spacing: -0.048px; text-align: left;
     }
     .hsm-row:hover { background: rgba(0,0,0,0.04); }
+    .hsm-sep { height: 1px; margin: 6px 8px; background: rgba(0,0,0,0.08); }
 
     /* ── 전체화면 스텝 (새 노트 추가 / 속지 목록) ── */
     /* 콘텐츠 최대 폭 — 넓은 화면에서 3열 그리드가 과하게 커지지 않도록 가운데로 모은다.
        배경(히어로 회색 띠)은 전체 폭을 유지해야 하므로 max-width 대신 안쪽 여백을 키운다. */
     .nnf-screen { --nnf-max: 1000px; --nnf-pad: max(32px, calc((100% - var(--nnf-max)) / 2)); }
-    .nn2-top, .nn2-sec, .nn2-grid,
     .ib-hero, .ib-filters, .ib-grid {
       padding-left: var(--nnf-pad); padding-right: var(--nnf-pad);
     }
@@ -2736,60 +2736,6 @@
     }
 
     /* 새 노트 추가: 상단 큰 카드 2개 */
-    .nn2-top { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding-top: 20px; }
-    .nn2-big {
-      position: relative; overflow: hidden;
-      height: 74px; padding: 18px 20px;
-      background: rgba(0,0,0,0.04); border: none; border-radius: 12px;
-      cursor: pointer; text-align: left; -webkit-tap-highlight-color: transparent;
-    }
-    .nn2-big:hover { background: rgba(0,0,0,0.06); }
-    .nn2-big-t {
-      font-family: 'Pretendard', sans-serif; font-size: 15px; font-weight: 700;
-      color: rgba(0,0,0,0.86); letter-spacing: -0.045px;
-    }
-    .nn2-big-s {
-      margin-top: 4px;
-      font-family: 'Pretendard', sans-serif; font-size: 11px; font-weight: 400;
-      color: rgba(0,0,0,0.45); letter-spacing: -0.033px;
-    }
-    /* 오른쪽에 살짝 겹쳐 놓인 종이 두 장 */
-    .nn2-big-pages { position: absolute; right: 20px; top: 10px; bottom: -14px; width: 96px; }
-    .nn2-big-pages i {
-      position: absolute; top: 0; bottom: 0; width: 56px;
-      background: #fff; border-radius: 3px; box-shadow: 0 1px 4px rgba(0,0,0,0.10);
-    }
-    .nn2-big-pages i:first-child { right: 34px; background: #f4f4f4; }
-    .nn2-big-pages i:last-child  { right: 0; }
-
-    .nn2-sec { padding-top: 34px; }
-    .nn2-sec-t {
-      font-family: 'Pretendard', sans-serif; font-size: 15px; font-weight: 700;
-      color: rgba(0,0,0,0.86); letter-spacing: -0.045px;
-    }
-    .nn2-sec-s {
-      margin-top: 4px;
-      font-family: 'Pretendard', sans-serif; font-size: 11px; font-weight: 400;
-      color: rgba(0,0,0,0.45); letter-spacing: -0.033px;
-    }
-    .nn2-grid {
-      display: grid; grid-template-columns: repeat(3, 1fr);
-      column-gap: 20px; row-gap: 24px;
-      padding-top: 16px; padding-bottom: 40px;
-    }
-    .nn2-cell { cursor: pointer; -webkit-tap-highlight-color: transparent; }
-    .nn2-thumb {
-      position: relative; width: 100%; aspect-ratio: 188 / 140;
-      border-radius: 6px; overflow: hidden;
-      display: flex; align-items: center; justify-content: center;
-    }
-    .nn2-thumb > div { pointer-events: none; }
-    .nn2-name {
-      margin-top: 10px; text-align: center;
-      font-family: 'Pretendard', sans-serif; font-size: 12px; font-weight: 500;
-      color: rgba(0,0,0,0.86); letter-spacing: -0.036px;
-    }
-
     /* 속지 목록 화면 — 히어로 + 필터 + 3열 그리드 */
     .ib-hero {
       background: rgba(0,0,0,0.05);
@@ -3738,36 +3684,18 @@
   <!-- 홈 + 버튼 메뉴 (노트 / 폴더) -->
   <div class="hsm-menu" id="hsAddMenu" onclick="event.stopPropagation()">
     <button class="hsm-row" id="hsmNote" type="button">
-      <i data-lucide="notebook-pen" style="width:20px;height:20px;color:rgba(0,0,0,0.86);"></i><span>노트</span>
+      <i data-lucide="book" style="width:20px;height:20px;color:rgba(0,0,0,0.86);"></i><span>노트</span>
     </button>
+    <button class="hsm-row" id="hsmSmart" type="button">
+      <i data-lucide="book-marked" style="width:20px;height:20px;color:rgba(0,0,0,0.86);"></i><span>스마트 노트</span>
+    </button>
+    <button class="hsm-row" id="hsmImport" type="button">
+      <i data-lucide="download" style="width:20px;height:20px;color:rgba(0,0,0,0.86);"></i><span>불러오기</span>
+    </button>
+    <div class="hsm-sep"></div>
     <button class="hsm-row" id="hsmFolder" type="button">
       <i data-lucide="folder" style="width:20px;height:20px;color:rgba(0,0,0,0.86);"></i><span>폴더</span>
     </button>
-  </div>
-
-  <!-- 1) 새 노트 추가 (Figma 5843:403428) -->
-  <div class="nnf-screen" id="newNoteScreen">
-    <div class="nnf-header">
-      <button class="nnf-back" id="nnfBack1" aria-label="뒤로"><i data-lucide="chevron-left" style="width:24px;height:24px;"></i></button>
-      <span class="nnf-title">새 노트 추가</span>
-    </div>
-    <div class="nn2-top">
-      <button class="nn2-big" type="button">
-        <div class="nn2-big-t">기본/템플릿 노트</div>
-        <div class="nn2-big-s">다양한 템플릿을 이용하여 자유롭게 기록</div>
-        <div class="nn2-big-pages"><i></i><i></i></div>
-      </button>
-      <button class="nn2-big" type="button">
-        <div class="nn2-big-t">PDF로 추가</div>
-        <div class="nn2-big-s">내가 가진 파일을 등록하여 노트 생성</div>
-        <div class="nn2-big-pages"><i></i><i></i></div>
-      </button>
-    </div>
-    <div class="nn2-sec">
-      <div class="nn2-sec-t">스마트 노트</div>
-      <div class="nn2-sec-s">공부 시간, 일정, 투두 등 자동 연동 및 기록</div>
-    </div>
-    <div class="nn2-grid" id="nn2Grid"></div>
   </div>
 
   <!-- 2) 속지 목록 (Figma 5843:403470) -->
@@ -7294,17 +7222,6 @@
   // ══════════════════════════════════════════════════════════════════
   (function () {
     // ── 데이터 ────────────────────────────────────────────────
-    const NOTE_TYPES = [
-      { id: 'planner',  name: '플래너',  bg: '#efefef',
-        desc: '일 단위의 공부 시간, 할일 관리 노트.\n할일, 일정, 공부 시간 자동 연동.' },
-      { id: 'timeline', name: '타임라인', bg: '#cfe0ef',
-        desc: '하루의 흐름을 시간 순으로 기록하는 노트.\n집중 구간과 쉬는 구간이 한눈에 보여요.' },
-      { id: 'todo',     name: '할 일',    bg: '#ccd6c4',
-        desc: '오늘 해야 할 일을 모아 관리하는 노트.\n체크리스트로 진행 상황을 확인해요.' },
-      { id: 'routine',  name: '루틴',     bg: '#e5d5b8',
-        desc: '매일 반복하는 습관을 기록하는 노트.\n주 단위로 달성률을 볼 수 있어요.' },
-    ];
-
     // 속지 목록. group = 상단 칩(일간/주간/월간), orient = 세로형/가로형
     const INSERTS = [
       { id: 'i1', name: '열품타 기본 플래너',       group: '일간', orient: 'portrait',  tint: '#ff6b1a', unlocked: true },
@@ -7312,11 +7229,30 @@
       { id: 'i3', name: '멍뭉이 데일리 플래너',      group: '일간', orient: 'portrait',  tint: '#f6efe6', unlocked: false },
       { id: 'i4', name: '고양이 데일리 플래너',      group: '일간', orient: 'portrait',  tint: '#e9c7fe', unlocked: false },
       { id: 'i5', name: '타임라인 플래너',           group: '일간', orient: 'portrait',  tint: '#ffffff', unlocked: false },
-      { id: 'i6', name: '3분할 데일리 플래너 (가로 전용)', group: '일간', orient: 'landscape', tint: '#eef1f4', unlocked: false },
+      { id: 'i6', name: '3분할 데일리 플래너',       group: '일간', orient: 'landscape', tint: '#eef1f4', unlocked: false },
       { id: 'i7', name: '위클리 스프레드',           group: '주간', orient: 'portrait',  tint: '#e6f0ff', unlocked: true },
-      { id: 'i8', name: '주간 타임블록 (가로 전용)',  group: '주간', orient: 'landscape', tint: '#fff3a4', unlocked: false },
+      { id: 'i8', name: '주간 타임블록',             group: '주간', orient: 'landscape', tint: '#fff3a4', unlocked: false },
       { id: 'i9', name: '먼슬리 그리드',             group: '월간', orient: 'portrait',  tint: '#e8f5ea', unlocked: true },
     ];
+    // 무지 노트용 속지 — 스터디 템플릿과 달리 빈 종이(무지·줄·모눈·도트)만 고른다
+    const PLAIN_INSERTS = [
+      { id: 'b1', name: '무지', plain: 'blank', orient: 'portrait',  unlocked: true },
+      { id: 'b2', name: '무지', plain: 'blank', orient: 'landscape', unlocked: true },
+      { id: 'b3', name: '줄',   plain: 'line',  orient: 'portrait',  unlocked: true },
+      { id: 'b4', name: '줄',   plain: 'line',  orient: 'landscape', unlocked: true },
+      { id: 'b5', name: '모눈', plain: 'grid',  orient: 'portrait',  unlocked: true },
+      { id: 'b6', name: '도트', plain: 'dot',   orient: 'portrait',  unlocked: true },
+    ];
+    const PLAIN_PAPER = {
+      blank: '#fff',
+      line:  'linear-gradient(rgba(0,0,0,0.10) 1px, transparent 1px) 0 0 / 100% 4.5%, #fff',
+      grid:  'linear-gradient(rgba(0,0,0,0.07) 1px, transparent 1px) 0 0 / 100% 6%,' +
+             ' linear-gradient(90deg, rgba(0,0,0,0.07) 1px, transparent 1px) 0 0 / 8% 100%, #fff',
+      dot:   'radial-gradient(rgba(0,0,0,0.2) 1px, transparent 1px) 0 0 / 8% 6%, #fff',
+    };
+    const PLAIN_DESC = '아무것도 없는 빈 속지예요. 필기, 그림, 메모 무엇이든 자유롭게 올려두세요.';
+    let ibMode = 'smart'; // 'smart' = 스터디 노트 템플릿 · 'plain' = 무지 노트
+
     const INSERT_TAGS = ['공부 시간 자동 기록', '과목 별 할 일 관리', 'D-day', '다양한 테마'];
     const INSERT_DESC = '매일 함께해주는 감성 플래너. 과목별로 할일을 체크리스트로 정리하고, 오늘 공부한 시간은 자동으로 기록돼요. D-day로 다가오는 시험이나 일정을 챙기고, 하루하루 쌓이는 기록은 잔디 형태로 한눈에 확인할 수 있어요.';
 
@@ -7337,13 +7273,25 @@
     // ── DOM ───────────────────────────────────────────────────
     const $ = id => document.getElementById(id);
     const addMenu = $('hsAddMenu');
-    const nnScreen = $('newNoteScreen'), ibScreen = $('insertBrowseScreen');
+    const ibScreen = $('insertBrowseScreen');
     const idsSheet = $('idsSheet'), idsBackdrop = $('idsBackdrop');
     const nwzPopup = $('nwzPopup'), nwzBackdrop = $('nwzBackdrop');
 
     // 속지 미리보기는 기존 스터디 카드 템플릿을 축소해 그린다
     function paintPage(el, item, tintColor) {
       el.innerHTML = '';
+      // 무지 노트 속지 — 스터디 카드 대신 빈 종이(무지·줄·모눈·도트)를 그린다
+      if (item && item.plain) {
+        el.style.background = PLAIN_PAPER[item.plain] || '#fff';
+        const tint0 = tintColor && tintColor !== '#ffffff' ? tintColor : null;
+        if (tint0) {
+          const t0 = document.createElement('div');
+          t0.style.cssText = `position:absolute;inset:0;mix-blend-mode:multiply;opacity:0.55;pointer-events:none;background:${tint0};`;
+          el.appendChild(t0);
+        }
+        return;
+      }
+      el.style.background = '';
       const src = buildStudyCardEl();
       if (item.orient === 'landscape') { src.style.width = '800px'; src.style.height = '600px'; src.dataset.orient = 'landscape'; }
       renderMp2Thumb(src, el);
@@ -7378,25 +7326,23 @@
       addMenu.classList.contains('show') ? closeAddMenu() : openAddMenu(fab);
     });
     $('hsmFolder').addEventListener('click', () => { closeAddMenu(); window.toast?.show('폴더 만들기는 준비 중이에요'); });
-    $('hsmNote').addEventListener('click', () => { closeAddMenu(); openNewNote(); });
+    $('hsmImport').addEventListener('click', () => { closeAddMenu(); window.toast?.show('불러오기는 준비 중이에요'); });
+    $('hsmNote').addEventListener('click',  () => { closeAddMenu(); openPlainBrowse(); });
+    $('hsmSmart').addEventListener('click', () => { closeAddMenu(); openSmartBrowse(); });
 
     // ── 1) 새 노트 추가 ───────────────────────────────────────
-    function openNewNote() {
-      const grid = $('nn2Grid');
-      grid.innerHTML = '';
-      NOTE_TYPES.forEach(t => {
-        const cell = document.createElement('div');
-        cell.className = 'nn2-cell';
-        cell.innerHTML = `<div class="nn2-thumb" style="background:${t.bg};"><div style="position:relative;height:74%;aspect-ratio:160/214;background:#fff;border-radius:3px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.10);"></div></div><div class="nn2-name">${t.name}</div>`;
-        cell.addEventListener('click', () => openInsertBrowse(t));
-        grid.appendChild(cell);
-        const pg = cell.querySelector('.nn2-thumb > div');
-        setTimeout(() => paintPage(pg, { orient: 'portrait' }, null), 0);
-      });
-      showScreen(nnScreen, true);
-      if (window.lucide) lucide.createIcons({ nodes: [nnScreen] });
-    }
-    $('nnfBack1').addEventListener('click', () => showScreen(nnScreen, false));
+    // ── 1) 목록 진입 ─────────────────────────────────────────
+    // + 메뉴에서 바로 온다. "노트"는 무지 속지, "스마트 노트"는 스터디 노트 템플릿.
+    const SMART_TYPE = {
+      id: 'study', name: '스터디 노트',
+      desc: '공부 시간, 할일, 일정이 연동되는 공부 관리 노트.\n종이 위에 공부 데이터를 연동하고 그 위에 자유롭게 필기하세요.'
+    };
+    const PLAIN_TYPE = {
+      id: 'plain', name: '노트',
+      desc: '빈 속지에 자유롭게 기록하는 노트.\n무지·줄·모눈·도트 중에서 고르세요.'
+    };
+    function openSmartBrowse() { ibMode = 'smart'; st.group = '일간'; openInsertBrowse(SMART_TYPE); }
+    function openPlainBrowse() { ibMode = 'plain'; openInsertBrowse(PLAIN_TYPE); }
 
     // ── 2) 속지 목록 ──────────────────────────────────────────
     function openInsertBrowse(type) {
@@ -7404,9 +7350,12 @@
       $('ibTitle').textContent = type.name;
       $('ibHeroT').textContent = type.name;
       $('ibHeroS').textContent = type.desc;
+      const heroItem = ibMode === 'plain'
+        ? { orient: 'portrait', plain: 'line' }
+        : { orient: 'portrait' };
       setTimeout(() => {
-        paintPage($('ibHeroP1'), { orient: 'portrait' }, null);
-        paintPage($('ibHeroP2'), { orient: 'portrait' }, null);
+        paintPage($('ibHeroP1'), heroItem, null);
+        paintPage($('ibHeroP2'), heroItem, null);
       }, 0);
       renderIbFilters();
       renderIbGrid();
@@ -7417,7 +7366,8 @@
     function renderIbFilters() {
       const chips = $('ibChips');
       chips.innerHTML = '';
-      ['일간', '주간', '월간'].forEach(g => {
+      // 무지 노트는 분류 칩 없이 방향만 고른다
+      if (ibMode !== 'plain') ['일간', '주간', '월간'].forEach(g => {
         const b = document.createElement('button');
         b.className = 'ib-chip' + (st.group === g ? ' on' : '');
         b.textContent = `${g} 플래너`;
@@ -7436,7 +7386,8 @@
     }
 
     function ibVisibleItems() {
-      return INSERTS.filter(it => it.group === st.group)
+      const list = ibMode === 'plain' ? PLAIN_INSERTS : INSERTS.filter(it => it.group === st.group);
+      return list
         .filter(it => st.orient === '전체'
           || (st.orient === '가로형' && it.orient === 'landscape')
           || (st.orient === '세로형' && it.orient === 'portrait'));
@@ -7448,7 +7399,10 @@
       ibVisibleItems().forEach(item => {
         const cell = document.createElement('div');
         cell.className = 'ib-cell';
-        cell.innerHTML = `<div class="ib-thumbwrap"><div class="ib-thumb${item.orient === 'landscape' ? ' land' : ''}"></div></div><div class="ib-name">${item.name}</div>`;
+        // 캡션은 "이름 (세로/가로)" — 같은 속지의 방향 차이를 목록에서 바로 알 수 있다
+        const oriTxt = item.orient === 'landscape' ? '가로' : '세로';
+        cell.innerHTML = `<div class="ib-thumbwrap"><div class="ib-thumb${item.orient === 'landscape' ? ' land' : ''}"></div></div>` +
+                         `<div class="ib-name">${item.name} (${oriTxt})</div>`;
         cell.addEventListener('click', () => openInsertDetail(item));
         grid.appendChild(cell);
         // paintPage가 썸네일 내용을 비우므로 잠금 배지는 그 뒤에 얹는다
@@ -7472,12 +7426,13 @@
       st.insert = item;
       $('idsName').textContent = item.name;
       $('idsOrient').textContent = item.orient === 'landscape' ? '가로형' : '세로형';
-      $('idsDesc').textContent = INSERT_DESC;
+      $('idsDesc').textContent = item.plain ? PLAIN_DESC : INSERT_DESC;
       $('idsBadge').hidden = !!item.unlocked; // 잠긴 속지만 프리미엄 배지
       const page = $('idsHeroPage');
       page.classList.toggle('land', item.orient === 'landscape');
       setTimeout(() => paintPage(page, item, null), 0);
-      $('idsTags').innerHTML = INSERT_TAGS.map(t => `<span class="ids-tag">${t}</span>`).join('');
+      $('idsTags').innerHTML = item.plain ? ''
+        : INSERT_TAGS.map(t => `<span class="ids-tag">${t}</span>`).join('');
       renderIdsColors();
       $('idsModeMenu').hidden = true;
       idsBackdrop.classList.add('show');
@@ -7625,7 +7580,6 @@
       const cover = currentCover();
       closeWizard();
       showScreen(ibScreen, false);
-      showScreen(nnScreen, false);
       input.value = '';
 
       // 홈 목록에도 새 노트를 꽂아준다 — 표지 색/패턴은 방금 고른 값을 그대로 쓴다
