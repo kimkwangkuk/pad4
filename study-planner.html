@@ -7573,16 +7573,18 @@
     // 표지 선택 확인 → 이름 입력 미니 팝업
     $('nwzNext').addEventListener('click', openNameAsk);
 
-    // "노트 생성" — 이름을 확정하고 노트를 만든다
+    // "노트 생성" — 이름을 확정하고 노트를 만든다.
+    // 팝업과 목록 화면을 닫아 홈으로 되돌아간 뒤, 새 노트가 맨 앞에 끼어드는
+    // 모습을 보여준다 (기존 카드들은 밀려나는 자리로 부드럽게 이동).
     $('nwzAskOk').addEventListener('click', () => {
       const input = $('nwzNameInput');
       const name = (input.value || '').trim() || input.placeholder;
       const cover = currentCover();
       closeWizard();
-      showScreen(ibScreen, false);
+      showScreen(ibScreen, false); // 목록 화면 뒤로가기 (0.2s 페이드)
       input.value = '';
 
-      // 홈 목록에도 새 노트를 꽂아준다 — 표지 색/패턴은 방금 고른 값을 그대로 쓴다
+      // 홈 목록에도 새 노트를 꽂아준다 — 표지 색은 방금 고른 값을 그대로 쓴다
       const note = {
         name, date: '방금 전', icon: 'notebook-pen',
         color: cover ? cover.bg : '#f2f2f2',
@@ -7591,13 +7593,48 @@
       };
       HOME_NOTES.unshift(note);
       const cardEl = buildNoteCardEl(note);
-      const listEl = document.getElementById('hsNotes');
-      listEl.insertBefore(cardEl, listEl.firstChild);
       if (window.lucide) lucide.createIcons({ nodes: [cardEl] });
-
-      openTabFromHome(note.name, note.icon, 'note', note.noteType);
-      window.toast?.show('노트가 만들어졌습니다');
+      // 목록 화면이 걷힌 다음에 끼어들어야 홈에서 그 움직임이 보인다
+      setTimeout(() => {
+        insertHomeNote(cardEl);
+        window.toast?.show('노트가 만들어졌습니다');
+      }, 230);
     });
+
+    // 홈 그리드 맨 앞에 카드를 끼워 넣는다 — 새 카드는 떠오르고,
+    // 기존 카드들은 원래 자리에서 새 자리로 미끄러진다 (FLIP)
+    function insertHomeNote(cardEl) {
+      const listEl = document.getElementById('hsNotes');
+      const kids = Array.from(listEl.children);
+      const before = new Map(kids.map(k => [k, k.getBoundingClientRect()]));
+      listEl.insertBefore(cardEl, listEl.firstChild);
+
+      cardEl.style.transition = 'none';
+      cardEl.style.opacity = '0';
+      cardEl.style.transform = 'scale(0.86)';
+      kids.forEach(k => {
+        const a = before.get(k), b = k.getBoundingClientRect();
+        const dx = a.left - b.left, dy = a.top - b.top;
+        if (!dx && !dy) return;
+        k.style.transition = 'none';
+        k.style.transform = `translate(${dx}px, ${dy}px)`;
+      });
+
+      requestAnimationFrame(() => {
+        const ease = 'cubic-bezier(0.32, 0.72, 0, 1)';
+        cardEl.style.transition = `opacity 0.28s ease, transform 0.36s ${ease}`;
+        cardEl.style.opacity = '';
+        cardEl.style.transform = '';
+        kids.forEach(k => {
+          if (!k.style.transform) return;
+          k.style.transition = `transform 0.36s ${ease}`;
+          k.style.transform = '';
+        });
+      });
+      setTimeout(() => {
+        [cardEl, ...kids].forEach(k => { k.style.transition = ''; k.style.transform = ''; k.style.opacity = ''; });
+      }, 420);
+    }
   })();
 
 </script>
