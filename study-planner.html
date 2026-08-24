@@ -4647,7 +4647,7 @@
   const pageToast = window.toast;
 
   // 새 페이지를 캔버스에 생성 (속지 설정에서 구성한 템플릿 + 컬러를 그대로 반영)
-  function createPage(year, month, day, quiet) {
+  function createPage(year, month, day, quiet, orientOverride) {
     if (datePicker.takenDates.has(`${year}-${month}-${day}`)) return;
     const y = String(year).slice(2);
     const m = String(month).padStart(2, '0');
@@ -4657,7 +4657,7 @@
     // 캔버스에 기본으로 깔린 속지(데일리)를 그대로 사용한다. 그날 캘린더에 공부기록이 있으면
     // 그 시간을 반영해 타임라인/과목시간이 채워진 채로 추가된다.
     // 속지 목록에서 마지막으로 고른 속지가 가로형이면 이 페이지도 가로형(800×600)으로 만들어진다.
-    const orient = (window.ipSelectedOrient && window.ipSelectedOrient()) || 'portrait';
+    const orient = orientOverride || (window.ipSelectedOrient && window.ipSelectedOrient()) || 'portrait';
     const newPage = { id: 'p' + pageCount++, dateText, today: false, orient, studyTime: STUDY_TIMES[`${year}-${month}-${day}`] };
     canvasZoomWrap.insertAdjacentHTML('beforeend', buildCardHTML(newPage));
     const newCard = canvasZoomWrap.lastElementChild;
@@ -7592,6 +7592,7 @@
         noteType: 'scroll'
       };
       HOME_NOTES.unshift(note);
+      createTodayPageForNewNote();
       const cardEl = buildNoteCardEl(note);
       if (window.lucide) lucide.createIcons({ nodes: [cardEl] });
       // 목록 화면이 걷힌 다음에 끼어들어야 홈에서 그 움직임이 보인다
@@ -7600,6 +7601,28 @@
         window.toast?.show('노트가 만들어졌습니다');
       }, 230);
     });
+
+    // 새 노트에는 오늘자 페이지 한 장이 미리 깔려 있다 — 고른 속지 방향·색을 그대로 반영한다
+    function createTodayPageForNewNote() {
+      const t = new Date();
+      const y = String(t.getFullYear()).slice(2);
+      const m = String(t.getMonth() + 1).padStart(2, '0');
+      const d = String(t.getDate()).padStart(2, '0');
+      createPage(t.getFullYear(), t.getMonth() + 1, t.getDate(), true, st.insert && st.insert.orient);
+
+      const card = canvasZoomWrap.querySelector(`.card[data-date-text="${y}.${m}.${d}"]`);
+      if (!card) return;
+      // 속지 설정 쪽 색이 아니라 상세 팝업에서 고른 색을 입힌다
+      card.querySelectorAll('.ip-applied-tint').forEach(el => el.remove());
+      const col = INSERT_COLORS.find(c => c.id === st.color);
+      if (col && col.color !== '#ffffff') {
+        const tint = document.createElement('div');
+        tint.className = 'ip-applied-tint';
+        tint.style.cssText = 'position:absolute;left:0;right:0;top:0;bottom:75px;mix-blend-mode:multiply;' +
+                             `opacity:0.5;pointer-events:none;background:${col.color};`;
+        card.appendChild(tint);
+      }
+    }
 
     // 홈 그리드 맨 앞에 카드를 끼워 넣는다 — 새 카드는 떠오르고,
     // 기존 카드들은 원래 자리에서 새 자리로 미끄러진다 (FLIP)
