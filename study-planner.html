@@ -2703,6 +2703,70 @@
     .hsm-row:hover { background: rgba(0,0,0,0.04); }
     .hsm-sep { height: 1px; margin: 6px 8px; background: rgba(0,0,0,0.08); }
 
+    /* ── 폴더 모양 (홈 카드 · 새 폴더 팝업 미리보기 공용) ── */
+    .fd { position: relative; width: 138px; height: 110px; filter: drop-shadow(0 7px 14px rgba(0,0,0,0.16)); }
+    .fd-tab {
+      position: absolute; left: 0; top: 0; width: 52%; height: 24%;
+      border-radius: 9px 9px 0 0; background: var(--fc); filter: brightness(0.94);
+    }
+    .fd-body {
+      position: absolute; left: 0; right: 0; bottom: 0; height: 84%;
+      border-radius: 12px; background: var(--fc);
+      display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,0.9);
+    }
+    .nbf { width: 170px; height: 226.667px; display: flex; align-items: center; justify-content: center; }
+
+    /* ── 새 폴더 팝업 (Figma 1707486774) ── */
+    .nfd-backdrop {
+      position: fixed; inset: 0; z-index: 5300; background: rgba(0,0,0,0.35);
+      opacity: 0; pointer-events: none; transition: opacity 0.2s ease;
+    }
+    .nfd-backdrop.show { opacity: 1; pointer-events: auto; }
+    .nfd-popup {
+      position: fixed; left: 50%; top: 50%; z-index: 5301;
+      transform: translate(-50%, calc(-50% + 16px));
+      width: 470px; max-width: calc(100vw - 32px);
+      background: #fff; border-radius: 28px; box-shadow: 0 15px 75px rgba(0,0,0,0.18);
+      display: flex; flex-direction: column; overflow: hidden;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.2s ease, transform 0.22s cubic-bezier(0.34,1.1,0.64,1);
+    }
+    .nfd-popup.show { opacity: 1; pointer-events: auto; transform: translate(-50%, -50%); }
+    .nfd-body { padding: 4px 24px 26px; display: flex; flex-direction: column; gap: 18px; }
+    .nfd-top { display: flex; align-items: center; gap: 20px; }
+    .nfd-preview { width: 120px; height: 96px; flex-shrink: 0; }
+    .nfd-name-wrap { position: relative; flex: 1 1 0; min-width: 0; }
+    .nfd-name {
+      width: 100%; height: 40px; padding: 0 38px 0 16px;
+      border: none; border-radius: 100px; background: rgba(0,0,0,0.05); outline: none;
+      font-family: 'Pretendard', sans-serif; font-size: 15px; font-weight: 500;
+      color: rgba(0,0,0,0.86); letter-spacing: -0.045px;
+    }
+    .nfd-name::placeholder { color: rgba(0,0,0,0.3); }
+    .nfd-clear {
+      position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+      width: 20px; height: 20px; padding: 0; border: none; border-radius: 50%;
+      background: rgba(0,0,0,0.2); color: #fff; cursor: pointer;
+      display: none; align-items: center; justify-content: center;
+    }
+    .nfd-clear.on { display: flex; }
+    .nfd-seg { display: flex; gap: 2px; padding: 3px; border-radius: 100px; background: rgba(0,0,0,0.05); }
+    .nfd-seg button {
+      flex: 1 1 0; height: 30px; border: none; border-radius: 100px; background: none; cursor: pointer;
+      font-family: 'Pretendard', sans-serif; font-size: 13px; font-weight: 500;
+      color: rgba(0,0,0,0.45); letter-spacing: -0.039px;
+    }
+    .nfd-seg button.on { background: #fff; color: rgba(0,0,0,0.86); box-shadow: 0 1px 3px rgba(0,0,0,0.12); }
+    .nfd-grid { display: grid; grid-template-columns: repeat(9, 1fr); gap: 14px 10px; justify-items: center; }
+    .nfd-sw { width: 26px; height: 26px; padding: 0; border: none; border-radius: 50%; cursor: pointer; }
+    .nfd-sw.sel { outline: 1.5px solid rgba(0,0,0,0.86); outline-offset: 3px; }
+    .nfd-ic {
+      width: 34px; height: 34px; padding: 0; border: none; border-radius: 10px; cursor: pointer;
+      background: rgba(0,0,0,0.04); color: rgba(0,0,0,0.7);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .nfd-ic.sel { background: rgba(0,0,0,0.86); color: #fff; }
+
     /* ── 전체화면 스텝 (새 노트 추가 / 속지 목록) ── */
     /* 콘텐츠 최대 폭 — 넓은 화면에서 3열 그리드가 과하게 커지지 않도록 가운데로 모은다.
        배경(히어로 회색 띠)은 전체 폭을 유지해야 하므로 max-width 대신 안쪽 여백을 키운다. */
@@ -3696,6 +3760,27 @@
     <button class="hsm-row" id="hsmFolder" type="button">
       <i data-lucide="folder" style="width:20px;height:20px;color:rgba(0,0,0,0.86);"></i><span>폴더</span>
     </button>
+  </div>
+
+  <!-- 새 폴더 팝업 (Figma 1707486774) -->
+  <div class="nfd-backdrop" id="nfdBackdrop"></div>
+  <div class="nfd-popup" id="nfdPopup">
+    <div class="nwz-header">
+      <button class="nwz-nav" id="nfdBack" aria-label="뒤로"><i data-lucide="chevron-left" style="width:22px;height:22px;color:rgba(0,0,0,0.86);"></i></button>
+      <span class="nwz-title">새 폴더</span>
+      <button class="nwz-nav nwz-next" id="nfdOk" aria-label="확인"><i data-lucide="check" style="width:20px;height:20px;color:#fff;"></i></button>
+    </div>
+    <div class="nfd-body">
+      <div class="nfd-top">
+        <div class="fd nfd-preview" id="nfdPreview"><div class="fd-tab"></div><div class="fd-body"></div></div>
+        <div class="nfd-name-wrap">
+          <input class="nfd-name" id="nfdName" type="text" placeholder="폴더 이름">
+          <button class="nfd-clear" id="nfdClear" type="button" aria-label="지우기"><i data-lucide="x" style="width:12px;height:12px;"></i></button>
+        </div>
+      </div>
+      <div class="nfd-seg" id="nfdSeg"></div>
+      <div class="nfd-grid" id="nfdGrid"></div>
+    </div>
   </div>
 
   <!-- 2) 속지 목록 (Figma 5843:403470) -->
@@ -5813,8 +5898,28 @@
     return card;
   }
 
+  // 폴더 카드 — 노트 카드와 같은 틀에 책 대신 폴더를 놓는다
+  function buildFolderCardEl(folder) {
+    const card = document.createElement('div');
+    card.className = 'note-card';
+    card.innerHTML = `
+      <div class="nbf">
+        <div class="fd" style="--fc:${folder.color};">
+          <div class="fd-tab"></div>
+          <div class="fd-body"><i data-lucide="${folder.icon || 'check'}" style="width:38px;height:38px;"></i></div>
+        </div>
+      </div>
+      <div class="note-info">
+        <div class="txt"><div class="nname">${folder.name}</div><div class="ntime">${folder.date}</div></div>
+        <div class="chev">⌄</div>
+      </div>
+    `;
+    card.addEventListener('click', () => window.toast?.show('폴더 열기는 준비 중이에요'));
+    return card;
+  }
+
   HOME_NOTES.forEach(note => {
-    hsNotesEl.appendChild(buildNoteCardEl(note));
+    hsNotesEl.appendChild(note.folder ? buildFolderCardEl(note) : buildNoteCardEl(note));
   });
 
   lucide.createIcons({ nodes: [homeScreen] });
@@ -7325,7 +7430,7 @@
       e.stopPropagation();
       addMenu.classList.contains('show') ? closeAddMenu() : openAddMenu(fab);
     });
-    $('hsmFolder').addEventListener('click', () => { closeAddMenu(); window.toast?.show('폴더 만들기는 준비 중이에요'); });
+    $('hsmFolder').addEventListener('click', () => { closeAddMenu(); openFolderPopup(); });
     $('hsmImport').addEventListener('click', () => { closeAddMenu(); window.toast?.show('불러오기는 준비 중이에요'); });
     $('hsmNote').addEventListener('click',  () => { closeAddMenu(); openPlainBrowse(); });
     $('hsmSmart').addEventListener('click', () => { closeAddMenu(); openSmartBrowse(); });
@@ -7623,6 +7728,99 @@
         card.appendChild(tint);
       }
     }
+
+    // ── 새 폴더 팝업 ─────────────────────────────────────────
+    // 색상 9색 × 3톤 = 27칸 (디자인의 9열 × 3행 그리드에 맞춘다)
+    const FOLDER_HUES = [8, 28, 45, 92, 145, 175, 205, 250, 320];
+    const FOLDER_COLORS = [].concat(
+      FOLDER_HUES.map(h => `hsl(${h}, 88%, 74%)`),
+      FOLDER_HUES.map(h => `hsl(${h}, 72%, 60%)`),
+      FOLDER_HUES.map(h => `hsl(${h}, 55%, 45%)`)
+    );
+    const FOLDER_ICONS = ['check','star','heart','bookmark','tag','flag','music','image','coffee',
+                          'leaf','sun','moon','cloud','gift','smile','zap','palette','folder'];
+    const fdState = { color: 1, icon: 'check', tab: '색상' };
+
+    function renderFolderPopup() {
+      const prev = $('nfdPreview');
+      prev.style.setProperty('--fc', FOLDER_COLORS[fdState.color]);
+      prev.querySelector('.fd-body').innerHTML =
+        `<i data-lucide="${fdState.icon}" style="width:34px;height:34px;"></i>`;
+
+      const seg = $('nfdSeg');
+      seg.innerHTML = '';
+      ['색상', '아이콘'].forEach(t => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = fdState.tab === t ? 'on' : '';
+        b.textContent = t;
+        b.addEventListener('click', () => { fdState.tab = t; renderFolderPopup(); });
+        seg.appendChild(b);
+      });
+
+      const grid = $('nfdGrid');
+      grid.innerHTML = '';
+      if (fdState.tab === '색상') {
+        FOLDER_COLORS.forEach((c, i) => {
+          const b = document.createElement('button');
+          b.type = 'button';
+          b.className = 'nfd-sw' + (fdState.color === i ? ' sel' : '');
+          b.style.background = c;
+          b.addEventListener('click', () => { fdState.color = i; renderFolderPopup(); });
+          grid.appendChild(b);
+        });
+      } else {
+        FOLDER_ICONS.forEach(ic => {
+          const b = document.createElement('button');
+          b.type = 'button';
+          b.className = 'nfd-ic' + (fdState.icon === ic ? ' sel' : '');
+          b.innerHTML = `<i data-lucide="${ic}" style="width:18px;height:18px;"></i>`;
+          b.addEventListener('click', () => { fdState.icon = ic; renderFolderPopup(); });
+          grid.appendChild(b);
+        });
+      }
+      if (window.lucide) lucide.createIcons({ nodes: [$('nfdPopup')] });
+    }
+
+    function openFolderPopup() {
+      fdState.color = 1; fdState.icon = 'check'; fdState.tab = '색상';
+      $('nfdName').value = '';
+      $('nfdClear').classList.remove('on');
+      renderFolderPopup();
+      $('nfdBackdrop').classList.add('show');
+      $('nfdPopup').classList.add('show');
+      setTimeout(() => $('nfdName').focus(), 0);
+    }
+    function closeFolderPopup() {
+      $('nfdBackdrop').classList.remove('show');
+      $('nfdPopup').classList.remove('show');
+    }
+    $('nfdBack').addEventListener('click', closeFolderPopup);
+    $('nfdBackdrop').addEventListener('click', closeFolderPopup);
+    $('nfdName').addEventListener('input', e => $('nfdClear').classList.toggle('on', !!e.target.value));
+    $('nfdClear').addEventListener('click', () => {
+      $('nfdName').value = '';
+      $('nfdClear').classList.remove('on');
+      $('nfdName').focus();
+    });
+    $('nfdName').addEventListener('keydown', e => { if (e.key === 'Enter') $('nfdOk').click(); });
+
+    // 확인 — 노트와 같은 방식으로 홈 맨 앞에 끼워 넣는다
+    $('nfdOk').addEventListener('click', () => {
+      const folder = {
+        name: ($('nfdName').value || '').trim() || '새 폴더',
+        date: '방금 전', folder: true,
+        color: FOLDER_COLORS[fdState.color], icon: fdState.icon
+      };
+      closeFolderPopup();
+      HOME_NOTES.unshift(folder);
+      const cardEl = buildFolderCardEl(folder);
+      if (window.lucide) lucide.createIcons({ nodes: [cardEl] });
+      setTimeout(() => {
+        insertHomeNote(cardEl);
+        window.toast?.show('폴더가 만들어졌습니다');
+      }, 220);
+    });
 
     // 홈 그리드 맨 앞에 카드를 끼워 넣는다 — 새 카드는 떠오르고,
     // 기존 카드들은 원래 자리에서 새 자리로 미끄러진다 (FLIP)
