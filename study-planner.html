@@ -321,7 +321,7 @@
     /* ─── WORKSPACE — 공부 화면과 같은 흰 프레임 (탭 바 바로 아래) ──
        바깥 8px이 흰 프레임, 안쪽 .ws-frame이 12px 라운드로 잘린다 */
     .workspace {
-      height: calc(100vh - 36px);
+      height: calc(100vh - 76px); /* 상태 표시줄 40 + 탭 바 36 */
       position: relative;
       overflow: hidden;
       padding: 8px;
@@ -940,7 +940,7 @@
     /* ─── SHOP / ITEM SCREENS ─────────────────────── */
     .shop-screen, .item-screen {
       position: fixed;
-      inset: 0;
+      top: 40px; left: 0; right: 0; bottom: 0; /* 상태 표시줄은 덮지 않는다 */
       z-index: 600;
       background: white;
       overflow-y: auto;
@@ -2378,7 +2378,7 @@
     /* ─── HOME SCREEN ──────────────────────────────── */
     .home-screen {
       position: fixed;
-      top: 36px; left: 0; right: 0; bottom: 0; /* 탭 바 아래 — 홈도 탭의 한 화면이다 */
+      top: 76px; left: 0; right: 0; bottom: 0; /* 상태 표시줄 + 탭 바 아래 — 홈도 탭의 한 화면이다 */
       z-index: 400;
       background: white;
       overflow-y: auto;
@@ -2392,7 +2392,7 @@
     /* 스플릿뷰 — 홈 탭도 흰 프레임 안 오른쪽 75%에 라운드 패널로 뜬다.
        홈은 프레임과 똑같이 하얘서 경계가 안 보이므로 연한 구분선을 둘러준다 */
     .home-screen.split {
-      left: calc(25% + 4px); right: 8px; top: 44px; bottom: 8px;
+      left: calc(25% + 4px); right: 8px; top: 84px; bottom: 8px;
       border-radius: 12px;
       box-shadow: 0 0 0 1px rgba(0,0,0,0.07);
     }
@@ -2776,7 +2776,7 @@
     }
     /* 목록 화면은 오른쪽에서 밀려 들어오고, 나갈 때는 다시 오른쪽으로 빠진다 */
     .nnf-screen {
-      position: fixed; inset: 0; z-index: 900;
+      position: fixed; top: 40px; left: 0; right: 0; bottom: 0; z-index: 900;
       background: #fff; overflow-y: auto;
       transform: translateX(100%); pointer-events: none;
       transition: transform 0.38s cubic-bezier(0.32, 0.72, 0, 1);
@@ -3134,7 +3134,7 @@
        타이머 버튼으로 공부를 시작하면 툴바·캔버스 대신 이 화면이 뜬다 */
     /* 바깥은 8px 여백(캔버스 배경색), 안쪽 패널이 라운드로 잘린다 */
     .study-view {
-      position: fixed; top: 36px; left: 0; right: 0; bottom: 0;
+      position: fixed; top: 76px; left: 0; right: 0; bottom: 0;
       z-index: 300; display: none;
       padding: 8px; box-sizing: border-box;
       background: #fff; /* Figma 프레임 배경이 흰색 — 캔버스 회색과 같으면 여백이 안 보인다 */
@@ -3246,6 +3246,15 @@
 </head>
 <body>
 
+  <!-- STATUS BAR (40px) — 기기 최상단 -->
+  <div class="status-bar">
+    <span class="status-time" id="statusTime">9:41</span>
+    <div class="status-icons">
+      <i data-lucide="signal" style="width:17px;height:17px;"></i>
+      <i data-lucide="wifi" style="width:17px;height:17px;"></i>
+      <i data-lucide="battery-full" style="width:22px;height:22px;"></i>
+    </div>
+  </div>
 
   <!-- TAB BAR (36px) -->
   <div class="tab-bar">
@@ -3931,6 +3940,17 @@
 <script src="components/sticker-picker.js"></script>
 <script src="components/panel-slider.js"></script>
 <script>
+  // 상태 표시줄 시계 — 실제 시각을 H:MM으로
+  (function statusClock() {
+    const el = document.getElementById('statusTime');
+    const tick = () => {
+      const d = new Date();
+      el.textContent = `${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`;
+    };
+    tick();
+    setInterval(tick, 20000);
+  })();
+
   // ── Page data (matches side panel thumbnails) ──────────────
   const _ydTmp = new Date(); _ydTmp.setDate(_ydTmp.getDate() - 1);
   const _ydText  = `${String(_ydTmp.getFullYear()).slice(2)}.${String(_ydTmp.getMonth()+1).padStart(2,'0')}.${String(_ydTmp.getDate()).padStart(2,'0')}`;
