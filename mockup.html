@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pad — 목업</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      overflow: hidden;
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+      /* 어두운 무대 — 가운데 목업만 떠 보이게 */
+      background: radial-gradient(120% 100% at 50% 0%, #26262c 0%, #17171b 55%, #101014 100%);
+      color: #fff;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── 무대: 목업을 화면 정중앙에 둔다 ───────────────────── */
+    .stage {
+      position: fixed; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      padding-bottom: 40px; /* 아래 툴바 자리만큼 위로 */
+    }
+    /* 창 크기에 맞춰 통째로 축소된다 (iframe 안이라 좌표 계산에 영향이 없다) */
+    .device-wrap { transform-origin: center center; transition: transform 0.25s ease; }
+
+    /* ── 디바이스 목업 ─────────────────────────────────────── */
+    .device {
+      position: relative;
+      padding: var(--bezel);
+      border-radius: var(--radius);
+      background: linear-gradient(160deg, #3a3a40, #202024 40%, #17171a);
+      box-shadow:
+        0 0 0 1px rgba(255,255,255,0.06) inset,
+        0 2px 0 rgba(255,255,255,0.10) inset,
+        0 40px 90px rgba(0,0,0,0.55),
+        0 8px 24px rgba(0,0,0,0.4);
+      transition: padding 0.25s ease, border-radius 0.25s ease;
+    }
+    /* 베젤 안쪽 얇은 테두리 — 유리면 경계 */
+    .device::after {
+      content: '';
+      position: absolute; inset: calc(var(--bezel) - 3px);
+      border-radius: calc(var(--radius) - var(--bezel) + 3px);
+      box-shadow: 0 0 0 1px rgba(0,0,0,0.6), 0 0 0 2px rgba(255,255,255,0.05);
+      pointer-events: none;
+    }
+    .device-screen {
+      position: relative;
+      width: var(--w); height: var(--h);
+      border-radius: calc(var(--radius) - var(--bezel));
+      overflow: hidden;
+      background: #e0e0e0;
+      transition: width 0.25s ease, height 0.25s ease, border-radius 0.25s ease;
+    }
+    .device-screen iframe {
+      display: block; width: 100%; height: 100%; border: 0;
+    }
+    /* 전면 카메라 — 긴 변(가로일 때 위쪽) 가운데 */
+    .device-cam {
+      position: absolute; z-index: 2;
+      width: 7px; height: 7px; border-radius: 50%;
+      background: #0c0c0e;
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.08), inset 0 0 3px rgba(80,140,255,0.35);
+      left: 50%; top: calc(var(--bezel) / 2); transform: translate(-50%, -50%);
+    }
+    /* 홈 인디케이터 — 아래 베젤 가운데 */
+    .device-home {
+      position: absolute; z-index: 2;
+      left: 50%; bottom: calc(var(--bezel) / 2 - 2px); transform: translateX(-50%);
+      width: 118px; height: 4px; border-radius: 100px;
+      background: rgba(255,255,255,0.18);
+    }
+
+    /* ── 아래 툴바 ─────────────────────────────────────────── */
+    .bar {
+      position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%);
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px; border-radius: 100px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.10);
+      backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+      box-shadow: 0 8px 30px rgba(0,0,0,0.45);
+      z-index: 10;
+    }
+    .bar select, .bar button {
+      height: 36px; border-radius: 100px; border: none; cursor: pointer;
+      font-family: 'Pretendard', sans-serif; font-size: 14px; font-weight: 600;
+      letter-spacing: -0.042px; color: rgba(255,255,255,0.92);
+      background: rgba(255,255,255,0.10);
+      -webkit-tap-highlight-color: transparent;
+    }
+    .bar select { padding: 0 34px 0 14px; appearance: none; -webkit-appearance: none;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+      background-repeat: no-repeat; background-position: right 12px center;
+    }
+    .bar select option { color: #111; }
+    .bar button { padding: 0 14px; display: flex; align-items: center; gap: 6px; }
+    .bar select:hover, .bar button:hover { background: rgba(255,255,255,0.18); }
+    .bar .size {
+      padding: 0 12px; font-size: 13px; font-weight: 500;
+      color: rgba(255,255,255,0.55); font-variant-numeric: tabular-nums; white-space: nowrap;
+    }
+    .bar svg { width: 16px; height: 16px; flex-shrink: 0; }
+  </style>
+</head>
+<body>
+
+  <div class="stage">
+    <div class="device-wrap" id="deviceWrap">
+      <div class="device" id="device">
+        <div class="device-screen">
+          <iframe id="appFrame" src="study-planner.html" title="Pad UI"></iframe>
+        </div>
+        <div class="device-cam"></div>
+        <div class="device-home"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bar">
+    <select id="deviceSel" aria-label="디바이스"></select>
+    <button id="rotateBtn" type="button" title="가로/세로 전환 (R)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/>
+        <path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/>
+      </svg>
+      <span id="rotateLabel">세로로</span>
+    </button>
+    <button id="reloadBtn" type="button" title="화면 새로고침">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/>
+      </svg>
+    </button>
+    <span class="size" id="sizeLabel"></span>
+  </div>
+
+<script>
+  // 화면 크기는 pt 기준(= 앱이 보는 CSS 픽셀). 앱은 iframe 안에서 자기 뷰포트를
+  // 그대로 쓰므로 목업이 축소돼도 내부 좌표 계산이 어긋나지 않는다.
+  const DEVICES = [
+    { id: 'pro13', name: 'iPad Pro 12.9"', w: 1366, h: 1024, bezel: 22, radius: 44 },
+    { id: 'pro11', name: 'iPad Pro 11"',   w: 1194, h: 834,  bezel: 20, radius: 40 },
+    { id: 'air11', name: 'iPad Air 11"',   w: 1180, h: 820,  bezel: 20, radius: 38 },
+    { id: 'mini',  name: 'iPad mini',      w: 1133, h: 744,  bezel: 18, radius: 34 },
+  ];
+
+  const $ = id => document.getElementById(id);
+  const wrap = $('deviceWrap'), device = $('device'), frame = $('appFrame');
+
+  let devIdx = 0, landscape = true;
+
+  // 저장해둔 선택 복원
+  try {
+    const saved = JSON.parse(localStorage.getItem('pad4-mockup') || '{}');
+    const i = DEVICES.findIndex(d => d.id === saved.device);
+    if (i >= 0) devIdx = i;
+    if (typeof saved.landscape === 'boolean') landscape = saved.landscape;
+  } catch (e) {}
+
+  // 디바이스 목록
+  DEVICES.forEach((d, i) => {
+    const o = document.createElement('option');
+    o.value = String(i);
+    o.textContent = d.name;
+    $('deviceSel').appendChild(o);
+  });
+
+  function apply() {
+    const d = DEVICES[devIdx];
+    const w = landscape ? d.w : d.h;
+    const h = landscape ? d.h : d.w;
+
+    device.style.setProperty('--w', w + 'px');
+    device.style.setProperty('--h', h + 'px');
+    device.style.setProperty('--bezel', d.bezel + 'px');
+    device.style.setProperty('--radius', d.radius + 'px');
+
+    // 창에 들어가도록 통째로 축소 (확대는 하지 않는다)
+    const outerW = w + d.bezel * 2, outerH = h + d.bezel * 2;
+    const s = Math.min(1, (window.innerWidth - 72) / outerW, (window.innerHeight - 132) / outerH);
+    wrap.style.transform = `scale(${s})`;
+
+    $('deviceSel').value = String(devIdx);
+    $('sizeLabel').textContent = `${w} × ${h}` + (s < 1 ? `  ·  ${Math.round(s * 100)}%` : '');
+    $('rotateLabel').textContent = landscape ? '세로로' : '가로로';
+
+    try {
+      localStorage.setItem('pad4-mockup', JSON.stringify({ device: d.id, landscape }));
+    } catch (e) {}
+  }
+
+  $('deviceSel').addEventListener('change', e => { devIdx = +e.target.value; apply(); });
+  $('rotateBtn').addEventListener('click', () => { landscape = !landscape; apply(); });
+  // file://로 열면 iframe이 다른 오리진 취급이라 contentWindow를 못 만진다 — src를 다시 넣는다
+  $('reloadBtn').addEventListener('click', () => { frame.src = frame.src; });
+  window.addEventListener('resize', apply);
+  document.addEventListener('keydown', e => {
+    if (e.key === 'r' || e.key === 'R') { landscape = !landscape; apply(); }
+  });
+
+  apply();
+</script>
+</body>
+</html>
