@@ -24,8 +24,12 @@
       position: fixed; inset: 0;
       display: flex; align-items: center; justify-content: center;
       padding: 24px 24px 108px; /* 아래 툴바·라벨 자리 */
-      overflow: hidden;
+      /* 세로로 돌려 창보다 커지면 축소하지 않고 스크롤한다 (.rail의 margin:auto가 중앙 정렬을
+         유지하면서도 넘칠 때 위쪽이 잘리지 않게 해준다) */
+      overflow: auto;
     }
+    .stage::-webkit-scrollbar { width: 8px; height: 8px; }
+    .stage::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.16); border-radius: 100px; }
     /* 전체 나열 — 왼쪽부터 오른쪽으로 쭉 늘어놓고 가로 스크롤 */
     .stage.gallery { justify-content: flex-start; overflow-x: auto; overflow-y: hidden; }
     .stage.gallery::-webkit-scrollbar { height: 8px; }
@@ -243,15 +247,15 @@
     return { outerW, outerH, real };
   }
 
-  // 창에 들어가도록 하는 추가 축소값 (배율은 기기 간 비율을 지키려고 전부 같은 값을 쓴다)
+  // 창에 들어가도록 하는 추가 축소값 (배율은 기기 간 비율을 지키려고 전부 같은 값을 쓴다).
+  // 실제 기기는 돌린다고 작아지지 않으므로, 이 값은 항상 "가로 상태" 기준으로만 정한다.
+  // 세로로 돌려 창을 넘치면 배율을 줄이는 대신 무대를 스크롤한다.
   function fitFor(list) {
-    let maxW = 0, maxH = 0, sumW = 0;
+    let maxW = 0, maxH = 0;
     list.forEach(d => {
-      const w = landscape ? d.w : d.h, h = landscape ? d.h : d.w;
-      const inW = landscape ? d.inW : d.inH;
-      const real = (inW * PX_PER_INCH) / w;
-      const ow = (w + d.bezel * 2) * real, oh = (h + d.bezel * 2) * real;
-      maxW = Math.max(maxW, ow); maxH = Math.max(maxH, oh); sumW += ow;
+      const real = (d.inW * PX_PER_INCH) / d.w; // 방향과 무관한 실물 배율
+      const ow = (d.w + d.bezel * 2) * real, oh = (d.h + d.bezel * 2) * real;
+      maxW = Math.max(maxW, ow); maxH = Math.max(maxH, oh);
     });
     const availH = window.innerHeight - (gallery ? 190 : 132);
     // 전체 나열은 가로로 스크롤하므로 높이만 맞춘다
