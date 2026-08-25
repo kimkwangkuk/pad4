@@ -303,10 +303,10 @@
   window.addEventListener('message', e => {
     const m = e.data;
     if (!m) return;
-    // 목업 위(=iframe 위)에서 굴린 휠은 앱이 부모로 넘겨준다 — 무대를 대신 스크롤한다
+    // 목업 위(=iframe 위)에서 굴린 휠은 앱이 부모로 넘겨준다 — 무대를 대신 스크롤한다.
+    // 단 전체 나열에서는 기기 안 스크롤이 끝나도 무대를 움직이지 않는다(기기 안은 기기 안에서만).
     if (m.padWheel) {
-      if (gallery) stage.scrollLeft += (m.dy || 0) + (m.dx || 0); // 나열 모드는 가로로
-      else { stage.scrollTop += (m.dy || 0); stage.scrollLeft += (m.dx || 0); }
+      if (!gallery) { stage.scrollTop += (m.dy || 0); stage.scrollLeft += (m.dx || 0); }
       return;
     }
     if (!m.padSync) return;
@@ -314,6 +314,15 @@
       if (f.contentWindow && f.contentWindow !== e.source) f.contentWindow.postMessage(m, '*');
     });
   });
+
+  // 전체 나열에서는 무대 배경 위 휠을 가로 이동으로 (기기 밖에서만 동작한다)
+  stage.addEventListener('wheel', e => {
+    if (!gallery) return;
+    const d = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+    if (!d) return;
+    stage.scrollLeft += d;
+    e.preventDefault();
+  }, { passive: false });
 
   // 무대 배경을 끌어서 이동 (목업 위에서는 드래그가 앱으로 가므로 배경에서만)
   let panning = null;
