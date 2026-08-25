@@ -302,11 +302,31 @@
   // 앱 안의 작은 에이전트가 클릭·입력을 올려보내면, 여기서 나머지 기기에 그대로 전달한다.
   window.addEventListener('message', e => {
     const m = e.data;
-    if (!m || !m.padSync) return;
+    if (!m) return;
+    // 목업 위(=iframe 위)에서 굴린 휠은 앱이 부모로 넘겨준다 — 무대를 대신 스크롤한다
+    if (m.padWheel) {
+      if (gallery) stage.scrollLeft += (m.dy || 0) + (m.dx || 0); // 나열 모드는 가로로
+      else { stage.scrollTop += (m.dy || 0); stage.scrollLeft += (m.dx || 0); }
+      return;
+    }
+    if (!m.padSync) return;
     rail.querySelectorAll('iframe').forEach(f => {
       if (f.contentWindow && f.contentWindow !== e.source) f.contentWindow.postMessage(m, '*');
     });
   });
+
+  // 무대 배경을 끌어서 이동 (목업 위에서는 드래그가 앱으로 가므로 배경에서만)
+  let panning = null;
+  stage.addEventListener('mousedown', e => {
+    if (e.target.closest('.dev-slot')) return;
+    panning = { x: e.clientX, y: e.clientY, l: stage.scrollLeft, t: stage.scrollTop };
+  });
+  window.addEventListener('mousemove', e => {
+    if (!panning) return;
+    stage.scrollLeft = panning.l - (e.clientX - panning.x);
+    stage.scrollTop  = panning.t - (e.clientY - panning.y);
+  });
+  window.addEventListener('mouseup', () => { panning = null; });
 
   $('deviceSel').addEventListener('change', e => { devIdx = +e.target.value; render(); });
   $('galleryBtn').addEventListener('click', () => { gallery = !gallery; stage.scrollLeft = 0; render(); });

@@ -7903,6 +7903,29 @@
     }
     function send(msg) { try { parent.postMessage(msg, '*'); } catch (e) {} }
 
+    // 목업이 화면보다 커서 스크롤해야 할 때, 앱 안에서 소화할 수 없는 휠은 목업으로 넘긴다
+    // (iframe 위에서는 부모가 휠 이벤트를 받지 못하기 때문)
+    function canConsume(el, dy, dx) {
+      while (el && el.nodeType === 1 && el !== document.body) {
+        const st = getComputedStyle(el);
+        if (/(auto|scroll)/.test(st.overflowY) && el.scrollHeight > el.clientHeight + 1) {
+          if (dy < 0 && el.scrollTop > 0) return true;
+          if (dy > 0 && el.scrollTop < el.scrollHeight - el.clientHeight - 1) return true;
+        }
+        if (/(auto|scroll)/.test(st.overflowX) && el.scrollWidth > el.clientWidth + 1) {
+          if (dx < 0 && el.scrollLeft > 0) return true;
+          if (dx > 0 && el.scrollLeft < el.scrollWidth - el.clientWidth - 1) return true;
+        }
+        el = el.parentElement;
+      }
+      return false;
+    }
+    window.addEventListener('wheel', e => {
+      if (e.ctrlKey) return; // 핀치 줌은 앱이 쓴다
+      if (canConsume(e.target, e.deltaY, e.deltaX)) return;
+      send({ padWheel: 1, dx: e.deltaX, dy: e.deltaY });
+    }, { passive: true, capture: true });
+
     document.addEventListener('click', e => {
       if (replaying || !e.isTrusted) return;
       send({ padSync: 'click', path: pathOf(e.target) });
