@@ -19,14 +19,29 @@
       -webkit-font-smoothing: antialiased;
     }
 
-    /* ── 무대: 목업을 화면 정중앙에 둔다 ───────────────────── */
+    /* ── 무대 ──────────────────────────────────────────────── */
     .stage {
       position: fixed; inset: 0;
       display: flex; align-items: center; justify-content: center;
-      padding-bottom: 40px; /* 아래 툴바 자리만큼 위로 */
+      padding: 24px 24px 108px; /* 아래 툴바·라벨 자리 */
+      overflow: hidden;
     }
-    /* 창 크기에 맞춰 통째로 축소된다 (iframe 안이라 좌표 계산에 영향이 없다) */
-    .device-wrap { transform-origin: center center; transition: transform 0.25s ease; }
+    /* 전체 나열 — 왼쪽부터 오른쪽으로 쭉 늘어놓고 가로 스크롤 */
+    .stage.gallery { justify-content: flex-start; overflow-x: auto; overflow-y: hidden; }
+    .stage.gallery::-webkit-scrollbar { height: 8px; }
+    .stage.gallery::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.16); border-radius: 100px; }
+    .rail { display: flex; align-items: center; gap: 56px; margin: auto; }
+    .stage.gallery .rail { margin: auto 8px; }
+
+    /* 축소된 목업이 차지하는 자리 — 안쪽은 transform으로 줄인다 */
+    .dev-slot { position: relative; flex-shrink: 0; }
+    .dev-inner { position: absolute; left: 0; top: 0; transform-origin: top left; }
+    .dev-label {
+      position: absolute; left: -20px; right: -20px; bottom: -28px;
+      text-align: center; white-space: nowrap;
+      font-size: 13px; font-weight: 500; color: rgba(255,255,255,0.5); letter-spacing: -0.039px;
+    }
+    .dev-label b { font-weight: 600; color: rgba(255,255,255,0.78); }
 
     /* ── 디바이스 목업 ─────────────────────────────────────── */
     .device {
@@ -39,7 +54,6 @@
         0 2px 0 rgba(255,255,255,0.10) inset,
         0 40px 90px rgba(0,0,0,0.55),
         0 8px 24px rgba(0,0,0,0.4);
-      transition: padding 0.25s ease, border-radius 0.25s ease;
     }
     /* 베젤 안쪽 얇은 테두리 — 유리면 경계 */
     .device::after {
@@ -55,11 +69,8 @@
       border-radius: calc(var(--radius) - var(--bezel));
       overflow: hidden;
       background: #e0e0e0;
-      transition: width 0.25s ease, height 0.25s ease, border-radius 0.25s ease;
     }
-    .device-screen iframe {
-      display: block; width: 100%; height: 100%; border: 0;
-    }
+    .device-screen iframe { display: block; width: 100%; height: 100%; border: 0; }
     /* 전면 카메라 — 긴 변(가로일 때 위쪽) 가운데 */
     .device-cam {
       position: absolute; z-index: 2;
@@ -99,8 +110,10 @@
       background-repeat: no-repeat; background-position: right 12px center;
     }
     .bar select option { color: #111; }
+    .bar select:disabled { opacity: 0.35; cursor: default; }
     .bar button { padding: 0 14px; display: flex; align-items: center; gap: 6px; }
     .bar select:hover, .bar button:hover { background: rgba(255,255,255,0.18); }
+    .bar button.on { background: #fff; color: rgba(0,0,0,0.86); }
     .bar .size {
       padding: 0 12px; font-size: 13px; font-weight: 500;
       color: rgba(255,255,255,0.55); font-variant-numeric: tabular-nums; white-space: nowrap;
@@ -110,20 +123,18 @@
 </head>
 <body>
 
-  <div class="stage">
-    <div class="device-wrap" id="deviceWrap">
-      <div class="device" id="device">
-        <div class="device-screen">
-          <iframe id="appFrame" src="study-planner.html" title="Pad UI"></iframe>
-        </div>
-        <div class="device-cam"></div>
-        <div class="device-home"></div>
-      </div>
-    </div>
+  <div class="stage" id="stage">
+    <div class="rail" id="rail"></div>
   </div>
 
   <div class="bar">
     <select id="deviceSel" aria-label="디바이스"></select>
+    <button id="galleryBtn" type="button" title="모든 기기를 나열 (A)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="2" y="6" width="6" height="12" rx="1.5"/><rect x="10" y="4" width="7" height="16" rx="1.5"/><rect x="19" y="7" width="4" height="10" rx="1.5"/>
+      </svg>
+      <span>전체 나열</span>
+    </button>
     <button id="rotateBtn" type="button" title="가로/세로 전환 (R)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/>
@@ -157,6 +168,7 @@
     { id: 'tabs10u',    name: 'Galaxy Tab S10 Ultra', resW: 2960, resH: 1848, diag: 14.6,  dpr: 2, bezel: 17, radius: 28 },
   ];
   const PX_PER_INCH = 96; // 무대에서 실물 1인치를 몇 px로 그릴지 (기기 간 크기 비교의 기준)
+  const APP_URL = 'study-planner.html';
 
   // 화면 대각(인치)과 해상도 비율로 실제 가로/세로 인치를 구한다
   DEVICES.forEach(d => {
@@ -168,10 +180,11 @@
   });
 
   const $ = id => document.getElementById(id);
-  const wrap = $('deviceWrap'), device = $('device'), frame = $('appFrame');
+  const stage = $('stage'), rail = $('rail');
 
   // 앱이 1366×1024 기준으로 만들어져 있어 13" 모델로 시작한다
-  let devIdx = Math.max(0, DEVICES.findIndex(d => d.id === 'pro13')), landscape = true;
+  let devIdx = Math.max(0, DEVICES.findIndex(d => d.id === 'pro13'));
+  let landscape = true, gallery = false;
 
   // 저장해둔 선택 복원
   try {
@@ -179,9 +192,9 @@
     const i = DEVICES.findIndex(d => d.id === saved.device);
     if (i >= 0) devIdx = i;
     if (typeof saved.landscape === 'boolean') landscape = saved.landscape;
+    if (typeof saved.gallery === 'boolean') gallery = saved.gallery;
   } catch (e) {}
 
-  // 디바이스 목록
   DEVICES.forEach((d, i) => {
     const o = document.createElement('option');
     o.value = String(i);
@@ -189,46 +202,122 @@
     $('deviceSel').appendChild(o);
   });
 
-  function apply() {
-    const d = DEVICES[devIdx];
+  // ── 목업 한 대 만들기 ────────────────────────────────────
+  function makeDevice(d, withLabel) {
+    const slot = document.createElement('div');
+    slot.className = 'dev-slot';
+    slot.dataset.id = d.id;
+    slot.innerHTML = `
+      <div class="dev-inner">
+        <div class="device">
+          <div class="device-screen"><iframe src="${APP_URL}" title="${d.name}"></iframe></div>
+          <div class="device-cam"></div>
+          <div class="device-home"></div>
+        </div>
+      </div>
+      ${withLabel ? `<div class="dev-label"><b>${d.name}</b></div>` : ''}
+    `;
+    return slot;
+  }
+
+  // 목업 하나의 크기·배율을 다시 잡는다. extraFit은 창에 맞추기 위한 추가 축소.
+  function layoutDevice(slot, d, extraFit) {
     const w = landscape ? d.w : d.h;
     const h = landscape ? d.h : d.w;
     const inW = landscape ? d.inW : d.inH;
-    const inH = landscape ? d.inH : d.inW;
 
+    const device = slot.querySelector('.device');
     device.style.setProperty('--w', w + 'px');
     device.style.setProperty('--h', h + 'px');
     device.style.setProperty('--bezel', d.bezel + 'px');
     device.style.setProperty('--radius', d.radius + 'px');
 
-    // 기기마다 "실물 크기 ÷ 화면 pt"만큼 축소해서 그린다 —
-    // 같은 무대에 놓으면 mini는 Pro보다 실제 비율만큼 작아 보인다.
+    // 실물 크기 배율 — 같은 무대에서 mini는 Pro보다 실제 비율만큼 작아진다
     const real = (inW * PX_PER_INCH) / w;
-    // 창에 들어가도록 한 번 더 줄인다 (실물 배율보다 키우지는 않는다)
-    const outerW = (w + d.bezel * 2) * real, outerH = (h + d.bezel * 2) * real;
-    const fit = Math.min(1, (window.innerWidth - 72) / outerW, (window.innerHeight - 132) / outerH);
-    wrap.style.transform = `scale(${real * fit})`;
+    const s = real * extraFit;
+    const outerW = (w + d.bezel * 2) * s, outerH = (h + d.bezel * 2) * s;
 
+    slot.style.width = outerW + 'px';
+    slot.style.height = outerH + 'px';
+    slot.querySelector('.dev-inner').style.transform = `scale(${s})`;
+    return { outerW, outerH, real };
+  }
+
+  // 창에 들어가도록 하는 추가 축소값 (배율은 기기 간 비율을 지키려고 전부 같은 값을 쓴다)
+  function fitFor(list) {
+    let maxW = 0, maxH = 0, sumW = 0;
+    list.forEach(d => {
+      const w = landscape ? d.w : d.h, h = landscape ? d.h : d.w;
+      const inW = landscape ? d.inW : d.inH;
+      const real = (inW * PX_PER_INCH) / w;
+      const ow = (w + d.bezel * 2) * real, oh = (h + d.bezel * 2) * real;
+      maxW = Math.max(maxW, ow); maxH = Math.max(maxH, oh); sumW += ow;
+    });
+    const availH = window.innerHeight - (gallery ? 190 : 132);
+    // 전체 나열은 가로로 스크롤하므로 높이만 맞춘다
+    return gallery
+      ? Math.min(1, availH / maxH)
+      : Math.min(1, (window.innerWidth - 72) / maxW, availH / maxH);
+  }
+
+  function render() {
+    const list = gallery ? DEVICES : [DEVICES[devIdx]];
+    const fit = fitFor(list);
+
+    // 필요한 목업만 새로 만든다 (이미 있으면 iframe을 다시 로드하지 않는다)
+    const keep = new Set(list.map(d => d.id));
+    Array.from(rail.children).forEach(el => { if (!keep.has(el.dataset.id)) el.remove(); });
+    list.forEach((d, i) => {
+      let slot = rail.querySelector(`.dev-slot[data-id="${d.id}"]`);
+      if (!slot) { slot = makeDevice(d, gallery); rail.appendChild(slot); }
+      if (slot !== rail.children[i]) rail.insertBefore(slot, rail.children[i]);
+      // 라벨은 전체 나열에서만
+      const label = slot.querySelector('.dev-label');
+      if (gallery && !label) slot.insertAdjacentHTML('beforeend', `<div class="dev-label"><b>${d.name}</b></div>`);
+      if (!gallery && label) label.remove();
+      layoutDevice(slot, d, fit);
+    });
+
+    stage.classList.toggle('gallery', gallery);
+    $('galleryBtn').classList.toggle('on', gallery);
+    $('deviceSel').disabled = gallery;
     $('deviceSel').value = String(devIdx);
-    $('sizeLabel').textContent = `${w} × ${h}`;
-    $('sizeLabel').title = `${landscape ? d.resW : d.resH} × ${landscape ? d.resH : d.resW}px · ${d.diag}"`;
     $('rotateLabel').textContent = landscape ? '세로로' : '가로로';
 
+    const d = DEVICES[devIdx];
+    const w = landscape ? d.w : d.h, h = landscape ? d.h : d.w;
+    $('sizeLabel').textContent = gallery ? `${DEVICES.length}대  ·  ${Math.round(fit * 100)}%` : `${w} × ${h}`;
+    $('sizeLabel').title = gallery ? '' : `${landscape ? d.resW : d.resH} × ${landscape ? d.resH : d.resW}px · ${d.diag}"`;
+
     try {
-      localStorage.setItem('pad4-mockup', JSON.stringify({ device: d.id, landscape }));
+      localStorage.setItem('pad4-mockup', JSON.stringify({ device: d.id, landscape, gallery }));
     } catch (e) {}
   }
 
-  $('deviceSel').addEventListener('change', e => { devIdx = +e.target.value; apply(); });
-  $('rotateBtn').addEventListener('click', () => { landscape = !landscape; apply(); });
-  // file://로 열면 iframe이 다른 오리진 취급이라 contentWindow를 못 만진다 — src를 다시 넣는다
-  $('reloadBtn').addEventListener('click', () => { frame.src = frame.src; });
-  window.addEventListener('resize', apply);
-  document.addEventListener('keydown', e => {
-    if (e.key === 'r' || e.key === 'R') { landscape = !landscape; apply(); }
+  // ── 화면 싱크 ───────────────────────────────────────────
+  // 앱 안의 작은 에이전트가 클릭·입력을 올려보내면, 여기서 나머지 기기에 그대로 전달한다.
+  window.addEventListener('message', e => {
+    const m = e.data;
+    if (!m || !m.padSync) return;
+    rail.querySelectorAll('iframe').forEach(f => {
+      if (f.contentWindow && f.contentWindow !== e.source) f.contentWindow.postMessage(m, '*');
+    });
   });
 
-  apply();
+  $('deviceSel').addEventListener('change', e => { devIdx = +e.target.value; render(); });
+  $('galleryBtn').addEventListener('click', () => { gallery = !gallery; stage.scrollLeft = 0; render(); });
+  $('rotateBtn').addEventListener('click', () => { landscape = !landscape; render(); });
+  $('reloadBtn').addEventListener('click', () => {
+    rail.querySelectorAll('iframe').forEach(f => { f.src = f.src; });
+  });
+  window.addEventListener('resize', render);
+  document.addEventListener('keydown', e => {
+    if (e.target.tagName === 'SELECT') return;
+    if (e.key === 'r' || e.key === 'R') { landscape = !landscape; render(); }
+    if (e.key === 'a' || e.key === 'A') { gallery = !gallery; stage.scrollLeft = 0; render(); }
+  });
+
+  render();
 </script>
 </body>
 </html>
