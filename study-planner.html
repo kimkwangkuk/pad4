@@ -526,6 +526,15 @@
     .card[data-orient="landscape"] .g-row,
     .card[data-orient="landscape"] .g-row td { height: 17px; }
 
+    /* ── 가로 폭 맞춤 모드 (목업 툴바에서 토글) ──────────────
+       가로형을 세로형과 같은 폭(600)으로 줄여 캔버스에서 좌우가 딱 맞게 놓이는 안 */
+    body.fit-width .card[data-orient="landscape"] { width: 600px; height: 525px; }
+    body.fit-width .card[data-orient="landscape"] .card-header { width: 568px; }
+    body.fit-width .card[data-orient="landscape"] .list-area { width: 568px; height: 304px; }
+    body.fit-width .card[data-orient="landscape"] .grid-wrap { height: 271px; }
+    body.fit-width .card[data-orient="landscape"] .g-row,
+    body.fit-width .card[data-orient="landscape"] .g-row td { height: 11px; }
+
     /* Card has 16px padding; the two panels sit side by side */
     .card-inner {
       flex: 1;
@@ -3952,6 +3961,14 @@
     setInterval(tick, 20000);
   })();
 
+  // 가로형 속지의 콘텐츠 크기 — 기본은 제 규격(4:3, 800×600),
+  // 가로 폭 맞춤 모드에서는 세로형과 같은 폭(600×450). 목업 툴바에서 토글한다.
+  function landSize() {
+    return document.body.classList.contains('fit-width')
+      ? { w: 600, h: 450 }
+      : { w: 800, h: 600 };
+  }
+
   // ── Page data (matches side panel thumbnails) ──────────────
   const _ydTmp = new Date(); _ydTmp.setDate(_ydTmp.getDate() - 1);
   const _ydText  = `${String(_ydTmp.getFullYear()).slice(2)}.${String(_ydTmp.getMonth()+1).padStart(2,'0')}.${String(_ydTmp.getDate()).padStart(2,'0')}`;
@@ -4085,10 +4102,10 @@
     const dateCls = page.empty ? 'hd-date-val placeholder' : 'hd-date-val';
     const dday    = page.empty ? '–' : ddayText(page.dateText);
     const time    = page.studyTime || (page.today ? '5:30:24' : '–');
-    // 가로형(4:3) 속지는 800×600 — 그리기 캔버스 픽셀 크기도 카드와 1:1로 맞춘다
+    // 가로형 속지는 4:3 — 그리기 캔버스 픽셀 크기도 카드와 1:1로 맞춘다
     const landscape = page.orient === 'landscape';
-    const cvW = landscape ? 800 : 600;
-    const cvH = landscape ? 600 : 800;
+    const cvW = landscape ? landSize().w : 600;
+    const cvH = landscape ? landSize().h : 800;
     return `
 <div class="card" data-page-id="${page.id}" data-canvas-state="${state}" data-orient="${landscape ? 'landscape' : 'portrait'}">
   ${page.empty ? `<button class="page-type-tab" id="pageTypeTabBtn">
@@ -4292,8 +4309,8 @@
     // 썸네일 비율은 원본 카드의 방향을 그대로 따라간다 — 가로형이면 칸도 4:3이 된다
     const landscape = card.dataset.orient === 'landscape';
     thumbEl.classList.toggle('sp-thumb-landscape', landscape);
-    const cardW = landscape ? 800 : 600;
-    const cardH = landscape ? 600 : 800;
+    const cardW = landscape ? landSize().w : 600;
+    const cardH = landscape ? landSize().h : 800;
     const thumbW = thumbEl.offsetWidth || 70;
     const scale  = thumbW / cardW;
 
@@ -5715,8 +5732,8 @@
     innerEl.innerHTML = '';
     // 가로형 속지는 800×600이므로 스케일 기준 폭도 그에 맞춰야 썸네일이 잘리지 않는다
     const landscape = card.dataset.orient === 'landscape';
-    const srcW = landscape ? 800 : 600;
-    const srcH = landscape ? 600 : 800;
+    const srcW = landscape ? landSize().w : 600;
+    const srcH = landscape ? landSize().h : 800;
     const scale = (innerEl.offsetWidth || 80) / srcW;
     const clone = card.cloneNode(true);
     clone.classList.remove('card-creating', 'card-created-reveal'); // 생성 트랜지션(opacity:0) 상태로 스냅샷되는 것 방지
@@ -6946,8 +6963,8 @@
       if (orient === 'landscape') {
         if (!ipSourceCardLand) {
           ipSourceCardLand = buildStudyCardEl();
-          ipSourceCardLand.style.width = '800px';
-          ipSourceCardLand.style.height = '600px';
+          ipSourceCardLand.style.width = landSize().w + 'px';
+          ipSourceCardLand.style.height = landSize().h + 'px';
           ipSourceCardLand.dataset.orient = 'landscape';
         }
         return ipSourceCardLand;
@@ -7109,8 +7126,8 @@
       card.dataset.orient = orient;
       const drawCv = card.querySelector('.card-draw-canvas');
       if (drawCv) {
-        drawCv.width = orient === 'landscape' ? 800 : 600;
-        drawCv.height = orient === 'landscape' ? 600 : 800;
+        drawCv.width = orient === 'landscape' ? landSize().w : 600;
+        drawCv.height = orient === 'landscape' ? landSize().h : 800;
       }
       const tab = card.querySelector('.page-type-tab');
       // 캔버스·탭 버튼 외 기존 내용 + 이전 틴트 제거
@@ -7420,7 +7437,7 @@
       }
       el.style.background = '';
       const src = buildStudyCardEl();
-      if (item.orient === 'landscape') { src.style.width = '800px'; src.style.height = '600px'; src.dataset.orient = 'landscape'; }
+      if (item.orient === 'landscape') { src.style.width = landSize().w + 'px'; src.style.height = landSize().h + 'px'; src.dataset.orient = 'landscape'; }
       renderMp2Thumb(src, el);
       const tint = tintColor || item.tint;
       if (tint && tint !== '#ffffff') {
@@ -7931,6 +7948,8 @@
       send({ padWheel: 1, dx: e.deltaX, dy: e.deltaY });
     }, { passive: true, capture: true });
 
+    send({ padReady: 1 }); // 목업이 현재 모드를 내려보내도록
+
     document.addEventListener('click', e => {
       if (replaying || !e.isTrusted) return;
       send({ padSync: 'click', path: pathOf(e.target) });
@@ -7942,6 +7961,11 @@
 
     window.addEventListener('message', e => {
       const m = e.data;
+      // 목업 툴바의 "가로 폭 맞춤" 토글
+      if (m && m.padMode) {
+        document.body.classList.toggle('fit-width', m.padMode === 'fit-width');
+        return;
+      }
       if (!m || !m.padSync) return;
       const el = elAt(m.path || []);
       if (!el) return;
