@@ -261,7 +261,10 @@
     list.forEach(d => {
       const real = (d.inW * PX_PER_INCH) / d.w; // 방향과 무관한 실물 배율
       const ow = (d.w + d.bezel * 2) * real, oh = (d.h + d.bezel * 2) * real;
-      maxW = Math.max(maxW, ow); maxH = Math.max(maxH, oh);
+      // 돌려도 배율이 변하지 않으면서 두 방향 모두 화면에 들어오도록,
+      // 긴 변(회전해도 그대로인 외접 정사각형)을 기준으로 잡는다
+      const side = Math.max(ow, oh);
+      maxW = Math.max(maxW, side); maxH = Math.max(maxH, side);
     });
     const availH = window.innerHeight - (gallery ? 190 : 132);
     // 전체 나열은 가로로 스크롤하므로 높이만 맞춘다
