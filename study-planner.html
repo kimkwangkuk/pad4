@@ -535,6 +535,25 @@
     body.fit-width .card[data-orient="landscape"] .g-row,
     body.fit-width .card[data-orient="landscape"] .g-row td { height: 11px; }
 
+    /* ── 가로 폭 채움 (반응형) ───────────────────────────────
+       속지가 캔버스 폭을 꽉 채우고, 확대가 아니라 내용이 그 폭에 맞게 늘어난다.
+       글자 크기·행 높이는 그대로고 남는 공간을 리스트와 타임라인이 나눠 갖는다. */
+    body.fill-width .canvas-zoom-wrap { padding-left: 16px; padding-right: 16px; }
+    body.fill-width .card { width: 100%; height: auto; }
+    /* 콘텐츠가 속지 비율(세로 3:4 / 가로 4:3)을 잡고 그 아래 배너가 붙는다 */
+    body.fill-width .card-inner { flex: 0 0 auto; aspect-ratio: 3 / 4; }
+    body.fill-width .card[data-orient="landscape"] .card-inner { aspect-ratio: 4 / 3; }
+    /* 헤더·리스트는 폭을 꽉 채우고, 남는 가로는 왼쪽(날짜·과목)이 받는다 */
+    body.fill-width .card-header { width: 100%; }
+    body.fill-width .list-area { width: 100%; height: auto; flex: 1 1 0; min-height: 0; }
+    body.fill-width .hd-left,
+    body.fill-width .left-panel { width: auto; flex: 1 1 0; min-width: 0; }
+    /* 타임라인(175px 고정 폭)은 리스트 높이만큼 늘어나고 24행이 그 안에서 나뉜다 */
+    body.fill-width .grid-wrap { height: auto; align-self: stretch; }
+    body.fill-width .grid-tbl { height: 100%; }
+    body.fill-width .g-row,
+    body.fill-width .g-row td { height: auto; }
+
     /* Card has 16px padding; the two panels sit side by side */
     .card-inner {
       flex: 1;
@@ -3969,20 +3988,6 @@
       : { w: 800, h: 600 };
   }
 
-  // 가로 폭 채움 — 속지 비율과 상관없이 페이지가 캔버스 폭을 꽉 채우게 배율을 준다.
-  // zoom은 레이아웃 크기까지 바꾸므로 세로 흐름(카드 사이 간격·스크롤 높이)도 함께 맞는다.
-  function applyFillMode() {
-    const fill = document.body.classList.contains('fill-width');
-    const frame = document.querySelector('.ws-frame');
-    const avail = frame ? frame.clientWidth - 32 : 0; // 좌우 여백
-    canvasZoomWrap.querySelectorAll('.card').forEach(card => {
-      const natural = card.dataset.orient === 'landscape' ? landSize().w : 600;
-      card.style.zoom = (fill && avail > 0) ? (avail / natural).toFixed(4) : '';
-    });
-  }
-  window.applyFillMode = applyFillMode;
-  window.addEventListener('resize', applyFillMode);
-
   // ── Page data (matches side panel thumbnails) ──────────────
   const _ydTmp = new Date(); _ydTmp.setDate(_ydTmp.getDate() - 1);
   const _ydText  = `${String(_ydTmp.getFullYear()).slice(2)}.${String(_ydTmp.getMonth()+1).padStart(2,'0')}.${String(_ydTmp.getDate()).padStart(2,'0')}`;
@@ -4314,7 +4319,6 @@
     rebuildPanel(datedCards, selectedPanelIdx);
     if (selectedCard) scrollToCard(selectedDomIdx, true);
     setTimeout(updateAllThumbs, 50);
-    applyFillMode(); // 새로 놓인 카드에도 채움 배율을 입힌다
     return [];
   }
 
@@ -4417,7 +4421,6 @@
     // window.watchTodayFab이 이미 존재하는 것처럼 보이므로(TDZ 오류 유발), 별도의 준비완료
     // 플래그로 안전하게 가드한다 — 최초 페이지 로드 시점엔 아직 준비 전이라 조용히 무시된다.
     if (window.__todayFabReady) window.watchTodayFab();
-    applyFillMode();
   }
 
   function ensureCalendarPageCard(tabEl, dateText) {
@@ -7981,7 +7984,6 @@
       if (m && m.padMode) {
         document.body.classList.toggle('fit-width', m.padMode === 'fit');
         document.body.classList.toggle('fill-width', m.padMode === 'fill');
-        if (window.applyFillMode) window.applyFillMode();
         return;
       }
       if (!m || !m.padSync) return;
