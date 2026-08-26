@@ -511,15 +511,20 @@
     }
 
     /* ─── 가로형(4:3) 페이지 ─────────────────────────────
-       세로형과 캔버스에서 나란히 놓이므로 가로 폭을 600px로 똑같이 맞춘다.
-       콘텐츠 600×450 + 하단 배너 75 = 525. 헤더·리스트 폭은 세로형과 같아 따로 안 준다. */
-    .card[data-orient="landscape"] { width: 600px; height: 525px; }
-    /* 낮아진 높이(450 - 32 - 106 - 8 = 304)에 맞게 리스트를 줄인다 */
-    .card[data-orient="landscape"] .list-area { height: 304px; }
-    /* 24행 타임라인이 271px(= 304 - 1 - 32) 안에 다 들어가도록 행 높이를 26→11px로 */
-    .card[data-orient="landscape"] .grid-wrap { height: 271px; }
+       같은 종이를 돌려놓은 것이므로 세로형의 가로(600)가 가로형의 세로가 된다 → 800×600.
+       두 방향 모두 제 규격(3:4 / 4:3)으로 나오고, .canvas-zoom-wrap이 align-items:center라
+       세로형 카드와 가운데가 자동으로 맞는다. */
+    .card[data-orient="landscape"] { width: 800px; height: 675px; } /* 콘텐츠 800×600 + 배너 75 */
+    /* 카드 안쪽 폭(800-32=768)에 맞춰 헤더/리스트를 늘리고, 낮아진 높이(568-106-8)에 맞게 리스트를 줄인다 */
+    .card[data-orient="landscape"] .card-header { width: 768px; }
+    .card[data-orient="landscape"] .list-area { width: 768px; height: 454px; }
+    /* 늘어난 가로 폭은 왼쪽(날짜·과목) 영역이 받는다 — 오른쪽 타임라인 폭(175px)은 그대로 */
+    .card[data-orient="landscape"] .hd-left,
+    .card[data-orient="landscape"] .left-panel { width: auto; flex: 1 1 0; min-width: 0; }
+    /* 24행 타임라인이 낮아진 높이(421px = 454 - 1 - 32) 안에 다 들어가도록 행 높이를 26→17px로 */
+    .card[data-orient="landscape"] .grid-wrap { height: 421px; }
     .card[data-orient="landscape"] .g-row,
-    .card[data-orient="landscape"] .g-row td { height: 11px; }
+    .card[data-orient="landscape"] .g-row td { height: 17px; }
 
     /* Card has 16px padding; the two panels sit side by side */
     .card-inner {
@@ -4080,10 +4085,10 @@
     const dateCls = page.empty ? 'hd-date-val placeholder' : 'hd-date-val';
     const dday    = page.empty ? '–' : ddayText(page.dateText);
     const time    = page.studyTime || (page.today ? '5:30:24' : '–');
-    // 가로형(4:3) 속지는 600×450 — 그리기 캔버스 픽셀 크기도 카드와 1:1로 맞춘다
+    // 가로형(4:3) 속지는 800×600 — 그리기 캔버스 픽셀 크기도 카드와 1:1로 맞춘다
     const landscape = page.orient === 'landscape';
-    const cvW = 600;
-    const cvH = landscape ? 450 : 800;
+    const cvW = landscape ? 800 : 600;
+    const cvH = landscape ? 600 : 800;
     return `
 <div class="card" data-page-id="${page.id}" data-canvas-state="${state}" data-orient="${landscape ? 'landscape' : 'portrait'}">
   ${page.empty ? `<button class="page-type-tab" id="pageTypeTabBtn">
@@ -4287,8 +4292,8 @@
     // 썸네일 비율은 원본 카드의 방향을 그대로 따라간다 — 가로형이면 칸도 4:3이 된다
     const landscape = card.dataset.orient === 'landscape';
     thumbEl.classList.toggle('sp-thumb-landscape', landscape);
-    const cardW = 600;
-    const cardH = landscape ? 450 : 800;
+    const cardW = landscape ? 800 : 600;
+    const cardH = landscape ? 600 : 800;
     const thumbW = thumbEl.offsetWidth || 70;
     const scale  = thumbW / cardW;
 
@@ -5710,8 +5715,8 @@
     innerEl.innerHTML = '';
     // 가로형 속지는 800×600이므로 스케일 기준 폭도 그에 맞춰야 썸네일이 잘리지 않는다
     const landscape = card.dataset.orient === 'landscape';
-    const srcW = 600;
-    const srcH = landscape ? 450 : 800;
+    const srcW = landscape ? 800 : 600;
+    const srcH = landscape ? 600 : 800;
     const scale = (innerEl.offsetWidth || 80) / srcW;
     const clone = card.cloneNode(true);
     clone.classList.remove('card-creating', 'card-created-reveal'); // 생성 트랜지션(opacity:0) 상태로 스냅샷되는 것 방지
@@ -6941,8 +6946,8 @@
       if (orient === 'landscape') {
         if (!ipSourceCardLand) {
           ipSourceCardLand = buildStudyCardEl();
-          ipSourceCardLand.style.width = '600px';
-          ipSourceCardLand.style.height = '450px';
+          ipSourceCardLand.style.width = '800px';
+          ipSourceCardLand.style.height = '600px';
           ipSourceCardLand.dataset.orient = 'landscape';
         }
         return ipSourceCardLand;
@@ -7104,8 +7109,8 @@
       card.dataset.orient = orient;
       const drawCv = card.querySelector('.card-draw-canvas');
       if (drawCv) {
-        drawCv.width = 600;
-        drawCv.height = orient === 'landscape' ? 450 : 800;
+        drawCv.width = orient === 'landscape' ? 800 : 600;
+        drawCv.height = orient === 'landscape' ? 600 : 800;
       }
       const tab = card.querySelector('.page-type-tab');
       // 캔버스·탭 버튼 외 기존 내용 + 이전 틴트 제거
@@ -7415,7 +7420,7 @@
       }
       el.style.background = '';
       const src = buildStudyCardEl();
-      if (item.orient === 'landscape') { src.style.width = '600px'; src.style.height = '450px'; src.dataset.orient = 'landscape'; }
+      if (item.orient === 'landscape') { src.style.width = '800px'; src.style.height = '600px'; src.dataset.orient = 'landscape'; }
       renderMp2Thumb(src, el);
       const tint = tintColor || item.tint;
       if (tint && tint !== '#ffffff') {
