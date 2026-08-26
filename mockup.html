@@ -139,12 +139,11 @@
       </svg>
       <span>전체 나열</span>
     </button>
-    <button id="fitBtn" type="button" title="가로형 속지를 세로형과 같은 폭으로 (F)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="3" y="3" width="8" height="18" rx="1.5"/><rect x="13" y="7" width="8" height="10" rx="1.5"/>
-      </svg>
-      <span>가로 폭 맞춤</span>
-    </button>
+    <select id="pageModeSel" aria-label="속지 규격" title="캔버스에 놓이는 속지 크기 (F로 순환)">
+      <option value="native">속지 제 규격</option>
+      <option value="fit">가로 폭 맞춤</option>
+      <option value="fill">가로 폭 채움</option>
+    </select>
     <button id="rotateBtn" type="button" title="가로/세로 전환 (R)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/>
@@ -194,7 +193,7 @@
 
   // 앱이 1366×1024 기준으로 만들어져 있어 13" 모델로 시작한다
   let devIdx = Math.max(0, DEVICES.findIndex(d => d.id === 'pro13'));
-  let landscape = true, gallery = false, fitWidth = false;
+  let landscape = true, gallery = false, pageMode = 'native'; // native | fit | fill
 
   // 저장해둔 선택 복원
   try {
@@ -203,7 +202,7 @@
     if (i >= 0) devIdx = i;
     if (typeof saved.landscape === 'boolean') landscape = saved.landscape;
     if (typeof saved.gallery === 'boolean') gallery = saved.gallery;
-    if (typeof saved.fitWidth === 'boolean') fitWidth = saved.fitWidth;
+    if (['native', 'fit', 'fill'].includes(saved.pageMode)) pageMode = saved.pageMode;
   } catch (e) {}
 
   DEVICES.forEach((d, i) => {
@@ -304,7 +303,7 @@
 
     stage.classList.toggle('gallery', gallery);
     $('galleryBtn').classList.toggle('on', gallery);
-    $('fitBtn').classList.toggle('on', fitWidth);
+    $('pageModeSel').value = pageMode;
     $('deviceSel').disabled = gallery;
     $('deviceSel').value = String(devIdx);
     $('rotateLabel').textContent = landscape ? '세로로' : '가로로';
@@ -314,13 +313,13 @@
     $('sizeLabel').title = gallery ? '' : `${landscape ? cur.resW : cur.resH} × ${landscape ? cur.resH : cur.resW}px · ${cur.diag}"`;
 
     try {
-      localStorage.setItem('pad4-mockup', JSON.stringify({ device: cur.id, landscape, gallery, fitWidth }));
+      localStorage.setItem('pad4-mockup', JSON.stringify({ device: cur.id, landscape, gallery, pageMode }));
     } catch (e) {}
   }
 
-  // 앱에 현재 "가로 폭 맞춤" 모드를 알린다
+  // 앱에 현재 속지 규격 모드를 알린다
   function sendMode(target) {
-    const msg = { padMode: fitWidth ? 'fit-width' : 'native' };
+    const msg = { padMode: pageMode };
     if (target) { target.postMessage(msg, '*'); return; }
     rail.querySelectorAll('iframe').forEach(f => { if (f.contentWindow) f.contentWindow.postMessage(msg, '*'); });
   }
@@ -368,7 +367,7 @@
 
   $('deviceSel').addEventListener('change', e => { devIdx = +e.target.value; render(); });
   $('galleryBtn').addEventListener('click', () => { gallery = !gallery; stage.scrollLeft = 0; render(); });
-  $('fitBtn').addEventListener('click', () => { fitWidth = !fitWidth; render(); sendMode(); });
+  $('pageModeSel').addEventListener('change', e => { pageMode = e.target.value; render(); sendMode(); });
   $('rotateBtn').addEventListener('click', () => { landscape = !landscape; render(); });
   $('reloadBtn').addEventListener('click', () => {
     rail.querySelectorAll('iframe').forEach(f => { f.src = f.src; });
@@ -378,7 +377,11 @@
     if (e.target.tagName === 'SELECT') return;
     if (e.key === 'r' || e.key === 'R') { landscape = !landscape; render(); }
     if (e.key === 'a' || e.key === 'A') { gallery = !gallery; stage.scrollLeft = 0; render(); }
-    if (e.key === 'f' || e.key === 'F') { fitWidth = !fitWidth; render(); sendMode(); }
+    if (e.key === 'f' || e.key === 'F') {
+      const order = ['native', 'fit', 'fill'];
+      pageMode = order[(order.indexOf(pageMode) + 1) % order.length];
+      render(); sendMode();
+    }
   });
 
   render();
