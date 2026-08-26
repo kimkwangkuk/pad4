@@ -274,20 +274,33 @@
   function render() {
     const list = gallery ? DEVICES : [DEVICES[devIdx]];
     const fit = fitFor(list);
+    const cur = DEVICES[devIdx];
 
-    // 필요한 목업만 새로 만든다 (이미 있으면 iframe을 다시 로드하지 않는다)
-    const keep = new Set(list.map(d => d.id));
-    Array.from(rail.children).forEach(el => { if (!keep.has(el.dataset.id)) el.remove(); });
-    list.forEach((d, i) => {
-      let slot = rail.querySelector(`.dev-slot[data-id="${d.id}"]`);
-      if (!slot) { slot = makeDevice(d, gallery); rail.appendChild(slot); }
-      if (slot !== rail.children[i]) rail.insertBefore(slot, rail.children[i]);
-      // 라벨은 전체 나열에서만
-      const label = slot.querySelector('.dev-label');
-      if (gallery && !label) slot.insertAdjacentHTML('beforeend', `<div class="dev-label"><b>${d.name}</b></div>`);
-      if (!gallery && label) label.remove();
-      layoutDevice(slot, d, fit);
-    });
+    // iframe은 DOM에서 옮기거나 다시 만들면 페이지가 새로 로드된다 —
+    // 그래서 이미 있는 슬롯은 절대 옮기지 않고, 기기를 바꿀 때도 슬롯을 재사용한다.
+    if (!gallery) {
+      // 단일 모드 — 슬롯 하나만 남기고 기기만 갈아 끼운다 (화면 내용 유지)
+      let slot = rail.querySelector(`.dev-slot[data-id="${cur.id}"]`) || rail.firstElementChild;
+      if (!slot) { slot = makeDevice(cur, false); rail.appendChild(slot); }
+      Array.from(rail.children).forEach(el => { if (el !== slot) el.remove(); });
+      slot.dataset.id = cur.id;
+      slot.querySelector('.dev-label')?.remove();
+      layoutDevice(slot, cur, fit);
+    } else {
+      // 전체 나열 — 없는 기기만 새로 만들어 순서대로 끼워 넣는다
+      let prev = null;
+      DEVICES.forEach(d => {
+        let slot = rail.querySelector(`.dev-slot[data-id="${d.id}"]`);
+        if (!slot) {
+          slot = makeDevice(d, true);
+          if (prev) prev.after(slot); else rail.prepend(slot);
+        } else if (!slot.querySelector('.dev-label')) {
+          slot.insertAdjacentHTML('beforeend', `<div class="dev-label"><b>${d.name}</b></div>`);
+        }
+        prev = slot;
+        layoutDevice(slot, d, fit);
+      });
+    }
 
     stage.classList.toggle('gallery', gallery);
     $('galleryBtn').classList.toggle('on', gallery);
@@ -296,13 +309,12 @@
     $('deviceSel').value = String(devIdx);
     $('rotateLabel').textContent = landscape ? '세로로' : '가로로';
 
-    const d = DEVICES[devIdx];
-    const w = landscape ? d.w : d.h, h = landscape ? d.h : d.w;
+    const w = landscape ? cur.w : cur.h, h = landscape ? cur.h : cur.w;
     $('sizeLabel').textContent = gallery ? `${DEVICES.length}대  ·  ${Math.round(fit * 100)}%` : `${w} × ${h}`;
-    $('sizeLabel').title = gallery ? '' : `${landscape ? d.resW : d.resH} × ${landscape ? d.resH : d.resW}px · ${d.diag}"`;
+    $('sizeLabel').title = gallery ? '' : `${landscape ? cur.resW : cur.resH} × ${landscape ? cur.resH : cur.resW}px · ${cur.diag}"`;
 
     try {
-      localStorage.setItem('pad4-mockup', JSON.stringify({ device: d.id, landscape, gallery, fitWidth }));
+      localStorage.setItem('pad4-mockup', JSON.stringify({ device: cur.id, landscape, gallery, fitWidth }));
     } catch (e) {}
   }
 
