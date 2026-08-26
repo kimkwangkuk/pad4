@@ -539,7 +539,16 @@
        속지가 캔버스 폭을 꽉 채우고, 확대가 아니라 내용이 그 폭에 맞게 늘어난다.
        글자 크기·행 높이는 그대로고 남는 공간을 리스트와 타임라인이 나눠 갖는다. */
     body.fill-width .canvas-zoom-wrap { padding-left: 16px; padding-right: 16px; }
-    body.fill-width .card { width: 100%; height: auto; }
+    /* 세로도 화면 안에 들어오게 — 캔버스에 보이는 높이를 넘지 않는 선에서 폭을 채운다.
+       화면 높이 - (상태바 40 + 탭바 36) - 프레임 여백 16 - 캔버스 상하 여백 98 - 배너 75 */
+    body.fill-width .card {
+      --fill-h: calc(100vh - 265px);
+      width: min(100%, calc(var(--fill-h) * 3 / 4)); /* 세로형 3:4 */
+      height: auto;
+    }
+    body.fill-width .card[data-orient="landscape"] {
+      width: min(100%, calc(var(--fill-h) * 4 / 3)); /* 가로형 4:3 */
+    }
     /* 콘텐츠가 속지 비율(세로 3:4 / 가로 4:3)을 잡고 그 아래 배너가 붙는다 */
     body.fill-width .card-inner { flex: 0 0 auto; aspect-ratio: 3 / 4; }
     body.fill-width .card[data-orient="landscape"] .card-inner { aspect-ratio: 4 / 3; }
