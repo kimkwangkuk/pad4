@@ -101,6 +101,22 @@
       flex-shrink: 0;
       position: relative;
     }
+    /* 스플릿뷰 — 타이머 탭이 맨 왼쪽으로 와서 왼쪽 패널(25%) 폭을 채우고,
+       홈을 비롯한 나머지 탭들은 우측 패널의 왼쪽 모서리부터 시작한다 */
+    .tab-bar.split .tab.split-lead { width: calc(25vw - 16px); }
+    .tab-bar.split .tab.split-lead .tab-inner { width: auto; flex: 1 1 auto; min-width: 0; }
+    /* 두 패널이 다 보이므로 리드 탭도 활성처럼 흰 몸통으로 */
+    .tab-bar.split .tab.split-lead .tab-inner.dim { background: #fff; }
+    .tab-bar.split .tab.split-lead .tab-label.dim { color: rgba(0,0,0,0.86); }
+    /* 두 탭 그룹 사이 세로 구분선 (패널 사이 8px 간격의 가운데) */
+    .tab-divider {
+      position: absolute; left: 25vw; top: 9px;
+      width: 1px; height: 18px;
+      background: rgba(0,0,0,0.16);
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+    .tab-bar.split .tab-divider { opacity: 1; }
     .tab {
       display: flex;
       align-items: center;
@@ -110,7 +126,8 @@
       cursor: pointer;
       user-select: none;
       transform-origin: left center;
-      transition: max-width 0.24s cubic-bezier(0.4, 0, 0.2, 1),
+      transition: width 0.32s cubic-bezier(0.32, 0.72, 0, 1),
+                  max-width 0.24s cubic-bezier(0.4, 0, 0.2, 1),
                   margin-right 0.24s cubic-bezier(0.4, 0, 0.2, 1),
                   transform 0.24s cubic-bezier(0.4, 0, 0.2, 1),
                   opacity 0.2s ease;
@@ -3295,6 +3312,8 @@
     </div>
     <!-- Gradient fade -->
     <div class="tab-fade"></div>
+    <!-- 스플릿뷰에서 두 탭 그룹 사이에 놓이는 세로 구분선 -->
+    <div class="tab-divider" id="tabDivider"></div>
   </div>
 
   <!-- MAIN AREA -->
@@ -6177,15 +6196,20 @@
 
   // Recalculate z-indices and margins after any tab change
   function refreshTabLayout() {
-    // 홈 탭은 항상 맨 앞
+    // 홈 탭은 항상 맨 앞. 단 스플릿에서는 왼쪽 패널을 대표하는 리드 탭이 그보다 앞에 온다
     const home = tabLabels.querySelector('.tab-home:not(.closing)');
-    if (home && tabLabels.firstElementChild !== home) tabLabels.insertBefore(home, tabLabels.firstElementChild);
+    const lead = splitOn ? tabLabels.querySelector('.tab.split-lead:not(.closing)') : null;
+    if (lead && tabLabels.firstElementChild !== lead) tabLabels.insertBefore(lead, tabLabels.firstElementChild);
+    const homeAt = lead ? lead.nextSibling : tabLabels.firstElementChild;
+    if (home && home !== homeAt) tabLabels.insertBefore(home, homeAt);
     const tabs = Array.from(tabLabels.querySelectorAll('.tab:not(.closing)'));
     const n = tabs.length;
     tabs.forEach((tab, i) => {
       // Active tab always on top; others: leftmost highest
       tab.style.zIndex     = tab.classList.contains('active') ? String(n + 2) : String(n - i);
-      tab.style.marginRight = i === n - 1 ? '0' : '-30px';
+      // 리드 탭 뒤에는 두 패널 사이 간격(8px)만큼 띄운다
+      tab.style.marginRight = (splitOn && tab.classList.contains('split-lead')) ? '8px'
+                            : (i === n - 1 ? '0' : '-30px');
       // 오른쪽 탭이 활성이면 그 탭이 내 우측 곡선 위로 겹친다 — 그 자리에 그림자를 깐다
       const coveredRight = !!tabs[i + 1] && tabs[i + 1].classList.contains('active');
       tabShadowR(tab).classList.toggle('on', coveredRight);
@@ -6207,20 +6231,22 @@
   function setTabActive(tab) {
     tabLabels.querySelectorAll('.tab:not(.closing)').forEach(t => {
       const isTarget = t === tab;
+      // 스플릿에서는 왼쪽 패널을 대표하는 리드 탭도 활성처럼 보인다 (실제 활성은 오른쪽 탭)
+      const looksActive = isTarget || (splitOn && t.classList.contains('split-lead'));
       t.classList.toggle('active', isTarget);
-      t.querySelector('.tab-inner')?.classList.toggle('dim', !isTarget);
-      t.querySelector('.tab-label')?.classList.toggle('dim', !isTarget);
+      t.querySelector('.tab-inner')?.classList.toggle('dim', !looksActive);
+      t.querySelector('.tab-label')?.classList.toggle('dim', !looksActive);
       const curves = t.querySelectorAll('.tab-curve');
-      const prefix = isTarget ? 'active' : 'inactive';
+      const prefix = looksActive ? 'active' : 'inactive';
       if (curves[0]) curves[0].src = `assets/tab-${prefix}-left.svg`;
       if (curves[1]) curves[1].src = `assets/tab-${prefix}-right.svg`;
       const shadow = t.querySelector('.tab-shadow');
       if (shadow) {
-        shadow.innerHTML = isTarget
+        shadow.innerHTML = looksActive
           ? ''
           : '<img src="assets/tab-shadow.svg" style="position:absolute;inset:0;width:100%;height:100%;">';
       }
-      const iconColor = isTarget ? 'rgba(0,0,0,0.86)' : 'rgba(0,0,0,0.4)';
+      const iconColor = looksActive ? 'rgba(0,0,0,0.86)' : 'rgba(0,0,0,0.4)';
       t.querySelectorAll('.tab-inner svg').forEach(svg => { svg.style.color = iconColor; });
     });
     refreshTabLayout();
@@ -6316,7 +6342,14 @@
         resetRightPane();
       }, 330);
     }
+    // 타이머 탭이 왼쪽 패널 위로 옮겨가며 폭을 채운다 (풀리면 원래 폭으로)
+    const leadTab = timerTabEl();
     tabBar.classList.toggle('split', on);
+    if (leadTab) {
+      leadTab.classList.toggle('split-lead', on);
+      if (on && tabLabels.firstElementChild !== leadTab) tabLabels.insertBefore(leadTab, tabLabels.firstElementChild);
+      animateTabWidth(leadTab); // width:auto ↔ calc()는 보간되지 않으므로 px로 잡아 애니메이션
+    }
     // 좁아진 폭에 카드가 다 들어오도록 캔버스를 축소했다가, 풀리면 원래 배율로 되돌린다
     const paneW = workspaceEl.clientWidth * 0.75 - 12; // 우측 75% - (가운데 4 + 바깥 8)
     if (window.canvasZoom) window.canvasZoom.setSplit(on, paneW);
@@ -6324,6 +6357,21 @@
     if (on) setTabActive((lastTab && lastTab.isConnected) ? lastTab : (homeTab || tabLabels.querySelector('.tab:not(.closing)')));
     else if (studyRunning) { const t = timerTabEl(); if (t && !t.classList.contains('active')) setTabActive(t); }
   }
+  // 클래스가 정한 목표 폭까지 실제 px로 애니메이션한 뒤 인라인 값을 지운다
+  let tabWT = null;
+  function animateTabWidth(tab) {
+    const from = tab.offsetWidth;
+    tab.style.transition = 'none';
+    tab.style.width = '';           // 바뀐 상태(클래스)의 목표 폭
+    const to = tab.offsetWidth;
+    tab.style.width = from + 'px';  // 지금 폭에서 시작
+    void tab.offsetWidth;           // 리플로우
+    tab.style.transition = '';
+    tab.style.width = to + 'px';
+    clearTimeout(tabWT);
+    tabWT = setTimeout(() => { tab.style.width = ''; }, 360);
+  }
+
   svPanelBtn.addEventListener('click', () => setSplit(!splitOn));
 
   function updateView() {
