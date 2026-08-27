@@ -331,6 +331,28 @@
       z-index: 2;
     }
 
+    /* ── 스마트 패드 — 종이가 아니라 화면을 꽉 채우는 반응형 페이지 ──
+       확대가 아니라 레이아웃이 늘어난다: 글자 크기는 그대로고 남는 공간을
+       과목 목록과 타임테이블이 나눠 갖는다 */
+    .canvas-zoom-wrap[data-mode="pad"] { padding: 8px; }
+    [data-mode="pad"] .card {
+      width: 100%;
+      height: calc(100vh - 36px - 32px); /* 탭 바 + 프레임/캔버스 여백 */
+      border-radius: 12px;
+    }
+    [data-mode="pad"] .card-inner { flex: 1 1 auto; min-height: 0; }
+    [data-mode="pad"] .card-ad { display: none; }          /* 패드에는 하단 배너 없음 */
+    [data-mode="pad"] .card-draw-canvas { display: none; } /* 펜 입력 없음 */
+    [data-mode="pad"] .card-header { width: 100%; }
+    [data-mode="pad"] .list-area { width: 100%; height: auto; flex: 1 1 0; min-height: 0; }
+    [data-mode="pad"] .hd-left,
+    [data-mode="pad"] .left-panel { width: auto; flex: 1 1 0; min-width: 0; }
+    [data-mode="pad"] .right-panel { align-self: stretch; }
+    [data-mode="pad"] .grid-wrap { height: auto; flex: 1 1 0; min-height: 0; }
+    [data-mode="pad"] .grid-tbl { height: 100%; }
+    [data-mode="pad"] .g-row,
+    [data-mode="pad"] .g-row td { height: auto; }
+
     /* ─── ADD PAGE BUTTON (always trailing element in canvas) ── */
     .add-page-btn {
       flex-shrink: 0;
@@ -1721,9 +1743,10 @@
     .mp2-thumb-inner {
       width: 80px; height: 108px;
       flex-shrink: 0;
-      border: 1px solid rgba(0,0,0,0.12);
-      border-radius: 2px;
-      box-shadow: 0px 1px 20px 0px rgba(0,0,0,0.05);
+      /* 종이 한 장이 아니라 프레임에 담긴 모습으로 */
+      border: 1px solid rgba(0,0,0,0.10);
+      border-radius: 7px;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.12);
       background: white;
       position: relative; overflow: hidden;
     }
@@ -2115,9 +2138,10 @@
     .mp2-thumb-inner {
       width: 80px; height: 108px;
       flex-shrink: 0;
-      border: 1px solid rgba(0,0,0,0.12);
-      border-radius: 2px;
-      box-shadow: 0px 1px 20px 0px rgba(0,0,0,0.05);
+      /* 종이 한 장이 아니라 프레임에 담긴 모습으로 */
+      border: 1px solid rgba(0,0,0,0.10);
+      border-radius: 7px;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.12);
       background: white;
       position: relative; overflow: hidden;
     }
@@ -2783,8 +2807,9 @@
     }
     .ib-thumb {
       position: relative; height: 100%; width: auto; aspect-ratio: 160 / 214;
-      background: #fff; border-radius: 4px; overflow: hidden;
-      box-shadow: 0 0 1px rgba(0,0,0,0.6), 0 4px 6px rgba(0,0,0,0.03);
+      background: #fff; border-radius: 10px; overflow: hidden;
+      /* 종이 한 장이 아니라 프레임에 담긴 모습으로 */
+      box-shadow: 0 0 0 1px rgba(0,0,0,0.07), 0 6px 18px rgba(0,0,0,0.12);
     }
     .ib-thumb.land { height: auto; width: 100%; aspect-ratio: 4 / 3; }
     .ib-lock {
@@ -2827,7 +2852,9 @@
     .ids-hero-page {
       position: relative; height: 100%; max-height: 707px; width: auto;
       aspect-ratio: 160 / 214;
-      background: #fff; border-radius: 10px; overflow: hidden;
+      background: #fff; border-radius: 12px; overflow: hidden;
+      /* 프레임에 담긴 모습 */
+      box-shadow: 0 0 0 1px rgba(0,0,0,0.07), 0 10px 30px rgba(0,0,0,0.14);
     }
     .ids-hero-page.land { height: auto; width: 100%; max-width: 707px; aspect-ratio: 4 / 3; }
 
@@ -3924,7 +3951,7 @@
       <i data-lucide="book" style="width:20px;height:20px;color:rgba(0,0,0,0.86);"></i><span>노트</span>
     </button>
     <button class="hsm-row" id="hsmSmart" type="button">
-      <i data-lucide="book-marked" style="width:20px;height:20px;color:rgba(0,0,0,0.86);"></i><span>스마트 노트</span>
+      <i data-lucide="book-marked" style="width:20px;height:20px;color:rgba(0,0,0,0.86);"></i><span>스마트 패드</span>
     </button>
     <button class="hsm-row" id="hsmImport" type="button">
       <i data-lucide="download" style="width:20px;height:20px;color:rgba(0,0,0,0.86);"></i><span>불러오기</span>
@@ -4544,7 +4571,9 @@
       }
       document.getElementById('spHeaderTitle').textContent = '페이지';
       closeCalInlinePanel(); // 탭 전환 시 이전 탭에서 열려있던 인라인 캘린더는 닫아둔다
-      if (mode === 'calendar') {
+      if (mode === 'pad') {
+        renderPadCanvas(tabEl);
+      } else if (mode === 'calendar') {
         renderCalendarNoteCanvas(tabEl);
         ensureCalendarPicker(tabEl);
       } else if (mode === 'weekly') {
@@ -4716,6 +4745,24 @@
     const t = new Date();
     if (!tabEl._monthPages) tabEl._monthPages = [monthKeyOf(t.getFullYear(), t.getMonth() + 1)];
     return tabEl._monthPages;
+  }
+
+  // 스마트 패드 — 종이가 아니라 화면. 페이지 한 장이 프레임을 꽉 채우고
+  // 속지 추가 버튼도, 펜 입력(그리기 캔버스)도 없다.
+  function renderPadCanvas(tabEl) {
+    canvasZoomWrap.innerHTML = '';
+    const t = new Date();
+    const dateText = `${String(t.getFullYear()).slice(2)}.${String(t.getMonth() + 1).padStart(2, '0')}.${String(t.getDate()).padStart(2, '0')}`;
+    canvasZoomWrap.insertAdjacentHTML('beforeend',
+      buildCardHTML({ id: 'pad-' + dateText.replace(/\./g, ''), dateText, empty: false, today: true }));
+    const card = canvasZoomWrap.lastElementChild;
+    card.dataset.pageType = 'daily';
+    card.dataset.dateText = dateText;
+    buildGrid(card, TODAY_FILLS);
+    card.querySelector('.card-draw-canvas')?.remove(); // 펜 입력 없음
+    initEmojiPicker(card);
+    lucide.createIcons({ nodes: [card] });
+    rebuildPanel([], -1); // 페이지 목록도 쓰지 않는다
   }
 
   function renderWeeklyCanvas(tabEl, selectedIdx) {
@@ -6771,8 +6818,8 @@
     homeScreen.classList.toggle('hs-visible', !!isHome && showTab);
 
     const isNote = showTab && !isHome && !isQuick;
-    // 페이지 패널 플로팅 버튼은 노트 화면에서만 뜬다 (홈·타이머·플레이스홀더에는 패널이 없다)
-    panelToggleBtn.style.display = isNote ? '' : 'none';
+    // 페이지 패널 플로팅 버튼은 노트 화면에서만 뜬다. 스마트 패드는 페이지가 한 장뿐이라 감춘다
+    panelToggleBtn.style.display = (isNote && noteType !== 'pad') ? '' : 'none';
     // 할 일·일정·그룹·통계는 각자 화면을 그리고, 그 밖의 탭만 플레이스홀더를 쓴다
     const quickKey = activeTab?.dataset.quick || '';
     const showQuick = isQuick && !isTimer && showTab;
@@ -7809,7 +7856,7 @@
       dot:   'radial-gradient(rgba(0,0,0,0.2) 1px, transparent 1px) 0 0 / 8% 6%, #fff',
     };
     const PLAIN_DESC = '아무것도 없는 빈 속지예요. 필기, 그림, 메모 무엇이든 자유롭게 올려두세요.';
-    let ibMode = 'smart'; // 'smart' = 스터디 노트 템플릿 · 'plain' = 무지 노트
+    let ibMode = 'smart'; // 'smart' = 스마트 패드 템플릿 · 'plain' = 무지 노트
 
     const INSERT_TAGS = ['공부 시간 자동 기록', '과목 별 할 일 관리', 'D-day', '다양한 테마'];
     const INSERT_DESC = '매일 함께해주는 감성 플래너. 과목별로 할일을 체크리스트로 정리하고, 오늘 공부한 시간은 자동으로 기록돼요. D-day로 다가오는 시험이나 일정을 챙기고, 하루하루 쌓이는 기록은 잔디 형태로 한눈에 확인할 수 있어요.';
@@ -7890,10 +7937,10 @@
 
     // ── 1) 새 노트 추가 ───────────────────────────────────────
     // ── 1) 목록 진입 ─────────────────────────────────────────
-    // + 메뉴에서 바로 온다. "노트"는 무지 속지, "스마트 노트"는 스터디 노트 템플릿.
+    // + 메뉴에서 바로 온다. "노트"는 무지 속지, "스마트 패드"는 데이터가 연동되는 화면형 템플릿.
     const SMART_TYPE = {
-      id: 'study', name: '스터디 노트',
-      desc: '공부 시간, 할일, 일정이 연동되는 공부 관리 노트.\n종이 위에 공부 데이터를 연동하고 그 위에 자유롭게 필기하세요.'
+      id: 'pad', name: '스마트 패드',
+      desc: '공부 시간, 할일, 일정이 연동되는 공부 관리 화면.\n종이가 아니라 화면에 맞게 꽉 차고, 필기 대신 데이터로 채웁니다.'
     };
     const PLAIN_TYPE = {
       id: 'plain', name: '노트',
@@ -8143,14 +8190,16 @@
       input.value = '';
 
       // 홈 목록에도 새 노트를 꽂아준다 — 표지 색은 방금 고른 값을 그대로 쓴다
+      // 스마트 패드는 종이가 아니라 화면 — 속지 추가·펜 입력이 없는 pad 타입으로 연다
+      const isPad = ibMode === 'smart';
       const note = {
-        name, date: '방금 전', icon: 'notebook-pen',
+        name, date: '방금 전', icon: isPad ? 'tablet' : 'notebook-pen',
         color: cover ? cover.bg : '#f2f2f2',
         pattern: null,
-        noteType: 'scroll'
+        noteType: isPad ? 'pad' : 'scroll'
       };
       HOME_NOTES.unshift(note);
-      createTodayPageForNewNote();
+      if (!isPad) createTodayPageForNewNote();
       const cardEl = buildNoteCardEl(note);
       if (window.lucide) lucide.createIcons({ nodes: [cardEl] });
       // 목록 화면이 걷힌 다음에 끼어들어야 홈에서 그 움직임이 보인다
