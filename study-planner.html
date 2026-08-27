@@ -3069,12 +3069,12 @@
       color: rgba(0,0,0,0.45); letter-spacing: -0.039px;
     }
     .hm-quick {
-      display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;
+      display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px;
       padding: 0 24px 22px;
     }
     .hm-card {
       display: flex; align-items: center; gap: 14px;
-      height: 60px; padding: 0 18px; border: none; border-radius: 14px;
+      height: 60px; padding: 0 14px; border: none; border-radius: 14px;
       background: #f5f5f5; cursor: pointer; text-align: left;
       -webkit-tap-highlight-color: transparent;
       transition: background 0.15s ease;
@@ -3097,6 +3097,63 @@
       font-family: 'Pretendard', sans-serif; font-size: 17px; font-weight: 700;
       color: rgba(0,0,0,0.86); letter-spacing: -0.051px;
     }
+
+    /* ══ 할 일 · 일정 · 그룹 · 통계 탭 화면 ════════════════════════
+       타이머/공부 화면과 같은 흰 프레임 + 라운드 패널 틀을 쓴다 */
+    .quick-view {
+      position: fixed; top: 36px; left: 0; right: 0; bottom: 0;
+      z-index: 300; display: none;
+      padding: 8px; box-sizing: border-box;
+      background: #fff; border-radius: 16px 16px 0 0; overflow: hidden;
+      font-family: 'Pretendard', sans-serif;
+    }
+    .quick-view.show { display: block; }
+    /* 스플릿에서는 오른쪽 패널 자리로 */
+    .quick-view.split { left: calc(25% + 4px); padding-left: 0; }
+    .qv-panel {
+      width: 100%; height: 100%; border-radius: 12px; background: #fff;
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,0.07);
+      overflow: hidden auto; scrollbar-width: none;
+    }
+    .qv-panel::-webkit-scrollbar { display: none; }
+    .qv-head { padding: 26px 24px 14px; }
+    .qv-title { font-size: 22px; font-weight: 700; color: rgba(0,0,0,0.86); letter-spacing: -0.066px; }
+    .qv-sub { margin-top: 4px; font-size: 14px; font-weight: 400; color: rgba(0,0,0,0.45); letter-spacing: -0.042px; }
+    .qv-body { padding: 0 24px 40px; }
+    .qv-sec { margin-top: 22px; font-size: 13px; font-weight: 600; color: rgba(0,0,0,0.45); letter-spacing: -0.039px; }
+    /* 공용 리스트 행 */
+    .qv-row {
+      display: flex; align-items: center; gap: 12px;
+      min-height: 48px; padding: 10px 0;
+      border-bottom: 1px solid rgba(0,0,0,0.07);
+    }
+    .qv-row .t { flex: 1 1 0; min-width: 0; font-size: 15px; font-weight: 500; color: rgba(0,0,0,0.86); letter-spacing: -0.045px; }
+    .qv-row .t small { display: block; margin-top: 2px; font-size: 13px; font-weight: 400; color: rgba(0,0,0,0.45); }
+    .qv-row .v { flex-shrink: 0; font-size: 14px; font-weight: 500; color: rgba(0,0,0,0.55); font-variant-numeric: tabular-nums; }
+    .qv-row.done .t { color: rgba(0,0,0,0.3); text-decoration: line-through; }
+    .qv-chk {
+      width: 20px; height: 20px; flex-shrink: 0; border-radius: 6px;
+      border: 1.5px solid rgba(0,0,0,0.2); background: #fff; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; color: #fff;
+    }
+    .qv-chk.on { background: rgba(0,0,0,0.86); border-color: rgba(0,0,0,0.86); }
+    .qv-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .qv-ava { width: 34px; height: 34px; border-radius: 12px; background: #ececec; flex-shrink: 0; }
+    .qv-badge {
+      flex-shrink: 0; padding: 3px 8px; border-radius: 100px;
+      font-size: 12px; font-weight: 600; letter-spacing: -0.036px;
+      background: rgba(0,0,0,0.05); color: rgba(0,0,0,0.55);
+    }
+    .qv-badge.on { background: rgba(59,130,246,0.12); color: #2563eb; }
+    /* 통계 — 요일 막대 */
+    .qv-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 6px; }
+    .qv-card { padding: 16px; border-radius: 14px; background: #f5f5f5; }
+    .qv-card b { display: block; font-size: 20px; font-weight: 700; color: rgba(0,0,0,0.86); font-variant-numeric: tabular-nums; }
+    .qv-card span { display: block; margin-top: 4px; font-size: 13px; color: rgba(0,0,0,0.45); }
+    .qv-bars { display: flex; align-items: flex-end; gap: 12px; height: 180px; margin-top: 14px; }
+    .qv-bar { flex: 1 1 0; display: flex; flex-direction: column; align-items: center; gap: 8px; height: 100%; justify-content: flex-end; }
+    .qv-bar i { display: block; width: 100%; max-width: 44px; border-radius: 8px 8px 0 0; background: #ff6b1a; }
+    .qv-bar b { font-size: 12px; font-weight: 500; color: rgba(0,0,0,0.45); }
 
     /* ══ 타이머 탭 화면 ═══════════════════════════════════════════
        상단 주황 블록(디데이·날짜·시간) + 과목/할일 목록.
@@ -3787,6 +3844,10 @@
           <span class="hm-card-ic"><i data-lucide="users" style="width:22px;height:22px;"></i></span>
           <span class="hm-card-txt"><b>그룹</b><em>3명 공부중</em></span>
         </button>
+        <button class="hm-card" type="button" data-quick="stats">
+          <span class="hm-card-ic"><i data-lucide="pie-chart" style="width:22px;height:22px;"></i></span>
+          <span class="hm-card-txt"><b>통계</b><em>이번 주 12시간</em></span>
+        </button>
       </div>
     </div>
     <div class="home-body">
@@ -3926,6 +3987,17 @@
     </div>
   </div>
 
+
+  <!-- 할 일 · 일정 · 그룹 · 통계 탭 화면 -->
+  <div class="quick-view" id="quickView">
+   <div class="qv-panel">
+    <div class="qv-head">
+      <div class="qv-title" id="qvTitle"></div>
+      <div class="qv-sub" id="qvSub"></div>
+    </div>
+    <div class="qv-body" id="qvBody"></div>
+   </div>
+  </div>
 
   <!-- 타이머 탭 화면 — 과목 앞 시작 버튼을 누르면 공부 화면으로 바뀐다 -->
   <div class="timer-view" id="timerView">
@@ -6163,6 +6235,7 @@
     todo:     { name: '할 일',  icon: 'check-square' },
     schedule: { name: '일정',   icon: 'calendar' },
     group:    { name: '그룹',   icon: 'users' },
+    stats:    { name: '통계',   icon: 'pie-chart' },
   };
   function quickTabEl(key) { return tabLabels.querySelector(`.tab[data-quick="${key}"]:not(.closing)`); }
   function timerTabEl() { return quickTabEl('timer'); }
@@ -6174,6 +6247,112 @@
   }
   document.querySelectorAll('.hm-card').forEach(btn => {
     btn.addEventListener('click', () => openQuickTab(btn.dataset.quick));
+  });
+
+  // ── 할 일 · 일정 · 그룹 · 통계 화면 ───────────────────────
+  const quickView = document.getElementById('quickView');
+  const CHECK_SVG = '<i data-lucide="check" style="width:13px;height:13px;"></i>';
+
+  const QV_TODO = [
+    { sec: '오늘', items: [
+      { t: '영어 수업', s: '오전 09:00', done: true },
+      { t: '수학 문제집 20p', s: '개념원리 3단원' },
+      { t: '국어 오답노트 정리' },
+    ]},
+    { sec: '내일', items: [
+      { t: '모의고사 대비 3회차' },
+      { t: '영단어 100개' },
+    ]},
+  ];
+  const QV_SCHEDULE = [
+    { sec: '오늘 · 4월 4일 (토)', items: [
+      { t: '영어 수업', s: '오전 09:00 – 12:00', c: '#3b82f6' },
+      { t: '스터디 그룹', s: '오후 01:00 – 03:00', c: '#22c55e' },
+    ]},
+    { sec: '4월 5일 (일)', items: [
+      { t: '중간고사 2일차', s: '오전 08:40', c: '#ff6b1a' },
+      { t: '수학 과외', s: '오후 07:00 – 09:00', c: '#a855f7' },
+    ]},
+  ];
+  const QV_GROUP = [
+    { n: '꽃길만걷자', on: true,  time: '3:12:04' },
+    { n: '별밤달빛',   on: true,  time: '2:48:30' },
+    { n: 'SummerSea', on: true,  time: '1:20:11' },
+    { n: '겨울아이',   on: false, time: '0:45:02' },
+    { n: '푸른하늘',   on: false, time: '0:12:47' },
+  ];
+  const QV_WEEK = [
+    { d: '월', h: 2.5 }, { d: '화', h: 3.2 }, { d: '수', h: 1.4 }, { d: '목', h: 2.8 },
+    { d: '금', h: 0.9 }, { d: '토', h: 1.2 }, { d: '일', h: 0.6 },
+  ];
+
+  function qvSections(list, rowHTML) {
+    return list.map(g =>
+      `<div class="qv-sec">${g.sec}</div>` + g.items.map(rowHTML).join('')
+    ).join('');
+  }
+
+  const QUICK_VIEWS = {
+    todo: () => ({
+      title: '할 일', sub: '오늘 3개 · 내일 2개',
+      body: qvSections(QV_TODO, it =>
+        `<div class="qv-row${it.done ? ' done' : ''}">` +
+        `<span class="qv-chk${it.done ? ' on' : ''}">${it.done ? CHECK_SVG : ''}</span>` +
+        `<span class="t">${it.t}${it.s ? `<small>${it.s}</small>` : ''}</span></div>`),
+    }),
+    schedule: () => ({
+      title: '일정', sub: '중간고사 2일차',
+      body: qvSections(QV_SCHEDULE, it =>
+        `<div class="qv-row"><span class="qv-dot" style="background:${it.c};"></span>` +
+        `<span class="t">${it.t}<small>${it.s}</small></span></div>`),
+    }),
+    group: () => ({
+      title: '그룹', sub: '직장인분들은 같이 발전합시다 · 8명 중 3명 공부중',
+      body: QV_GROUP.map(m =>
+        `<div class="qv-row"><span class="qv-ava"></span>` +
+        `<span class="t">${m.n}</span>` +
+        `<span class="qv-badge${m.on ? ' on' : ''}">${m.on ? '공부중' : '휴식'}</span>` +
+        `<span class="v">${m.time}</span></div>`).join(''),
+    }),
+    stats: () => {
+      const total = QV_WEEK.reduce((a, b) => a + b.h, 0);
+      const max = Math.max(...QV_WEEK.map(w => w.h));
+      const hm = h => `${Math.floor(h)}시간 ${Math.round((h % 1) * 60)}분`;
+      return {
+        title: '통계', sub: '이번 주 공부 기록',
+        body:
+          `<div class="qv-cards">` +
+            `<div class="qv-card"><b>${hm(total)}</b><span>이번 주 합계</span></div>` +
+            `<div class="qv-card"><b>${hm(total / 7)}</b><span>하루 평균</span></div>` +
+            `<div class="qv-card"><b>5일</b><span>연속 공부</span></div>` +
+          `</div>` +
+          `<div class="qv-sec">요일별</div>` +
+          `<div class="qv-bars">` + QV_WEEK.map(w =>
+            `<span class="qv-bar"><i style="height:${Math.round(w.h / max * 100)}%;"></i><b>${w.d}</b></span>`
+          ).join('') + `</div>`,
+      };
+    },
+  };
+
+  function renderQuickView(key) {
+    const make = QUICK_VIEWS[key];
+    if (!make) return false;
+    const v = make();
+    document.getElementById('qvTitle').textContent = v.title;
+    document.getElementById('qvSub').textContent = v.sub;
+    document.getElementById('qvBody').innerHTML = v.body;
+    if (window.lucide) lucide.createIcons({ nodes: [quickView] });
+    return true;
+  }
+
+  // 할 일 체크는 그 자리에서 토글된다
+  document.getElementById('qvBody').addEventListener('click', e => {
+    const chk = e.target.closest('.qv-chk');
+    if (!chk) return;
+    const on = chk.classList.toggle('on');
+    chk.innerHTML = on ? CHECK_SVG : '';
+    chk.closest('.qv-row')?.classList.toggle('done', on);
+    if (window.lucide) lucide.createIcons({ nodes: [chk] });
   });
 
   // ── 공부 타이머 — 버튼과 공부 화면의 시간이 함께 흘러간다 ──
@@ -6329,7 +6508,7 @@
   // 우측 패널(노트 캔버스·홈)은 프레임 밖 오른쪽에서 밀려 들어온다.
   // 폭 자체는 즉시 75%로 잡고, 움직임만 transform으로 준다.
   const SPLIT_OUT = 'translateX(calc(100% + 16px))';
-  function rightPanes() { return [wsFrame, homeScreen]; }
+  function rightPanes() { return [wsFrame, homeScreen, quickView]; }
   function slideRightPaneIn() {
     rightPanes().forEach(el => { el.style.transition = 'none'; el.style.transform = SPLIT_OUT; });
     void wsFrame.offsetWidth; // 리플로우 — 시작 위치를 확정시킨다
@@ -6360,10 +6539,12 @@
       // 폭은 즉시 잡고, 오른쪽 프레임 밖에서 제자리로 밀어 넣는다
       workspaceEl.classList.add('split');
       homeScreen.classList.add('split');
+      quickView.classList.add('split');
       slideRightPaneIn();
     } else if (instant) {
       workspaceEl.classList.remove('split');
       homeScreen.classList.remove('split');
+      quickView.classList.remove('split');
       resetRightPane();
     } else {
       // 오른쪽으로 밀어낸 뒤에야 전체 폭으로 되돌린다
@@ -6371,6 +6552,7 @@
       splitT = setTimeout(() => {
         workspaceEl.classList.remove('split');
         homeScreen.classList.remove('split');
+        quickView.classList.remove('split');
         resetRightPane();
       }, 330);
     }
@@ -6432,7 +6614,12 @@
     const isNote = showTab && !isHome && !isQuick;
     // 페이지 패널 플로팅 버튼은 노트 화면에서만 뜬다 (홈·타이머·플레이스홀더에는 패널이 없다)
     panelToggleBtn.style.display = isNote ? '' : 'none';
-    const showPlaceholder = isQuick && !isTimer && showTab;
+    // 할 일·일정·그룹·통계는 각자 화면을 그리고, 그 밖의 탭만 플레이스홀더를 쓴다
+    const quickKey = activeTab?.dataset.quick || '';
+    const showQuick = isQuick && !isTimer && showTab;
+    const hasQuickView = showQuick && renderQuickView(quickKey);
+    quickView.classList.toggle('show', hasQuickView);
+    const showPlaceholder = showQuick && !hasQuickView;
     viewPlaceholder.style.display = showPlaceholder ? 'flex' : 'none';
     viewPlaceholderLabel.textContent = showPlaceholder ? tabName : '';
     if (!onLeft) setSplit(false, true); // 타이머/공부 화면을 벗어나면 스플릿도 곧바로 풀린다
