@@ -3101,20 +3101,31 @@
     /* ══ 타이머 탭 화면 ═══════════════════════════════════════════
        상단 주황 블록(디데이·날짜·시간) + 과목/할일 목록.
        과목 앞 시작 버튼을 누르면 공부 화면으로 바뀐다 */
+    /* 공부 화면과 같은 틀 — 바깥 8px 흰 프레임, 안쪽 패널이 라운드로 잘린다 */
     .timer-view {
       position: fixed; top: 36px; left: 0; right: 0; bottom: 0;
       z-index: 300; display: none;
-      background: #fff; overflow-y: auto; scrollbar-width: none;
+      padding: 8px; box-sizing: border-box;
+      background: #fff; border-radius: 16px 16px 0 0; overflow: hidden;
       font-family: 'Pretendard', sans-serif;
+      transition: right 0.32s cubic-bezier(0.4, 0, 0.2, 1),
+                  padding-right 0.32s cubic-bezier(0.4, 0, 0.2, 1),
+                  border-radius 0.32s cubic-bezier(0.4, 0, 0.2, 1);
     }
-    .timer-view::-webkit-scrollbar { display: none; }
     .timer-view.show { display: block; }
     /* 공부 화면과 같은 UI이므로 스플릿 기하도 똑같이 — 왼쪽 25%로 좁아진다 */
-    .timer-view { transition: right 0.32s cubic-bezier(0.4, 0, 0.2, 1); }
-    .timer-view.split { right: 75%; }
+    .timer-view.split { right: 75%; padding-right: 4px; border-radius: 16px 0 0 0; }
+    /* 안쪽 패널 — 흰 프레임 위에서도 경계가 보이도록 연한 구분선을 두른다 */
+    .tv-panel {
+      position: relative; width: 100%; height: 100%;
+      border-radius: 12px; overflow: hidden auto; scrollbar-width: none;
+      background: #fff;
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,0.07);
+    }
+    .tv-panel::-webkit-scrollbar { display: none; }
     .tv-head {
       position: relative; background: #ff6b1a; color: #fff;
-      padding: 18px 20px 26px; border-radius: 12px; margin: 8px;
+      padding: 18px 20px 26px; border-radius: 12px 12px 0 0;
     }
     .tv-dday { font-size: 13px; font-weight: 600; letter-spacing: -0.039px; }
     .tv-date {
@@ -3186,6 +3197,7 @@
     .sv-panel {
       position: relative; width: 100%; height: 100%;
       border-radius: 12px; overflow: hidden auto; /* 안쪽 패널은 네 모서리 모두 12px */
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,0.07); /* 흰 프레임과 맞닿는 경계선 */
       background: #14213d url('assets/study-bg.png') center top / cover no-repeat;
     }
     .sv-panel::-webkit-scrollbar { display: none; }
@@ -3917,6 +3929,7 @@
 
   <!-- 타이머 탭 화면 — 과목 앞 시작 버튼을 누르면 공부 화면으로 바뀐다 -->
   <div class="timer-view" id="timerView">
+   <div class="tv-panel">
     <div class="tv-head">
       <span class="tv-dday">D-36</span>
       <span class="tv-date" id="tvDate">4. 4 (토)</span>
@@ -3931,6 +3944,7 @@
       <div class="tv-sub" id="tvSub">1분 57초</div>
     </div>
     <div class="tv-list" id="tvList"></div>
+   </div>
   </div>
 
   <!-- 공부 탭 화면 (Figma 6382:861492) — 툴바·캔버스를 대체한다 -->
