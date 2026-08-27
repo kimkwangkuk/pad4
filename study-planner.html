@@ -331,7 +331,7 @@
       z-index: 2;
     }
 
-    /* ── 스마트 패드 — 종이가 아니라 화면을 꽉 채우는 반응형 페이지 ──
+    /* ── 스마트패드 — 종이가 아니라 화면을 꽉 채우는 반응형 페이지 ──
        확대가 아니라 레이아웃이 늘어난다: 글자 크기는 그대로고 남는 공간을
        과목 목록과 타임테이블이 나눠 갖는다 */
     /* 캔버스(아트보드) 위에 놓인 종이가 아니라, 홈처럼 프레임을 그대로 채운다 */
@@ -355,7 +355,7 @@
     [data-mode="pad"] .g-row,
     [data-mode="pad"] .g-row td { height: auto; }
 
-    /* ── 타임라인 스마트 패드 ─────────────────────────────
+    /* ── 타임라인 스마트패드 ─────────────────────────────
        왼쪽은 시간 축과 공부 블록, 오른쪽은 그날의 기록 목록 */
     .tl {
       display: flex; flex-direction: column; background: #fff; overflow: hidden;
@@ -2415,7 +2415,11 @@
     .grid-ic i { border:2px solid rgba(0,0,0,.86); border-radius:2px; }
 
     .home-body { flex:1; display:flex; flex-direction:column; }
-    .note-grid { display:grid; grid-template-columns:repeat(5,170px); justify-content:space-between; row-gap:40px; padding:0 20px 40px; }
+    /* 홈 카드 격자 — 가로 섬네일이 한 줄에 다섯, 간격은 넉넉하게 */
+    .note-grid {
+      display: grid; grid-template-columns: repeat(5, minmax(0, 260px));
+      column-gap: 50px; row-gap: 40px; padding: 0 24px 40px;
+    }
 
     .fab-add-btn {
       position:fixed; right:20px; bottom:20px; width:60px; height:60px; border-radius:50%;
@@ -2433,11 +2437,12 @@
     .nb-spine i { width:.944px; height:100%; background:linear-gradient(to bottom, rgba(0,0,0,.25), rgba(255,255,255,.25) 20%, rgba(0,0,0,.25)); }
     .nb-inset { position:absolute; inset:0; border-radius:inherit; box-shadow:inset -1.417px -1.417px .944px rgba(0,0,0,.15); pointer-events:none; }
     .nb-deco { position:absolute; color:rgba(255,255,255,.9); pointer-events:none; font-weight:700; letter-spacing:-.3px; font-family: 'Pretendard', sans-serif; }
-    .note-info { display:flex; align-items:flex-start; width:100%; }
-    .note-info .txt { flex:1; min-width:0; }
+    /* 캡션 — 이름을 가운데 두고 오른쪽에 메뉴 화살표 */
+    .note-info { display:flex; align-items:center; justify-content:center; gap:4px; width:100%; margin-top:12px; }
+    .note-info .txt { min-width:0; text-align:center; }
     .note-info .nname { font-family: 'Pretendard', sans-serif; font-size:14px; font-weight:600; color:rgba(0,0,0,.86); letter-spacing:-.042px; line-height:1.4; }
     .note-info .ntime { font-family: 'Pretendard', sans-serif; font-size:10px; font-weight:400; color:rgba(0,0,0,.59); line-height:1.4; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-    .note-info .chev { font-size:12px; color:rgba(0,0,0,.4); padding:2px 8px 0; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+    .note-info .chev { font-size:12px; color:rgba(0,0,0,.45); padding:0 2px; cursor:pointer; -webkit-tap-highlight-color:transparent; }
 
     /* ─── 홈 노트 이름 변경 팝업 ───────────────────────────── */
     .rn-backdrop { position:fixed; inset:0; background:rgba(0,0,0,0.35); opacity:0; pointer-events:none; transition:opacity .2s; z-index:6000; }
@@ -2716,26 +2721,18 @@
       display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,0.9);
     }
     .nbf { width: 170px; height: 226.667px; display: flex; align-items: center; justify-content: center; }
-    /* 스마트 패드는 표지가 없다 — 스토어와 같은 화면 섬네일로 보여준다 */
-    /* 홈에 미리 깔린 기능 카드 — 타이머·할 일·캘린더·통계 */
-    .nbq { width: 170px; height: 226.667px; display: flex; align-items: center; justify-content: center; }
-    .nbq-tile {
-      width: 170px; aspect-ratio: 4 / 3; border-radius: 14px;
-      display: flex; align-items: center; justify-content: center;
-      box-shadow: 1px 1px 3px rgba(0,0,0,0.15), 0 5px 10px rgba(0,0,0,0.05);
-    }
-    .nbq-tile svg { width: 42px; height: 42px; }
-
-    .nbp { width: 170px; height: 226.667px; display: flex; align-items: center; justify-content: center; }
+    /* 스마트패드는 표지가 없다 — 스토어와 같은 화면 섬네일로 보여준다 */
+    /* 화면 섬네일 — 흰 프레임(라운드 20) 안에 화면(라운드 12)이 꽉 찬다 */
+    .nbp { width: 100%; display: flex; align-items: flex-end; justify-content: center; }
     .nbp-screen {
-      position: relative; width: 170px;
-      padding: 5px; background: #fff; border-radius: 9px; overflow: hidden;
-      box-shadow: 1px 1px 3px rgba(0,0,0,0.15), 0 5px 10px rgba(0,0,0,0.05);
+      position: relative; width: 100%;
+      padding: 5.25px; background: #fff; border-radius: 20px; overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.15), 0 5px 10px rgba(0,0,0,0.05);
     }
-    /* 화면은 프레임 안쪽을 가로·세로 모두 채운다 (비율을 여기서 잡아야 딱 맞는다) */
     .nbp-inner {
       position: relative; width: 100%; aspect-ratio: 4 / 3;
-      border: 0.5px solid rgba(0,0,0,0.12); border-radius: 5px; overflow: hidden;
+      border: 0.5px solid rgba(0,0,0,0.08); border-radius: 12px; overflow: hidden;
+      background: #fff;
     }
     .nbp-inner .card { border-radius: 0; box-shadow: none; }
 
@@ -2848,7 +2845,7 @@
     }
     .ib-hero-pages > div:first-child { right: 46px; }
     .ib-hero-pages > div:last-child  { right: 0; }
-    /* 스마트 패드 — 가로 목업 한 장 + 떠 있는 아이콘 배지 두 개 */
+    /* 스마트패드 — 가로 목업 한 장 + 떠 있는 아이콘 배지 두 개 */
     .ib-hero-pages.pad { width: 240px; height: 156px; }
     .ib-hero-pages.pad > .ib-hero-page {
       right: 0; height: 100%; aspect-ratio: 4 / 3; border-radius: 8px;
@@ -2889,7 +2886,7 @@
       column-gap: 20px; row-gap: 28px;
       padding-top: 22px; padding-bottom: 48px;
     }
-    /* 스마트 패드는 가로 섬네일이라 4열 */
+    /* 스마트패드는 가로 섬네일이라 4열 */
     .ib-grid.pad { grid-template-columns: repeat(4, 1fr); column-gap: 16px; row-gap: 26px; }
     .ib-grid.pad .ib-thumbwrap { aspect-ratio: auto; align-items: stretch; }
     /* 섬네일 = 흰 프레임 + 그 안에 테두리 있는 화면 (Figma 7902:965588) */
@@ -2911,7 +2908,7 @@
       color: rgba(0,0,0,0.45); letter-spacing: -0.036px;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
-    /* 스마트 패드 칸은 제목·설명 모두 왼쪽 정렬 — 이름 길이가 달라도 줄이 맞는다 */
+    /* 스마트패드 칸은 제목·설명 모두 왼쪽 정렬 — 이름 길이가 달라도 줄이 맞는다 */
     .ib-grid.pad .ib-name {
       margin-top: 10px; text-align: left; font-weight: 600;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
@@ -2974,7 +2971,7 @@
       box-shadow: 0 0 0 1px rgba(0,0,0,0.07), 0 10px 30px rgba(0,0,0,0.14);
     }
     .ids-hero-page.land { height: auto; width: 100%; max-width: 707px; aspect-ratio: 4 / 3; }
-    /* 스마트 패드 미리보기 — 화면이므로 안쪽은 꽉 차고, 프레임은 테두리·그림자로만
+    /* 스마트패드 미리보기 — 화면이므로 안쪽은 꽉 차고, 프레임은 테두리·그림자로만
        (여백을 주면 썸네일 스케일 계산이 어긋난다) */
     .ids-hero-page.pad {
       border-radius: 10px;
@@ -4013,11 +4010,11 @@
   <!-- ═══ 새 노트 만들기 플로우 ═══════════════════════════════════ -->
   <!-- 홈 + 버튼 메뉴 (노트 / 폴더) -->
   <div class="hsm-menu" id="hsAddMenu" onclick="event.stopPropagation()">
+    <button class="hsm-row" id="hsmSmart" type="button">
+      <i data-lucide="tablet" style="width:20px;height:20px;color:rgba(0,0,0,0.86);"></i><span>스마트패드</span>
+    </button>
     <button class="hsm-row" id="hsmNote" type="button">
       <i data-lucide="book" style="width:20px;height:20px;color:rgba(0,0,0,0.86);"></i><span>노트</span>
-    </button>
-    <button class="hsm-row" id="hsmSmart" type="button">
-      <i data-lucide="book-marked" style="width:20px;height:20px;color:rgba(0,0,0,0.86);"></i><span>스마트 패드</span>
     </button>
     <button class="hsm-row" id="hsmImport" type="button">
       <i data-lucide="download" style="width:20px;height:20px;color:rgba(0,0,0,0.86);"></i><span>불러오기</span>
@@ -4166,7 +4163,7 @@
    </div>
   </div>
 
-  <!-- 마지막 단계 — 이름 입력 팝업 (표지 선택 위에 겹치거나, 스마트 패드는 단독으로 뜬다) -->
+  <!-- 마지막 단계 — 이름 입력 팝업 (표지 선택 위에 겹치거나, 스마트패드는 단독으로 뜬다) -->
   <div class="nwz-ask" id="nwzAsk" hidden>
     <div class="nwz-ask-box">
       <div class="nwz-ask-title">노트 이름</div>
@@ -4819,7 +4816,7 @@
     return tabEl._monthPages;
   }
 
-  // ── 타임라인 스마트 패드 ────────────────────────────────
+  // ── 타임라인 스마트패드 ────────────────────────────────
   const TL_START = 6, TL_END = 24; // 표시 구간 (6시 ~ 24시)
   const TL_SESSIONS = [
     { s: 7.0,  e: 8.5,  n: '국어', c: '#3b82f6' },
@@ -4868,7 +4865,7 @@
     return el;
   }
 
-  // 스마트 패드 — 종이가 아니라 화면. 페이지 한 장이 프레임을 꽉 채우고
+  // 스마트패드 — 종이가 아니라 화면. 페이지 한 장이 프레임을 꽉 채우고
   // 속지 추가 버튼도, 펜 입력(그리기 캔버스)도 없다.
   function renderPadCanvas(tabEl) {
     canvasZoomWrap.innerHTML = '';
@@ -6277,32 +6274,35 @@
 
   // 홈에 기본으로 깔리는 기능 카드 — 누르면 각자의 고유 탭이 열린다
   const HOME_QUICKS = [
-    { quick: 'timer',    name: '타이머', icon: 'timer',        sub: '0:00:00',        c: '#ff6b1a', subId: 'hmTimerVal' },
-    { quick: 'todo',     name: '할 일',  icon: 'check-square', sub: '오늘 3개',        c: '#3b82f6' },
-    { quick: 'schedule', name: '캘린더', icon: 'calendar',     sub: '중간고사 2일차',  c: '#22c55e' },
-    { quick: 'stats',    name: '통계',   icon: 'pie-chart',    sub: '이번 주 12시간',  c: '#a855f7' },
+    { quick: 'timer',    name: '타이머' },
+    { quick: 'todo',     name: '할일'   },
+    { quick: 'schedule', name: '캘린더' },
+    { quick: 'stats',    name: '통계'   },
   ];
   function buildQuickCardEl(q) {
     const card = document.createElement('div');
     card.className = 'note-card';
     card.innerHTML = `
-      <div class="nbq">
-        <div class="nbq-tile" style="background:${q.c}1f;color:${q.c};">
-          <i data-lucide="${q.icon}"></i>
-        </div>
-      </div>
+      <div class="nbp"><div class="nbp-screen"><div class="nbp-inner"></div></div></div>
       <div class="note-info">
-        <div class="txt">
-          <div class="nname">${q.name}</div>
-          <div class="ntime"${q.subId ? ` id="${q.subId}"` : ''}>${q.sub}</div>
-        </div>
+        <div class="txt"><div class="nname">${q.name}</div></div>
+        <div class="chev">⌄</div>
       </div>
     `;
+    // 카드가 홈에 붙어 폭이 잡힌 뒤에 화면을 축소해 그린다
+    let tries = 0;
+    const paint = () => {
+      const inner = card.querySelector('.nbp-inner');
+      if (!inner) return;
+      if (!inner.offsetWidth && tries++ < 120) { requestAnimationFrame(paint); return; }
+      window.paintQuickMock?.(inner, q.quick);
+    };
+    requestAnimationFrame(paint);
     card.addEventListener('click', () => openQuickTab(q.quick));
     return card;
   }
 
-  // 스마트 패드 카드 — 책 표지 대신 스토어와 같은 화면 섬네일을 놓는다
+  // 스마트패드 카드 — 책 표지 대신 스토어와 같은 화면 섬네일을 놓는다
   function buildPadCardEl(note) {
     const card = document.createElement('div');
     card.className = 'note-card';
@@ -6720,6 +6720,47 @@
     },
   };
 
+  // 홈 카드 섬네일 — 각 기능의 실제 화면을 그대로 축소해서 보여준다
+  function quickMockHTML(kind) {
+    if (kind === 'timer') {
+      const t = new Date();
+      const rows = TIMER_SUBJECTS.map(s2 =>
+        `<div class="tv-row subj">` +
+        `<span class="tv-play" style="background:${s2.color};"></span>` +
+        `<span class="tv-name">${s2.name}</span>` +
+        `<span class="tv-time-cell">${fmtStudy(s2.sec)}</span></div>` +
+        s2.todos.map(td =>
+          `<div class="tv-row todo"><span class="tv-name">${td.t}</span>` +
+          `<span class="tv-check${td.done ? ' on' : ''}"></span></div>`).join('')
+      ).join('');
+      return `<div class="tv-panel" style="height:100%;">
+          <div class="tv-head">
+            <span class="tv-dday">D-36</span>
+            <span class="tv-date">${t.getMonth() + 1}. ${t.getDate()}</span>
+            <div class="tv-time-wrap"><div class="tv-time">${fmtStudy(studySec)}</div></div>
+            <div class="tv-sub">오늘 공부 중</div>
+          </div>
+          <div class="tv-list">${rows}</div>
+        </div>`;
+    }
+    const v = QUICK_VIEWS[kind] && QUICK_VIEWS[kind]();
+    if (!v) return '';
+    return `<div class="qv-panel" style="height:100%;box-shadow:none;border-radius:0;">
+        <div class="qv-head"><div class="qv-head-txt">
+          <div class="qv-title">${v.title}</div><div class="qv-sub">${v.sub}</div>
+        </div></div>
+        <div class="qv-body">${v.body}</div>
+      </div>`;
+  }
+  window.paintQuickMock = (el, kind) => {
+    const src = document.createElement('div');
+    src.dataset.orient = 'landscape';
+    src.style.cssText = 'width:800px;height:600px;background:#fff;overflow:hidden;' +
+                        "font-family:'Pretendard',sans-serif;";
+    src.innerHTML = quickMockHTML(kind);
+    renderMp2Thumb(src, el);
+  };
+
   function renderQuickView(key) {
     const make = QUICK_VIEWS[key];
     if (!make) return false;
@@ -7010,7 +7051,7 @@
     homeScreen.classList.toggle('hs-visible', !!isHome && showTab);
 
     const isNote = showTab && !isHome && !isQuick;
-    // 페이지 패널 플로팅 버튼은 노트 화면에서만 뜬다. 스마트 패드는 페이지가 한 장뿐이라 감춘다
+    // 페이지 패널 플로팅 버튼은 노트 화면에서만 뜬다. 스마트패드는 페이지가 한 장뿐이라 감춘다
     panelToggleBtn.style.display = (isNote && noteType !== 'pad') ? '' : 'none';
     // 할 일·일정·그룹·통계는 각자 화면을 그리고, 그 밖의 탭만 플레이스홀더를 쓴다
     const quickKey = activeTab?.dataset.quick || '';
@@ -7049,7 +7090,7 @@
     newTab.dataset.tabName = name;
     newTab.dataset.noteType = noteType || 'scroll';
     if (quickKey) newTab.dataset.quick = quickKey; // 타이머·할일·일정·그룹은 하나씩만 열린다
-    if (padTpl) newTab.dataset.padTpl = padTpl;    // 스마트 패드는 템플릿마다 화면이 다르다
+    if (padTpl) newTab.dataset.padTpl = padTpl;    // 스마트패드는 템플릿마다 화면이 다르다
     if (homeKey) newTab.dataset.homeKey = homeKey; // 같은 항목은 탭 하나만 열린다
     if (newTab.dataset.noteType === 'calendar') {
       const t = new Date();
@@ -8042,7 +8083,7 @@
       { id: 'i8', name: '주간 타임블록',             group: '주간', orient: 'landscape', tint: '#fff3a4', unlocked: false },
       { id: 'i9', name: '먼슬리 그리드',             group: '월간', orient: 'portrait',  tint: '#e8f5ea', unlocked: true },
     ];
-    // 스마트 패드 템플릿 — 종이가 아니라 화면이라 방향 구분 없이 가로 한 종류로 보여준다
+    // 스마트패드 템플릿 — 종이가 아니라 화면이라 방향 구분 없이 가로 한 종류로 보여준다
     // desc = 목록 캡션(한 줄) · long = 상세 팝업 소개
     const PAD_TEMPLATES = [
       { id: 't1', name: '스터디 타이머', desc: '과목별 공부 기록', tint: '#ff6b1a', unlocked: true,
@@ -8079,7 +8120,7 @@
       dot:   'radial-gradient(rgba(0,0,0,0.2) 1px, transparent 1px) 0 0 / 8% 6%, #fff',
     };
     const PLAIN_DESC = '아무것도 없는 빈 속지예요. 필기, 그림, 메모 무엇이든 자유롭게 올려두세요.';
-    let ibMode = 'smart'; // 'smart' = 스마트 패드 템플릿 · 'plain' = 무지 노트
+    let ibMode = 'smart'; // 'smart' = 스마트패드 템플릿 · 'plain' = 무지 노트
 
     const INSERT_TAGS = ['공부 시간 자동 기록', '과목 별 할 일 관리', 'D-day', '다양한 테마'];
     const INSERT_DESC = '매일 함께해주는 감성 플래너. 과목별로 할일을 체크리스트로 정리하고, 오늘 공부한 시간은 자동으로 기록돼요. D-day로 다가오는 시험이나 일정을 챙기고, 하루하루 쌓이는 기록은 잔디 형태로 한눈에 확인할 수 있어요.';
@@ -8169,9 +8210,9 @@
 
     // ── 1) 새 노트 추가 ───────────────────────────────────────
     // ── 1) 목록 진입 ─────────────────────────────────────────
-    // + 메뉴에서 바로 온다. "노트"는 무지 속지, "스마트 패드"는 데이터가 연동되는 화면형 템플릿.
+    // + 메뉴에서 바로 온다. "노트"는 무지 속지, "스마트패드"는 데이터가 연동되는 화면형 템플릿.
     const SMART_TYPE = {
-      id: 'pad', name: '스마트 패드',
+      id: 'pad', name: '스마트패드',
       desc: '공부 시간, 할일, 일정이 연동되는 공부 관리 화면.\n종이가 아니라 화면에 맞게 꽉 차고, 필기 대신 데이터로 채웁니다.'
     };
     const PLAIN_TYPE = {
@@ -8204,7 +8245,7 @@
     $('nnfBack2').addEventListener('click', () => showScreen(ibScreen, false));
 
     function renderIbFilters() {
-      // 스마트 패드는 필터 없이 템플릿만 쭉 보여준다
+      // 스마트패드는 필터 없이 템플릿만 쭉 보여준다
       const filters = document.querySelector('.ib-filters');
       if (filters) filters.style.display = ibMode === 'smart' ? 'none' : '';
       const chips = $('ibChips');
@@ -8244,7 +8285,7 @@
       ibVisibleItems().forEach(item => {
         const cell = document.createElement('div');
         cell.className = 'ib-cell';
-        // 스마트 패드는 화면형이라 항상 가로 섬네일 + 설명 한 줄. 무지 노트는 속지 방향을 따른다
+        // 스마트패드는 화면형이라 항상 가로 섬네일 + 설명 한 줄. 무지 노트는 속지 방향을 따른다
         const isPadItem = ibMode === 'smart';
         const land = isPadItem || item.orient === 'landscape';
         const cap = isPadItem ? item.name : `${item.name} (${item.orient === 'landscape' ? '가로' : '세로'})`;
@@ -8273,7 +8314,7 @@
     function openInsertDetail(item) {
       st.insert = item;
       $('idsName').textContent = item.name;
-      $('idsOrient').textContent = ibMode === 'smart' ? '스마트 패드'
+      $('idsOrient').textContent = ibMode === 'smart' ? '스마트패드'
         : (item.orient === 'landscape' ? '가로형' : '세로형');
       $('idsDesc').textContent = item.long || item.desc || (item.plain ? PLAIN_DESC : INSERT_DESC);
       $('idsBadge').hidden = !!item.unlocked; // 잠긴 속지만 프리미엄 배지
@@ -8327,10 +8368,10 @@
     idsBackdrop.addEventListener('click', closeInsertDetail);
 
     // "이 템플릿으로 노트 생성" → 팝업을 닫고 다음 단계로.
-    // 스마트 패드는 표지가 없으므로 표지 선택을 건너뛰고 바로 이름을 묻는다.
+    // 스마트패드는 표지가 없으므로 표지 선택을 건너뛰고 바로 이름을 묻는다.
     $('idsUse').addEventListener('click', () => {
       const isPad = ibMode === 'smart';
-      const padName = st.insert?.name || '스마트 패드';
+      const padName = st.insert?.name || '스마트패드';
       closeInsertDetail();
       // 패드는 표지도 이름 설정도 없다 — 템플릿 이름 그대로 바로 만들어진다
       setTimeout(() => { if (isPad) createNoteOrPad(padName, true); else openWizard(); }, 240);
@@ -8432,7 +8473,7 @@
     // "노트 생성" — 이름을 확정하고 노트를 만든다.
     // 팝업과 목록 화면을 닫아 홈으로 되돌아간 뒤, 새 노트가 맨 앞에 끼어드는
     // 모습을 보여준다 (기존 카드들은 밀려나는 자리로 부드럽게 이동).
-    // 노트/패드를 실제로 만든다. 스마트 패드는 표지도 이름 설정도 없다.
+    // 노트/패드를 실제로 만든다. 스마트패드는 표지도 이름 설정도 없다.
     function createNoteOrPad(name, isPad) {
       const cover = isPad ? null : currentCover();
       closeWizard();
@@ -8452,7 +8493,7 @@
       // 목록 화면이 걷힌 다음에 끼어들어야 홈에서 그 움직임이 보인다
       setTimeout(() => {
         insertHomeNote(cardEl);
-        window.toast?.show(isPad ? '스마트 패드가 만들어졌습니다' : '노트가 만들어졌습니다');
+        window.toast?.show(isPad ? '스마트패드가 만들어졌습니다' : '노트가 만들어졌습니다');
       }, 430);
     }
 
