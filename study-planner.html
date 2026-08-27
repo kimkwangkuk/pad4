@@ -2821,7 +2821,13 @@
     /* 스마트 패드는 가로 섬네일이라 4열 */
     .ib-grid.pad { grid-template-columns: repeat(4, 1fr); column-gap: 16px; row-gap: 26px; }
     .ib-grid.pad .ib-thumbwrap { aspect-ratio: 4 / 3; align-items: stretch; }
-    .ib-grid.pad .ib-thumb { width: 100%; height: 100%; }
+    /* 섬네일이 종이 한 장이 아니라 화면이다 — 안쪽 여백 없이 프레임을 꽉 채운다 */
+    .ib-grid.pad .ib-thumb {
+      width: 100%; height: 100%; padding: 0; border-radius: 10px; overflow: hidden;
+    }
+    .ib-grid.pad .ib-page { border-radius: 10px; }
+    /* 화면형이라 종이 모서리 라운드도 쓰지 않는다 */
+    .ib-grid.pad .ib-page .card { border-radius: 0; box-shadow: none; }
     .ib-desc {
       margin-top: 4px; text-align: left;
       font-family: 'Pretendard', sans-serif; font-size: 12px; font-weight: 400;
@@ -2891,6 +2897,8 @@
       box-shadow: 0 0 0 1px rgba(0,0,0,0.07), 0 10px 30px rgba(0,0,0,0.14);
     }
     .ids-hero-page.land { height: auto; width: 100%; max-width: 707px; aspect-ratio: 4 / 3; }
+    /* 스마트 패드 미리보기는 종이가 아니라 화면 — 안쪽 카드도 라운드 없이 꽉 채운다 */
+    .ids-hero-page.pad .card { border-radius: 0; box-shadow: none; }
 
     /* 오른쪽 — 정보 */
     .ids-side {
@@ -8102,6 +8110,7 @@
       const page = $('idsHeroPage');
       const padMode = ibMode === 'smart';
       page.classList.toggle('land', padMode || item.orient === 'landscape');
+      page.classList.toggle('pad', padMode);
       setTimeout(() => paintPage(page, padMode ? { ...item, orient: 'landscape' } : item, null), 0);
       $('idsTags').innerHTML = item.plain ? ''
         : INSERT_TAGS.map(t => `<span class="ids-tag">${t}</span>`).join('');
