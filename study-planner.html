@@ -6442,13 +6442,11 @@
       <img class="tab-curve" src="assets/tab-active-right.svg" style="width:29px;height:36px;flex-shrink:0;display:block;transform:scaleX(-1);">
       <div class="tab-shadow"></div>
     `;
-    // 새 탭은 홈 다음(=탭들 중 맨 왼쪽)에 꽂는다 — 최근에 연 탭이 왼쪽에 온다
-    const homeFirst = tabLabels.querySelector('.tab-home:not(.closing)');
-    if (homeFirst) tabLabels.insertBefore(newTab, homeFirst.nextSibling);
-    else tabLabels.insertBefore(newTab, tabLabels.firstChild);
+    // 새 탭은 기존 탭들 뒤에 붙는다
+    tabLabels.appendChild(newTab);
     lucide.createIcons({ nodes: [newTab] });
 
-    // 등장 트랜지션 — 폭 0에서 펴지며 오른쪽 탭들을 밀어낸다 (닫힘의 반대)
+    // 등장 트랜지션 — 왼쪽 끝을 고정한 채 폭 0에서 오른쪽으로 펴진다 (닫힘의 반대)
     const naturalW = newTab.offsetWidth;
     newTab.style.transition  = 'none';
     newTab.style.maxWidth    = '0px';
@@ -6479,7 +6477,7 @@
 
     refreshTabLayout();
     updateView();
-    if (tabsSection) tabsSection.scrollLeft = 0; // 새 탭은 왼쪽에 있다
+    if (tabsSection) tabsSection.scrollLeft = tabsSection.scrollWidth; // 새 탭이 보이도록 끝으로
   }
 
   // Initialise z-index / margin on the static tabs already in HTML
