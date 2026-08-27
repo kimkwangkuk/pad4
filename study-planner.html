@@ -2719,12 +2719,13 @@
     /* 스마트 패드는 표지가 없다 — 스토어와 같은 화면 섬네일로 보여준다 */
     .nbp { width: 170px; height: 226.667px; display: flex; align-items: center; justify-content: center; }
     .nbp-screen {
-      position: relative; width: 170px; aspect-ratio: 4 / 3;
+      position: relative; width: 170px;
       padding: 5px; background: #fff; border-radius: 9px; overflow: hidden;
       box-shadow: 1px 1px 3px rgba(0,0,0,0.15), 0 5px 10px rgba(0,0,0,0.05);
     }
+    /* 화면은 프레임 안쪽을 가로·세로 모두 채운다 (비율을 여기서 잡아야 딱 맞는다) */
     .nbp-inner {
-      position: relative; width: 100%; height: 100%;
+      position: relative; width: 100%; aspect-ratio: 4 / 3;
       border: 0.5px solid rgba(0,0,0,0.12); border-radius: 5px; overflow: hidden;
     }
     .nbp-inner .card { border-radius: 0; box-shadow: none; }
@@ -2881,14 +2882,16 @@
     }
     /* 스마트 패드는 가로 섬네일이라 4열 */
     .ib-grid.pad { grid-template-columns: repeat(4, 1fr); column-gap: 16px; row-gap: 26px; }
-    .ib-grid.pad .ib-thumbwrap { aspect-ratio: 4 / 3; align-items: stretch; }
+    .ib-grid.pad .ib-thumbwrap { aspect-ratio: auto; align-items: stretch; }
     /* 섬네일 = 흰 프레임 + 그 안에 테두리 있는 화면 (Figma 7902:965588) */
     .ib-grid.pad .ib-thumb {
-      width: 100%; height: 100%; padding: 5px; background: #fff;
+      width: 100%; height: auto; padding: 5px; background: #fff;
       border-radius: 9px; overflow: hidden;
       box-shadow: 1px 1px 3px rgba(0,0,0,0.15), 0 5px 10px rgba(0,0,0,0.05);
     }
+    /* 화면이 프레임 안쪽을 가로·세로 모두 채운다 */
     .ib-grid.pad .ib-page {
+      width: 100%; aspect-ratio: 4 / 3;
       border: 0.5px solid rgba(0,0,0,0.12); border-radius: 5px; overflow: hidden;
     }
     /* 안쪽은 종이가 아니라 화면 — 모서리 라운드·그림자를 쓰지 않는다 */
@@ -3551,22 +3554,11 @@
     <div class="tabs-section">
       <!-- Tab labels -->
       <div class="tab-labels">
-        <!-- 홈 탭 — 항상 맨 앞에 고정. 다른 탭과 같은 디자인이되 아이콘만 표시한다 -->
-        <div class="tab tab-home" data-tab-type="home" data-tab-name="홈">
-          <img class="tab-curve" src="assets/tab-inactive-left.svg" style="width:29px;height:36px;flex-shrink:0;display:block;">
-          <div class="tab-inner dim">
-            <i data-lucide="house" style="width:16px;height:16px;flex-shrink:0;color:rgba(0,0,0,0.4);"></i>
-          </div>
-          <img class="tab-curve" src="assets/tab-inactive-right.svg" style="width:29px;height:36px;flex-shrink:0;display:block;transform:scaleX(-1);">
-          <div class="tab-shadow"><img src="assets/tab-shadow.svg" style="position:absolute;inset:0;width:100%;height:100%;"></div>
-        </div>
-        <!-- Active tab: 나의 하루 기록 노트 -->
-        <div class="tab active" style="z-index:7;margin-right:0;">
+        <!-- 홈 탭 — 항상 맨 앞에 고정. 처음 진입하면 이 탭(홈 화면)으로 시작한다 -->
+        <div class="tab tab-home active" data-tab-type="home" data-tab-name="홈">
           <img class="tab-curve" src="assets/tab-active-left.svg" style="width:29px;height:36px;flex-shrink:0;display:block;">
           <div class="tab-inner">
-            <i data-lucide="notebook-pen" style="width:16px;height:16px;flex-shrink:0;color:rgba(0,0,0,0.86);"></i>
-            <span class="tab-label">나의 하루 기록 노트</span>
-            <i data-lucide="x" style="width:16px;height:16px;flex-shrink:0;color:rgba(0,0,0,0.86);"></i>
+            <i data-lucide="house" style="width:16px;height:16px;flex-shrink:0;color:rgba(0,0,0,0.86);"></i>
           </div>
           <img class="tab-curve" src="assets/tab-active-right.svg" style="width:29px;height:36px;flex-shrink:0;display:block;transform:scaleX(-1);">
           <div class="tab-shadow"></div>
@@ -6282,11 +6274,8 @@
   const tabLabels  = document.querySelector('.tab-labels');
   const tabsSection = document.querySelector('.tabs-section');
 
-  const HOME_NOTES = [
-    { name: '데일리 플래너', date: '2일 전', icon: 'sun',            color: '#f34c18', noteType: 'scroll'  },
-    { name: '위클리 플래너', date: '2일 전', icon: 'calendar-range', color: '#452c83', noteType: 'weekly'  },
-    { name: '먼슬리 플래너', date: '2일 전', icon: 'calendar-days',  color: '#1e7f00', noteType: 'monthly' },
-  ];
+  // 처음에는 비어 있다 — 홈에서 만든 노트·패드·폴더가 여기에 쌓인다
+  const HOME_NOTES = [];
 
   // rgb() 문자열로 커버색을 어둡게 만들어 책등(spine) 색을 계산 (참고: note-creation-ipad-v5.html darkenHex)
   function darkenHex(hex, f) {
@@ -6335,9 +6324,15 @@
         <div class="chev">⌄</div>
       </div>
     `;
-    setTimeout(() => {
-      window.paintPagePreview?.(card.querySelector('.nbp-inner'), { orient: 'landscape', tpl: note.padTpl });
-    }, 0);
+    // 카드가 홈에 꽂힌 다음에 그려야 폭이 잡힌다 — 폭이 0이면 다음 프레임에 다시 시도
+    let tries = 0;
+    const paint = () => {
+      const inner = card.querySelector('.nbp-inner');
+      if (!inner) return;
+      if (!inner.offsetWidth && tries++ < 120) { requestAnimationFrame(paint); return; }
+      window.paintPagePreview?.(inner, { orient: 'landscape', tpl: note.padTpl });
+    };
+    requestAnimationFrame(paint);
     card.addEventListener('click', () => openTabFromHome(note.name, note.icon || 'tablet', 'note', 'pad', note.padTpl, homeKeyOf(note)));
     const chevEl = card.querySelector('.chev');
     const nameEl = card.querySelector('.nname');
