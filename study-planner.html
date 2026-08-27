@@ -6909,13 +6909,14 @@
     tabLabels.appendChild(newTab);
     lucide.createIcons({ nodes: [newTab] });
 
-    // 등장 트랜지션 — 왼쪽 끝을 고정한 채 폭 0에서 오른쪽으로 펴진다 (닫힘의 반대)
+    // 등장 트랜지션 — 탭 바 아래에서 위로 솟아오른다. 자리(폭)는 함께 열려
+    // 옆 탭들이 튀지 않고 밀린다 (탭 바가 overflow:hidden이라 아래는 잘려 보인다)
     const naturalW = newTab.offsetWidth;
     newTab.style.transition  = 'none';
     newTab.style.maxWidth    = '0px';
     newTab.style.marginRight = '0px';
     newTab.style.opacity     = '0';
-    newTab.style.transform   = 'translateX(-16px) scaleX(0.72)';
+    newTab.style.transform   = 'translateY(18px)';
     void newTab.offsetWidth; // 리플로우 — 시작 상태 확정
     newTab.style.transition  = '';
     newTab.style.maxWidth    = naturalW + 'px';
