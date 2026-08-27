@@ -3155,6 +3155,53 @@
       background: rgba(0,0,0,0.05); color: rgba(0,0,0,0.55);
     }
     .qv-badge.on { background: rgba(59,130,246,0.12); color: #2563eb; }
+    /* 할 일 · 주 보기 — 요일 블록 2열 */
+    .qv-week { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 12px; }
+    .qv-wk { border: 1px solid rgba(0,0,0,0.08); border-radius: 14px; padding: 12px 14px 8px; }
+    .qv-wk.today { border-color: rgba(255,107,26,0.5); background: rgba(255,107,26,0.04); }
+    .qv-wk-h {
+      display: flex; align-items: center; gap: 6px; margin-bottom: 4px;
+      font-size: 14px; font-weight: 700; color: rgba(0,0,0,0.86); letter-spacing: -0.042px;
+    }
+    .qv-wk-h em {
+      font-style: normal; font-size: 12px; font-weight: 600;
+      color: rgba(0,0,0,0.35); font-variant-numeric: tabular-nums;
+    }
+    .qv-wk .qv-row { min-height: 32px; padding: 5px 0; border-bottom: none; gap: 8px; }
+    .qv-wk .qv-row .t { font-size: 14px; font-weight: 400; }
+    .qv-wk .qv-chk { width: 17px; height: 17px; border-radius: 5px; }
+    .qv-wk-empty { padding: 5px 0 8px; font-size: 13px; color: rgba(0,0,0,0.3); }
+
+    /* 할 일 · 월 보기 — 캘린더 */
+    .qv-cal { margin-top: 12px; border: 1px solid rgba(0,0,0,0.08); border-radius: 14px; overflow: hidden; }
+    .qv-cal-dow, .qv-cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); }
+    .qv-cal-dow span {
+      padding: 9px 0; text-align: center;
+      font-size: 12px; font-weight: 600; color: rgba(0,0,0,0.45);
+      background: rgba(0,0,0,0.03);
+    }
+    .qv-cal-cell {
+      min-height: 96px; padding: 6px 6px 8px;
+      border-top: 1px solid rgba(0,0,0,0.06); border-left: 1px solid rgba(0,0,0,0.06);
+    }
+    .qv-cal-cell:nth-child(7n + 1) { border-left: none; }
+    .qv-cal-cell b {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-width: 20px; height: 20px; margin-bottom: 5px; border-radius: 100px;
+      font-size: 12px; font-weight: 600; color: rgba(0,0,0,0.6); font-variant-numeric: tabular-nums;
+    }
+    .qv-cal-cell:nth-child(7n + 1) b { color: #e05252; }
+    .qv-cal-cell:nth-child(7n) b { color: #3b82f6; }
+    .qv-cal-cell.today b { background: #ff6b1a; color: #fff !important; }
+    .qv-cal-chip {
+      display: block; margin-bottom: 3px; padding: 3px 6px; border-radius: 6px;
+      background: rgba(255,107,26,0.12); color: #c2410c;
+      font-size: 11px; font-weight: 500; letter-spacing: -0.033px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .qv-cal-chip.done { background: rgba(0,0,0,0.05); color: rgba(0,0,0,0.32); text-decoration: line-through; }
+    .qv-cal-more { font-size: 11px; font-weight: 500; color: rgba(0,0,0,0.4); padding-left: 2px; }
+
     /* 통계 — 요일 막대 */
     .qv-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 6px; }
     .qv-card { padding: 16px; border-radius: 14px; background: #f5f5f5; }
@@ -6284,40 +6331,73 @@
         ]},
       ],
     },
-    week: {
-      sub: '이번 주 9개 · 3개 완료',
-      list: [
-        { sec: '월', items: [{ t: '영단어 50개', done: true }, { t: '수학 문제집 15p' }] },
-        { sec: '화', items: [{ t: '국어 비문학 3지문' }] },
-        { sec: '수', items: [{ t: '영어 듣기 모의고사', done: true }] },
-        { sec: '목', items: [{ t: '수학 오답노트' }] },
-        { sec: '금', items: [{ t: '과학 실험 보고서', s: '제출 마감' }] },
-        { sec: '토 · 오늘', items: [{ t: '영어 수업', s: '오전 09:00', done: true }, { t: '수학 문제집 20p' }] },
-        { sec: '일', items: [{ t: '모의고사 대비 3회차' }] },
-      ],
-    },
-    month: {
-      sub: '4월 8개 · 2개 완료',
-      list: [
-        { sec: '1주 · 4/1 – 4/7', items: [
-          { t: '중간고사 대비 계획 세우기', done: true },
-          { t: '영단어 300개' },
-        ]},
-        { sec: '2주 · 4/8 – 4/14', items: [
-          { t: '중간고사', s: '4/12 – 4/14' },
-          { t: '오답노트 정리' },
-        ]},
-        { sec: '3주 · 4/15 – 4/21', items: [
-          { t: '수행평가 준비', done: true },
-          { t: '독서 감상문' },
-        ]},
-        { sec: '4주 · 4/22 – 4/30', items: [
-          { t: '모의고사' },
-          { t: '학원 레벨테스트', s: '4/28' },
-        ]},
-      ],
-    },
   };
+
+  // 주 보기 — 요일 블록 (오늘 요일은 강조)
+  const QV_WEEK_TODO = [
+    { d: '월', items: [{ t: '영단어 50개', done: true }, { t: '수학 문제집 15p' }] },
+    { d: '화', items: [{ t: '국어 비문학 3지문' }] },
+    { d: '수', items: [{ t: '영어 듣기 모의고사', done: true }] },
+    { d: '목', items: [{ t: '수학 오답노트' }] },
+    { d: '금', items: [{ t: '과학 실험 보고서' }] },
+    { d: '토', items: [{ t: '영어 수업', done: true }, { t: '수학 문제집 20p' }] },
+    { d: '일', items: [{ t: '모의고사 대비 3회차' }] },
+  ];
+  // 월 보기 — 오늘 기준 오프셋으로 이번 달 곳곳에 흩어 놓는다
+  const QV_MONTH_TODO = [
+    { off: -9, t: '중간고사 계획', done: true },
+    { off: -5, t: '영단어 300개', done: true },
+    { off: -1, t: '국어 비문학' },
+    { off: 0,  t: '영어 수업', done: true },
+    { off: 0,  t: '수학 문제집 20p' },
+    { off: 0,  t: '국어 오답노트' },
+    { off: 1,  t: '모의고사 대비' },
+    { off: 4,  t: '수행평가 준비' },
+    { off: 8,  t: '독서 감상문' },
+    { off: 12, t: '학원 레벨테스트' },
+  ];
+
+  function qvWeekHTML() {
+    const todayD = ['일', '월', '화', '수', '목', '금', '토'][new Date().getDay()];
+    return '<div class="qv-week">' + QV_WEEK_TODO.map(g => {
+      const rows = g.items.length
+        ? g.items.map(it =>
+            `<div class="qv-row${it.done ? ' done' : ''}">` +
+            `<span class="qv-chk${it.done ? ' on' : ''}">${it.done ? CHECK_SVG : ''}</span>` +
+            `<span class="t">${it.t}</span></div>`).join('')
+        : '<div class="qv-wk-empty">없음</div>';
+      return `<div class="qv-wk${g.d === todayD ? ' today' : ''}">` +
+        `<div class="qv-wk-h">${g.d}${g.d === todayD ? ' · 오늘' : ''}<em>${g.items.length}</em></div>` +
+        rows + '</div>';
+    }).join('') + '</div>';
+  }
+
+  function qvMonthHTML() {
+    const now = new Date();
+    const y = now.getFullYear(), m = now.getMonth(), today = now.getDate();
+    const start = new Date(y, m, 1).getDay();      // 1일의 요일 (0=일)
+    const days  = new Date(y, m + 1, 0).getDate(); // 이번 달 마지막 날
+    // 오늘 기준 오프셋 → 이번 달 날짜별 할 일
+    const byDay = {};
+    QV_MONTH_TODO.forEach(it => {
+      const d = new Date(y, m, today + it.off);
+      if (d.getMonth() !== m) return;
+      (byDay[d.getDate()] ||= []).push(it);
+    });
+    const cells = [];
+    for (let i = 0; i < start; i++) cells.push('<div class="qv-cal-cell"></div>');
+    for (let d = 1; d <= days; d++) {
+      const list = byDay[d] || [];
+      const chips = list.slice(0, 2).map(it =>
+        `<span class="qv-cal-chip${it.done ? ' done' : ''}">${it.t}</span>`).join('');
+      const more = list.length > 2 ? `<span class="qv-cal-more">+${list.length - 2}</span>` : '';
+      cells.push(`<div class="qv-cal-cell${d === today ? ' today' : ''}"><b>${d}</b>${chips}${more}</div>`);
+    }
+    while (cells.length % 7) cells.push('<div class="qv-cal-cell"></div>');
+    return '<div class="qv-cal">' +
+      '<div class="qv-cal-dow">' + ['일','월','화','수','목','금','토'].map(d => `<span>${d}</span>`).join('') + '</div>' +
+      '<div class="qv-cal-grid">' + cells.join('') + '</div></div>';
+  }
   const QV_SCHEDULE = [
     { sec: '오늘 · 4월 4일 (토)', items: [
       { t: '영어 수업', s: '오전 09:00 – 12:00', c: '#3b82f6' },
@@ -6348,10 +6428,19 @@
 
   const QUICK_VIEWS = {
     todo: () => {
-      const d = QV_TODO[todoRange];
+      const seg = TODO_RANGES.map(([v, l]) => ({ v, l, on: v === todoRange }));
+      if (todoRange === 'week') {
+        const n = QV_WEEK_TODO.reduce((a, g) => a + g.items.length, 0);
+        const done = QV_WEEK_TODO.reduce((a, g) => a + g.items.filter(i => i.done).length, 0);
+        return { title: '할 일', sub: `이번 주 ${n}개 · ${done}개 완료`, seg, body: qvWeekHTML() };
+      }
+      if (todoRange === 'month') {
+        const n = QV_MONTH_TODO.length, done = QV_MONTH_TODO.filter(i => i.done).length;
+        return { title: '할 일', sub: `${new Date().getMonth() + 1}월 ${n}개 · ${done}개 완료`, seg, body: qvMonthHTML() };
+      }
+      const d = QV_TODO.day;
       return {
-        title: '할 일', sub: d.sub,
-        seg: TODO_RANGES.map(([v, l]) => ({ v, l, on: v === todoRange })),
+        title: '할 일', sub: d.sub, seg,
         body: qvSections(d.list, it =>
           `<div class="qv-row${it.done ? ' done' : ''}">` +
           `<span class="qv-chk${it.done ? ' on' : ''}">${it.done ? CHECK_SVG : ''}</span>` +
