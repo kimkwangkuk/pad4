@@ -355,6 +355,55 @@
     [data-mode="pad"] .g-row,
     [data-mode="pad"] .g-row td { height: auto; }
 
+    /* ── 타임라인 스마트 패드 ─────────────────────────────
+       왼쪽은 시간 축과 공부 블록, 오른쪽은 그날의 기록 목록 */
+    .tl {
+      display: flex; flex-direction: column; background: #fff; overflow: hidden;
+      font-family: 'Pretendard', sans-serif; box-sizing: border-box;
+    }
+    .tl-head {
+      flex-shrink: 0; display: flex; align-items: center; gap: 10px;
+      padding: 16px 20px; border-bottom: 1px solid rgba(0,0,0,0.08);
+    }
+    .tl-date { font-size: 16px; font-weight: 700; color: rgba(0,0,0,0.86); letter-spacing: -0.048px; }
+    .tl-badge {
+      padding: 3px 8px; border-radius: 100px; background: rgba(255,107,26,0.12);
+      font-size: 12px; font-weight: 600; color: #ff6b1a;
+    }
+    .tl-total { margin-left: auto; font-size: 15px; font-weight: 600; color: rgba(0,0,0,0.86); font-variant-numeric: tabular-nums; }
+    .tl-body { flex: 1 1 0; min-height: 0; display: flex; }
+    .tl-rail { position: relative; flex: 1 1 0; min-width: 0; padding: 10px 16px 10px 0; overflow: hidden; }
+    .tl-hour { position: relative; display: flex; align-items: flex-start; gap: 8px; }
+    .tl-hour i {
+      width: 40px; flex-shrink: 0; text-align: right; font-style: normal;
+      font-size: 11px; font-weight: 500; color: rgba(0,0,0,0.35); font-variant-numeric: tabular-nums;
+    }
+    .tl-hour u { flex: 1 1 0; height: 1px; margin-top: 6px; background: rgba(0,0,0,0.06); }
+    .tl-block {
+      position: absolute; left: 56px; right: 20px;
+      border-radius: 6px; padding: 4px 8px; color: #fff; overflow: hidden;
+      font-size: 12px; font-weight: 600; letter-spacing: -0.036px;
+    }
+    .tl-block em { font-style: normal; font-weight: 500; opacity: 0.85; margin-left: 6px; }
+    .tl-side {
+      width: 38%; max-width: 300px; flex-shrink: 0; padding: 10px 16px;
+      border-left: 1px solid rgba(0,0,0,0.08); overflow: hidden;
+    }
+    .tl-side-t { font-size: 12px; font-weight: 600; color: rgba(0,0,0,0.45); margin-bottom: 6px; }
+    .tl-item {
+      display: flex; align-items: center; gap: 8px; height: 34px;
+      border-bottom: 1px solid rgba(0,0,0,0.06);
+    }
+    .tl-item span.d { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .tl-item span.n { flex: 1 1 0; min-width: 0; font-size: 13px; font-weight: 500; color: rgba(0,0,0,0.86);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .tl-item span.v { font-size: 12px; font-weight: 500; color: rgba(0,0,0,0.45); font-variant-numeric: tabular-nums; }
+    /* 패드로 열렸을 때는 프레임을 꽉 채운다 */
+    .canvas-zoom-wrap[data-mode="pad"] .tl {
+      width: 100%; height: calc(100vh - 52px);
+      border-radius: 12px; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.10);
+    }
+
     /* ─── ADD PAGE BUTTON (always trailing element in canvas) ── */
     .add-page-btn {
       flex-shrink: 0;
@@ -4795,10 +4844,65 @@
     return tabEl._monthPages;
   }
 
+  // ── 타임라인 스마트 패드 ────────────────────────────────
+  const TL_START = 6, TL_END = 24; // 표시 구간 (6시 ~ 24시)
+  const TL_SESSIONS = [
+    { s: 7.0,  e: 8.5,  n: '국어', c: '#3b82f6' },
+    { s: 9.0,  e: 11.0, n: '영어', c: '#f59e0b' },
+    { s: 13.0, e: 15.5, n: '수학', c: '#22c55e' },
+    { s: 16.0, e: 17.0, n: '과학', c: '#a855f7' },
+    { s: 20.0, e: 22.0, n: '복습', c: '#ef4444' },
+  ];
+  function _tlDur(x) {
+    const h = Math.floor(x), m = Math.round((x % 1) * 60);
+    return h ? `${h}시간${m ? ' ' + m + '분' : ''}` : `${m}분`;
+  }
+  function buildTimelineEl() {
+    const t = new Date();
+    const el = document.createElement('div');
+    el.className = 'tl';
+    const total = TL_SESSIONS.reduce((a, b) => a + (b.e - b.s), 0);
+    const hours = [];
+    for (let h = TL_START; h <= TL_END; h++) hours.push(h);
+    const rowPct = 100 / (hours.length - 1);
+    el.innerHTML = `
+      <div class="tl-head">
+        <span class="tl-date">${t.getFullYear()}. ${t.getMonth() + 1}. ${t.getDate()}</span>
+        <span class="tl-badge">오늘</span>
+        <span class="tl-total">${_tlDur(total)}</span>
+      </div>
+      <div class="tl-body">
+        <div class="tl-rail">
+          ${hours.map((h, i) =>
+            `<div class="tl-hour" style="height:${i === hours.length - 1 ? 0 : rowPct}%;">` +
+            `<i>${String(h).padStart(2, '0')}:00</i><u></u></div>`).join('')}
+          ${TL_SESSIONS.map(b => {
+            const top = (b.s - TL_START) / (TL_END - TL_START) * 100;
+            const hgt = (b.e - b.s) / (TL_END - TL_START) * 100;
+            return `<div class="tl-block" style="top:calc(${top}% + 10px);height:${hgt}%;background:${b.c};">` +
+                   `${b.n}<em>${_tlDur(b.e - b.s)}</em></div>`;
+          }).join('')}
+        </div>
+        <div class="tl-side">
+          <div class="tl-side-t">오늘의 기록</div>
+          ${TL_SESSIONS.map(b =>
+            `<div class="tl-item"><span class="d" style="background:${b.c};"></span>` +
+            `<span class="n">${b.n}</span><span class="v">${_tlDur(b.e - b.s)}</span></div>`).join('')}
+        </div>
+      </div>`;
+    return el;
+  }
+
   // 스마트 패드 — 종이가 아니라 화면. 페이지 한 장이 프레임을 꽉 채우고
   // 속지 추가 버튼도, 펜 입력(그리기 캔버스)도 없다.
   function renderPadCanvas(tabEl) {
     canvasZoomWrap.innerHTML = '';
+    // 템플릿마다 자기 화면을 쓴다 (타임라인은 타임라인 UI)
+    if (tabEl?.dataset.padTpl === 'timeline') {
+      canvasZoomWrap.appendChild(buildTimelineEl());
+      rebuildPanel([], -1);
+      return;
+    }
     const t = new Date();
     const dateText = `${String(t.getFullYear()).slice(2)}.${String(t.getMonth() + 1).padStart(2, '0')}.${String(t.getDate()).padStart(2, '0')}`;
     canvasZoomWrap.insertAdjacentHTML('beforeend',
@@ -6189,7 +6293,7 @@
         <div class="chev">⌄</div>
       </div>
     `;
-    card.addEventListener('click', () => openTabFromHome(note.name, note.icon || 'file-text', 'note', note.noteType || 'scroll'));
+    card.addEventListener('click', () => openTabFromHome(note.name, note.icon || 'file-text', 'note', note.noteType || 'scroll', note.padTpl));
     const chevEl = card.querySelector('.chev');
     const nameEl = card.querySelector('.nname');
     chevEl.addEventListener('click', (e) => {
@@ -6467,14 +6571,14 @@
     }).join('') + '</div>';
   }
 
-  function qvMonthHTML() {
+  // 오늘 기준 오프셋(off)을 가진 항목들을 이번 달 캘린더에 얹는다 (할 일·일정 공용)
+  function qvCalendarHTML(items) {
     const now = new Date();
     const y = now.getFullYear(), m = now.getMonth(), today = now.getDate();
     const start = new Date(y, m, 1).getDay();      // 1일의 요일 (0=일)
     const days  = new Date(y, m + 1, 0).getDate(); // 이번 달 마지막 날
-    // 오늘 기준 오프셋 → 이번 달 날짜별 할 일
     const byDay = {};
-    QV_MONTH_TODO.forEach(it => {
+    items.forEach(it => {
       const d = new Date(y, m, today + it.off);
       if (d.getMonth() !== m) return;
       (byDay[d.getDate()] ||= []).push(it);
@@ -6484,7 +6588,9 @@
     for (let d = 1; d <= days; d++) {
       const list = byDay[d] || [];
       const chips = list.slice(0, 2).map(it =>
-        `<span class="qv-cal-chip${it.done ? ' done' : ''}">${it.t}</span>`).join('');
+        `<span class="qv-cal-chip${it.done ? ' done' : ''}"` +
+        (it.c ? ` style="background:${it.c}1f;color:${it.c};"` : '') +
+        `>${it.t}</span>`).join('');
       const more = list.length > 2 ? `<span class="qv-cal-more">+${list.length - 2}</span>` : '';
       cells.push(`<div class="qv-cal-cell${d === today ? ' today' : ''}"><b>${d}</b>${chips}${more}</div>`);
     }
@@ -6493,15 +6599,16 @@
       '<div class="qv-cal-dow">' + ['일','월','화','수','목','금','토'].map(d => `<span>${d}</span>`).join('') + '</div>' +
       '<div class="qv-cal-grid">' + cells.join('') + '</div></div>';
   }
+  // 일정 — 오늘 기준 오프셋으로 이번 달 캘린더에 흩어 놓는다
   const QV_SCHEDULE = [
-    { sec: '오늘 · 4월 4일 (토)', items: [
-      { t: '영어 수업', s: '오전 09:00 – 12:00', c: '#3b82f6' },
-      { t: '스터디 그룹', s: '오후 01:00 – 03:00', c: '#22c55e' },
-    ]},
-    { sec: '4월 5일 (일)', items: [
-      { t: '중간고사 2일차', s: '오전 08:40', c: '#ff6b1a' },
-      { t: '수학 과외', s: '오후 07:00 – 09:00', c: '#a855f7' },
-    ]},
+    { off: -2, t: '학원 상담',      s: '오후 05:00',          c: '#a855f7' },
+    { off: 0,  t: '영어 수업',      s: '오전 09:00 – 12:00',  c: '#3b82f6' },
+    { off: 0,  t: '스터디 그룹',    s: '오후 01:00 – 03:00',  c: '#22c55e' },
+    { off: 1,  t: '중간고사 2일차', s: '오전 08:40',          c: '#ff6b1a' },
+    { off: 1,  t: '수학 과외',      s: '오후 07:00 – 09:00',  c: '#a855f7' },
+    { off: 3,  t: '모의고사',       s: '오전 08:40',          c: '#ff6b1a' },
+    { off: 6,  t: '독서 모임',      s: '오후 04:00',          c: '#22c55e' },
+    { off: 10, t: '학원 레벨테스트', s: '오후 06:30',          c: '#3b82f6' },
   ];
   const QV_GROUP = [
     { n: '꽃길만걷자', on: true,  time: '3:12:04' },
@@ -6531,7 +6638,7 @@
       }
       if (todoRange === 'month') {
         const n = QV_MONTH_TODO.length, done = QV_MONTH_TODO.filter(i => i.done).length;
-        return { title: '할 일', sub: `${new Date().getMonth() + 1}월 ${n}개 · ${done}개 완료`, seg, body: qvMonthHTML() };
+        return { title: '할 일', sub: `${new Date().getMonth() + 1}월 ${n}개 · ${done}개 완료`, seg, body: qvCalendarHTML(QV_MONTH_TODO) };
       }
       const d = QV_TODO.day;
       return {
@@ -6542,12 +6649,19 @@
           `<span class="t">${it.t}${it.s ? `<small>${it.s}</small>` : ''}</span></div>`),
       };
     },
-    schedule: () => ({
-      title: '일정', sub: '중간고사 2일차',
-      body: qvSections(QV_SCHEDULE, it =>
-        `<div class="qv-row"><span class="qv-dot" style="background:${it.c};"></span>` +
-        `<span class="t">${it.t}<small>${it.s}</small></span></div>`),
-    }),
+    schedule: () => {
+      const todayList = QV_SCHEDULE.filter(e => e.off === 0);
+      return {
+        title: '일정', sub: `${new Date().getMonth() + 1}월 · 오늘 ${todayList.length}개`,
+        body: qvCalendarHTML(QV_SCHEDULE) +
+          '<div class="qv-sec">오늘 일정</div>' +
+          (todayList.length
+            ? todayList.map(it =>
+                `<div class="qv-row"><span class="qv-dot" style="background:${it.c};"></span>` +
+                `<span class="t">${it.t}<small>${it.s}</small></span></div>`).join('')
+            : '<div class="qv-wk-empty">오늘 일정이 없어요</div>'),
+      };
+    },
     group: () => ({
       title: '그룹', sub: '직장인분들은 같이 발전합시다 · 8명 중 3명 공부중',
       body: QV_GROUP.map(m =>
@@ -6881,12 +6995,12 @@
     if (isNote) setCanvasMode(noteType, activeTab);
   }
 
-  function openTabFromHome(name, icon, type, noteType) {
+  function openTabFromHome(name, icon, type, noteType, padTpl) {
     closeHomeScreen();
-    addHomeTab(name, icon, type || 'note', noteType);
+    addHomeTab(name, icon, type || 'note', noteType, null, padTpl);
   }
 
-  function addHomeTab(name, icon, type, noteType, quickKey) {
+  function addHomeTab(name, icon, type, noteType, quickKey, padTpl) {
     // Deactivate current active tab
     const prevActive = tabLabels.querySelector('.tab.active:not(.closing)');
     if (prevActive) setTabActive(null); // clear all active states first
@@ -6898,6 +7012,7 @@
     newTab.dataset.tabName = name;
     newTab.dataset.noteType = noteType || 'scroll';
     if (quickKey) newTab.dataset.quick = quickKey; // 타이머·할일·일정·그룹은 하나씩만 열린다
+    if (padTpl) newTab.dataset.padTpl = padTpl;    // 스마트 패드는 템플릿마다 화면이 다르다
     if (newTab.dataset.noteType === 'calendar') {
       const t = new Date();
       newTab._calState = {
@@ -7892,7 +8007,7 @@
     // 스마트 패드 템플릿 — 종이가 아니라 화면이라 방향 구분 없이 가로 한 종류로 보여준다
     const PAD_TEMPLATES = [
       { id: 't1', name: '스터디 타이머',      desc: '과목별 공부 기록',                    tint: '#ff6b1a', unlocked: true },
-      { id: 't2', name: '타임라인',           desc: '하루를 공부 기록 일정으로 채우고 확인', tint: '#ffffff', unlocked: true },
+      { id: 't2', name: '타임라인',           desc: '하루를 공부 기록 일정으로 채우고 확인', tint: '#ffffff', unlocked: true, tpl: 'timeline' },
       { id: 't3', name: '일간 스터디 플래너', desc: '할일 정리, 총 시간관리',              tint: '#ffffff', unlocked: true },
       { id: 't4', name: '주간 스터디 플래너', desc: '과목별 공부 기록',                    tint: '#f6efe6', unlocked: false },
       { id: 't5', name: '캘린더',             desc: '하루 공부 기록 일정으로 채우고 확인',  tint: '#ffffff', unlocked: false },
@@ -7947,6 +8062,14 @@
     // 속지 미리보기는 기존 스터디 카드 템플릿을 축소해 그린다
     function paintPage(el, item, tintColor) {
       el.innerHTML = '';
+      // 타임라인 템플릿은 타임라인 화면을 그대로 축소해 보여준다
+      if (item && item.tpl === 'timeline') {
+        const tl = buildTimelineEl();
+        tl.style.width = '800px'; tl.style.height = '600px';
+        tl.dataset.orient = 'landscape';
+        renderMp2Thumb(tl, el);
+        return;
+      }
       // 무지 노트 속지 — 스터디 카드 대신 빈 종이(무지·줄·모눈·도트)를 그린다
       if (item && item.plain) {
         el.style.background = PLAIN_PAPER[item.plain] || '#fff';
@@ -8272,7 +8395,8 @@
         name, date: '방금 전', icon: isPad ? 'tablet' : 'notebook-pen',
         color: cover ? cover.bg : '#f2f2f2',
         pattern: null,
-        noteType: isPad ? 'pad' : 'scroll'   // 패드는 속지 추가·펜 입력이 없는 화면형
+        noteType: isPad ? 'pad' : 'scroll',  // 패드는 속지 추가·펜 입력이 없는 화면형
+        padTpl: isPad ? (st.insert && st.insert.tpl) || '' : ''  // 템플릿별 화면 (타임라인 등)
       };
       HOME_NOTES.unshift(note);
       if (!isPad) createTodayPageForNewNote();
