@@ -2717,6 +2717,15 @@
     }
     .nbf { width: 170px; height: 226.667px; display: flex; align-items: center; justify-content: center; }
     /* 스마트 패드는 표지가 없다 — 스토어와 같은 화면 섬네일로 보여준다 */
+    /* 홈에 미리 깔린 기능 카드 — 타이머·할 일·캘린더·통계 */
+    .nbq { width: 170px; height: 226.667px; display: flex; align-items: center; justify-content: center; }
+    .nbq-tile {
+      width: 170px; aspect-ratio: 4 / 3; border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 1px 1px 3px rgba(0,0,0,0.15), 0 5px 10px rgba(0,0,0,0.05);
+    }
+    .nbq-tile svg { width: 42px; height: 42px; }
+
     .nbp { width: 170px; height: 226.667px; display: flex; align-items: center; justify-content: center; }
     .nbp-screen {
       position: relative; width: 170px;
@@ -3209,30 +3218,6 @@
       margin-top: 2px;
       font-family: 'Pretendard', sans-serif; font-size: 13px; font-weight: 400;
       color: rgba(0,0,0,0.45); letter-spacing: -0.039px;
-    }
-    .hm-quick {
-      display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px;
-      padding: 0 24px 22px;
-    }
-    .hm-card {
-      display: flex; align-items: center; gap: 14px;
-      height: 60px; padding: 0 14px; border: none; border-radius: 14px;
-      background: #f5f5f5; cursor: pointer; text-align: left;
-      -webkit-tap-highlight-color: transparent;
-      transition: background 0.15s ease;
-    }
-    .hm-card:hover { background: #eeeeee; }
-    .hm-card-ic { flex-shrink: 0; color: rgba(0,0,0,0.86); display: flex; }
-    .hm-card-txt { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-    .hm-card-txt b {
-      font-family: 'Pretendard', sans-serif; font-size: 14px; font-weight: 600;
-      color: rgba(0,0,0,0.86); letter-spacing: -0.042px;
-    }
-    .hm-card-txt em {
-      font-family: 'Pretendard', sans-serif; font-size: 13px; font-weight: 400; font-style: normal;
-      color: rgba(0,0,0,0.45); letter-spacing: -0.039px;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-      font-variant-numeric: tabular-nums;
     }
     .hm-sec-title {
       padding: 22px 24px 14px; border-top: 1px solid rgba(0,0,0,0.08);
@@ -4013,29 +3998,6 @@
           <div class="hm-name">케이케이</div>
           <div class="hm-grade">고2</div>
         </div>
-      </div>
-      <!-- 빠른 실행 — 누르면 각각 고유한 탭이 열린다 -->
-      <div class="hm-quick">
-        <button class="hm-card" type="button" data-quick="timer">
-          <span class="hm-card-ic"><i data-lucide="timer" style="width:22px;height:22px;"></i></span>
-          <span class="hm-card-txt"><b>타이머</b><em id="hmTimerVal">0:00:00</em></span>
-        </button>
-        <button class="hm-card" type="button" data-quick="todo">
-          <span class="hm-card-ic"><i data-lucide="check-square" style="width:22px;height:22px;"></i></span>
-          <span class="hm-card-txt"><b>할 일</b><em>영어 수업 외 2</em></span>
-        </button>
-        <button class="hm-card" type="button" data-quick="schedule">
-          <span class="hm-card-ic"><i data-lucide="calendar" style="width:22px;height:22px;"></i></span>
-          <span class="hm-card-txt"><b>일정</b><em>중간고사 2일차</em></span>
-        </button>
-        <button class="hm-card" type="button" data-quick="group">
-          <span class="hm-card-ic"><i data-lucide="users" style="width:22px;height:22px;"></i></span>
-          <span class="hm-card-txt"><b>그룹</b><em>3명 공부중</em></span>
-        </button>
-        <button class="hm-card" type="button" data-quick="stats">
-          <span class="hm-card-ic"><i data-lucide="pie-chart" style="width:22px;height:22px;"></i></span>
-          <span class="hm-card-txt"><b>통계</b><em>이번 주 12시간</em></span>
-        </button>
       </div>
     </div>
     <div class="home-body">
@@ -6313,6 +6275,33 @@
     return card;
   }
 
+  // 홈에 기본으로 깔리는 기능 카드 — 누르면 각자의 고유 탭이 열린다
+  const HOME_QUICKS = [
+    { quick: 'timer',    name: '타이머', icon: 'timer',        sub: '0:00:00',        c: '#ff6b1a', subId: 'hmTimerVal' },
+    { quick: 'todo',     name: '할 일',  icon: 'check-square', sub: '오늘 3개',        c: '#3b82f6' },
+    { quick: 'schedule', name: '캘린더', icon: 'calendar',     sub: '중간고사 2일차',  c: '#22c55e' },
+    { quick: 'stats',    name: '통계',   icon: 'pie-chart',    sub: '이번 주 12시간',  c: '#a855f7' },
+  ];
+  function buildQuickCardEl(q) {
+    const card = document.createElement('div');
+    card.className = 'note-card';
+    card.innerHTML = `
+      <div class="nbq">
+        <div class="nbq-tile" style="background:${q.c}1f;color:${q.c};">
+          <i data-lucide="${q.icon}"></i>
+        </div>
+      </div>
+      <div class="note-info">
+        <div class="txt">
+          <div class="nname">${q.name}</div>
+          <div class="ntime"${q.subId ? ` id="${q.subId}"` : ''}>${q.sub}</div>
+        </div>
+      </div>
+    `;
+    card.addEventListener('click', () => openQuickTab(q.quick));
+    return card;
+  }
+
   // 스마트 패드 카드 — 책 표지 대신 스토어와 같은 화면 섬네일을 놓는다
   function buildPadCardEl(note) {
     const card = document.createElement('div');
@@ -6366,6 +6355,8 @@
     return buildNoteCardEl(note);
   }
 
+  // 기능 카드가 먼저, 그 뒤로 만든 노트·패드·폴더
+  HOME_QUICKS.forEach(q => hsNotesEl.appendChild(buildQuickCardEl(q)));
   HOME_NOTES.forEach(note => {
     hsNotesEl.appendChild(buildHomeCardEl(note));
   });
@@ -6547,10 +6538,6 @@
     const q = QUICK_TABS[key];
     if (q) addHomeTab(q.name, q.icon, 'quick', null, key);
   }
-  document.querySelectorAll('.hm-card').forEach(btn => {
-    btn.addEventListener('click', () => openQuickTab(btn.dataset.quick));
-  });
-
   // ── 할 일 · 일정 · 그룹 · 통계 화면 ───────────────────────
   const quickView = document.getElementById('quickView');
   const CHECK_SVG = '<i data-lucide="check" style="width:13px;height:13px;"></i>';
@@ -8597,7 +8584,9 @@
       const listEl = document.getElementById('hsNotes');
       const kids = Array.from(listEl.children);
       const before = new Map(kids.map(k => [k, k.getBoundingClientRect()]));
-      listEl.insertBefore(cardEl, listEl.firstChild);
+      // 기능 카드(타이머·할 일·캘린더·통계) 다음 자리에 끼운다
+      const anchor = listEl.children[HOME_QUICKS.length] || null;
+      listEl.insertBefore(cardEl, anchor);
 
       cardEl.style.transition = 'none';
       cardEl.style.opacity = '0';
