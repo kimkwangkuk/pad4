@@ -89,86 +89,9 @@
       overflow-y: clip;
     }
     .tabs-section::-webkit-scrollbar { display: none; }
-    .study-btn-wrap {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      justify-content: flex-start; /* 탭 바 위쪽에 붙인다 */
-      align-self: stretch;
-      flex-shrink: 0;
-      margin-right: -10px;
-      padding-right: 2px;
-      padding-top: 3px;
-      position: relative;
-      z-index: 10;
-      transition: width 0.34s cubic-bezier(0.32, 0.72, 0, 1),
-                  margin-right 0.34s cubic-bezier(0.32, 0.72, 0, 1);
-    }
-    /* 공부 버튼
-         기본(공부 전)        : 유리 알약 버튼
-         .running(공부 시작 후): 다른 탭과 똑같은 탭 모양 (곡선 + 몸통)
-         .selected            : 흰 몸통 + 진한 글자, 미선택은 흐린 몸통 */
-    .study-btn {
-      position: relative;
-      padding: 3px 10px;
-      border-radius: 12px;
-      display: flex; align-items: center; gap: 4px;
-      flex-shrink: 0; cursor: pointer;
-      color: rgba(0,0,0,0.59);
-      background: rgba(255,255,255,0.5);
-      border: 1px solid #fff;
-      backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
-      box-shadow: 0 20px 25px rgba(0,0,0,0.25);
-      transition: background .2s ease, color .2s ease, box-shadow .2s ease;
-    }
-    /* 선택 상태 — 불투명 흰 배경, 진한 글자 */
-    .study-btn.selected {
-      background: #fff; border-color: transparent;
-      color: rgba(0,0,0,0.86);
-      backdrop-filter: none; -webkit-backdrop-filter: none;
-      box-shadow: 0 20px 50px rgba(0,0,0,0.25);
-    }
-    .sb-body { display: flex; align-items: center; gap: 4px; }
-    /* 알약 ↔ 탭 전환 — 아래로 내려가 사라지고, 바뀐 모습이 아래에서 올라온다 */
-    .study-btn.morphing {
-      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.26s ease;
-    }
-    /* 버튼이 내려가는 동안 자리도 함께 접혀 탭들이 왼쪽 끝까지 붙고,
-       새 모습이 올라오면서 다시 오른쪽으로 밀어낸다 */
-    .study-btn-wrap.morphing {
-      transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-                  margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    /* 공부 전(알약)에는 탭 곡선을 감춘다 — 뒤에 오는 .tab-curve보다 우선하도록 .study-btn을 붙인다 */
-    .study-btn .sb-curve { display: none; }
-    /* ── 공부 시작 후 = 탭 ── 알약 스타일을 벗고 탭 곡선 + 몸통으로 */
-    .study-btn.running {
-      padding: 0; border: none; border-radius: 0;
-      background: none; box-shadow: none;
-      backdrop-filter: none; -webkit-backdrop-filter: none;
-      align-items: stretch; gap: 0;
-    }
-    .study-btn.running .sb-curve { display: block; }
-    .study-btn.running .sb-body {
-      height: 36px; padding: 0 2px;
-      background: #f2f2f2; color: rgba(0,0,0,0.4);
-    }
-    .study-btn.running.selected .sb-body { background: #fff; color: rgba(0,0,0,0.86); }
-    /* 탭이 된 뒤에는 다른 탭처럼 탭 바 위쪽에 딱 붙고, 홈 탭과 곡선이 겹친다 */
-    .study-btn-wrap.as-tab { padding-top: 0; padding-right: 0; margin-right: -30px; }
-    .sb-icon { width: 14px; height: 14px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
-    .sb-dot { width: 8px; height: 8px; border-radius: 40px; background: #7243ff; }
-    .study-btn-time {
-      font-family: 'Pretendard', sans-serif;
-      font-size: 15px; font-weight: 500;
-      color: inherit; letter-spacing: -0.045px; line-height: 1.4;
-      font-variant-numeric: tabular-nums; white-space: nowrap;
-    }
-
-
     /* 홈 탭 — 아이콘만 들어가고 양옆 여백 없이 아이콘 폭에 딱 맞춘다 */
     .tab-home .tab-inner { width: auto; justify-content: center; gap: 0; padding: 0; }
-    /* 홈 탭 왼쪽(공부 버튼과 맞닿는 쪽)에는 곡선 그림자를 두지 않는다 */
+    /* 홈 탭은 맨 앞이라 왼쪽 곡선 그림자를 두지 않는다 */
     .tab-home .tab-shadow { display: none; }
     /* 겹침 순서는 타이머 탭까지 한 줄로 따진다(활성이 맨 위, 나머지는 왼쪽이 위).
        그래서 이 그룹에는 stacking context를 만들지 않는다 — z-index는 JS가 탭마다 준다 */
@@ -178,20 +101,6 @@
       flex-shrink: 0;
       position: relative;
     }
-    /* 스플릿뷰 — 타이머 탭이 왼쪽 패널(25%) 폭을 꽉 채우고, 그 오른쪽 8px 간격
-       다음부터 나머지 탭들이 시작한다 (= 우측 패널의 왼쪽 모서리) */
-    .tab-bar.split .study-btn-wrap { width: calc(25vw - 16px); margin-right: 8px; }
-    .tab-bar.split .study-btn { width: 100%; }
-    .tab-bar.split .study-btn.running .sb-body { flex: 1 1 auto; min-width: 0; }
-    /* 스플릿뷰 — 두 탭 그룹 사이 세로 구분선 (패널 사이 8px 간격의 가운데) */
-    .tab-divider {
-      position: absolute; left: 25vw; top: 9px;
-      width: 1px; height: 18px;
-      background: rgba(0,0,0,0.16);
-      opacity: 0; pointer-events: none;
-      transition: opacity 0.2s ease;
-    }
-    .tab-bar.split .tab-divider { opacity: 1; }
     .tab {
       display: flex;
       align-items: center;
@@ -3130,6 +3039,108 @@
     .nwz-ask-btn.primary:hover { background: rgba(0,0,0,0.75); }
 
 
+    /* ─── 홈: 프로필 + 빠른 실행 ─────────────────────── */
+    .hm-profile { display: flex; align-items: center; gap: 14px; padding: 26px 24px 18px; }
+    .hm-avatar { width: 44px; height: 44px; border-radius: 50%; background: #e3e3e3; flex-shrink: 0; }
+    .hm-name {
+      font-family: 'Pretendard', sans-serif; font-size: 17px; font-weight: 700;
+      color: rgba(0,0,0,0.86); letter-spacing: -0.051px;
+    }
+    .hm-grade {
+      margin-top: 2px;
+      font-family: 'Pretendard', sans-serif; font-size: 13px; font-weight: 400;
+      color: rgba(0,0,0,0.45); letter-spacing: -0.039px;
+    }
+    .hm-quick {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;
+      padding: 0 24px 22px;
+    }
+    .hm-card {
+      display: flex; align-items: center; gap: 14px;
+      height: 60px; padding: 0 18px; border: none; border-radius: 14px;
+      background: #f5f5f5; cursor: pointer; text-align: left;
+      -webkit-tap-highlight-color: transparent;
+      transition: background 0.15s ease;
+    }
+    .hm-card:hover { background: #eeeeee; }
+    .hm-card-ic { flex-shrink: 0; color: rgba(0,0,0,0.86); display: flex; }
+    .hm-card-txt { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .hm-card-txt b {
+      font-family: 'Pretendard', sans-serif; font-size: 14px; font-weight: 600;
+      color: rgba(0,0,0,0.86); letter-spacing: -0.042px;
+    }
+    .hm-card-txt em {
+      font-family: 'Pretendard', sans-serif; font-size: 13px; font-weight: 400; font-style: normal;
+      color: rgba(0,0,0,0.45); letter-spacing: -0.039px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      font-variant-numeric: tabular-nums;
+    }
+    .hm-sec-title {
+      padding: 22px 24px 14px; border-top: 1px solid rgba(0,0,0,0.08);
+      font-family: 'Pretendard', sans-serif; font-size: 17px; font-weight: 700;
+      color: rgba(0,0,0,0.86); letter-spacing: -0.051px;
+    }
+
+    /* ══ 타이머 탭 화면 ═══════════════════════════════════════════
+       상단 주황 블록(디데이·날짜·시간) + 과목/할일 목록.
+       과목 앞 시작 버튼을 누르면 공부 화면으로 바뀐다 */
+    .timer-view {
+      position: fixed; top: 36px; left: 0; right: 0; bottom: 0;
+      z-index: 300; display: none;
+      background: #fff; overflow-y: auto; scrollbar-width: none;
+      font-family: 'Pretendard', sans-serif;
+    }
+    .timer-view::-webkit-scrollbar { display: none; }
+    .timer-view.show { display: block; }
+    .tv-head {
+      position: relative; background: #ff6b1a; color: #fff;
+      padding: 18px 20px 26px; border-radius: 12px; margin: 8px;
+    }
+    .tv-dday { font-size: 13px; font-weight: 600; letter-spacing: -0.039px; }
+    .tv-date {
+      position: absolute; left: 50%; top: 18px; transform: translateX(-50%);
+      font-size: 13px; font-weight: 500; letter-spacing: -0.039px;
+    }
+    .tv-more {
+      position: absolute; right: 14px; top: 12px;
+      width: 32px; height: 32px; border: none; background: none; color: #fff; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .tv-time-wrap { margin-top: 18px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .tv-time { font-size: 40px; font-weight: 700; letter-spacing: -1px; font-variant-numeric: tabular-nums; }
+    .tv-sub { margin-top: 6px; text-align: center; font-size: 13px; font-weight: 500; opacity: 0.9; }
+
+    .tv-list { padding: 6px 8px 40px; }
+    .tv-row {
+      display: flex; align-items: center; gap: 10px;
+      height: 40px; padding: 0 12px;
+      border-bottom: 1px solid rgba(0,0,0,0.06);
+    }
+    .tv-row.subj { height: 44px; }
+    .tv-play {
+      width: 22px; height: 22px; flex-shrink: 0; padding: 0;
+      border: none; border-radius: 6px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; -webkit-tap-highlight-color: transparent;
+    }
+    .tv-name {
+      flex: 1 1 0; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      font-size: 15px; font-weight: 600; color: rgba(0,0,0,0.86); letter-spacing: -0.045px;
+    }
+    .tv-row.todo .tv-name { font-size: 14px; font-weight: 400; color: rgba(0,0,0,0.7); padding-left: 32px; }
+    .tv-time-cell {
+      flex-shrink: 0; font-size: 14px; font-weight: 500;
+      color: rgba(0,0,0,0.7); font-variant-numeric: tabular-nums;
+    }
+    .tv-row.todo .tv-time-cell { font-size: 12px; color: rgba(0,0,0,0.35); }
+    .tv-check {
+      width: 18px; height: 18px; flex-shrink: 0; border-radius: 4px;
+      border: 1.5px solid rgba(0,0,0,0.2); background: #fff; cursor: pointer;
+    }
+    .tv-check.on { background: #ffb020; border-color: #ffb020; }
+    .tv-check.round { border-radius: 50%; }
+
     /* ══ 공부 탭 화면 (Figma 6382:861492) ═════════════════════════
        타이머 버튼으로 공부를 시작하면 툴바·캔버스 대신 이 화면이 뜬다 */
     /* 바깥은 8px 여백(캔버스 배경색), 안쪽 패널이 라운드로 잘린다 */
@@ -3250,18 +3261,6 @@
   <!-- TAB BAR (36px) -->
   <div class="tab-bar">
     <div class="tabs-section">
-      <!-- 타이머 버튼 — 탭 컨테이너 맨 앞(홈 탭보다 앞). 누르면 공부 탭이 열리고 버튼은 숨는다 -->
-      <div class="study-btn-wrap" id="studyBtnWrap">
-        <!-- 공부 전: 유리 알약 버튼 / 공부 시작 후(.running): 다른 탭과 같은 탭 모양 -->
-        <div class="study-btn" id="studyTimerBtn">
-          <img class="tab-curve sb-curve" id="sbCurveL" src="assets/tab-inactive-left.svg">
-          <div class="sb-body">
-            <span class="sb-icon" id="sbIcon"></span>
-            <span class="study-btn-time" id="studyTimerTime">00:00:00</span>
-          </div>
-          <img class="tab-curve sb-curve" id="sbCurveR" src="assets/tab-inactive-right.svg" style="transform:scaleX(-1);">
-        </div>
-      </div>
       <!-- Tab labels -->
       <div class="tab-labels">
         <!-- 홈 탭 — 항상 맨 앞에 고정. 다른 탭과 같은 디자인이되 아이콘만 표시한다 -->
@@ -3296,8 +3295,6 @@
     </div>
     <!-- Gradient fade -->
     <div class="tab-fade"></div>
-    <!-- 스플릿뷰에서 두 탭 그룹 사이에 놓이는 세로 구분선 -->
-    <div class="tab-divider" id="tabDivider"></div>
   </div>
 
   <!-- MAIN AREA -->
@@ -3727,16 +3724,36 @@
   <!-- HOME SCREEN -->
   <div id="homeScreen" class="home-screen">
     <div class="home-top">
-      <div class="home-title-row">
-        <div class="home-title">홈</div>
-        <button class="hicon-btn" aria-label="통계"><i data-lucide="pie-chart" style="width:24px;height:24px;color:rgba(0,0,0,0.86);"></i></button>
-        <button class="hicon-btn" aria-label="그룹"><i data-lucide="users" style="width:24px;height:24px;color:rgba(0,0,0,0.86);"></i></button>
-        <button class="menu-btn" aria-label="메뉴">
-          <span class="grid-ic"><i></i><i></i><i></i><i></i></span>
+      <!-- 프로필 -->
+      <div class="hm-profile">
+        <div class="hm-avatar"></div>
+        <div class="hm-who">
+          <div class="hm-name">케이케이</div>
+          <div class="hm-grade">고2</div>
+        </div>
+      </div>
+      <!-- 빠른 실행 — 누르면 각각 고유한 탭이 열린다 -->
+      <div class="hm-quick">
+        <button class="hm-card" type="button" data-quick="timer">
+          <span class="hm-card-ic"><i data-lucide="timer" style="width:22px;height:22px;"></i></span>
+          <span class="hm-card-txt"><b>타이머</b><em id="hmTimerVal">0:00:00</em></span>
+        </button>
+        <button class="hm-card" type="button" data-quick="todo">
+          <span class="hm-card-ic"><i data-lucide="check-square" style="width:22px;height:22px;"></i></span>
+          <span class="hm-card-txt"><b>할 일</b><em>영어 수업 외 2</em></span>
+        </button>
+        <button class="hm-card" type="button" data-quick="schedule">
+          <span class="hm-card-ic"><i data-lucide="calendar" style="width:22px;height:22px;"></i></span>
+          <span class="hm-card-txt"><b>일정</b><em>중간고사 2일차</em></span>
+        </button>
+        <button class="hm-card" type="button" data-quick="group">
+          <span class="hm-card-ic"><i data-lucide="users" style="width:22px;height:22px;"></i></span>
+          <span class="hm-card-txt"><b>그룹</b><em>3명 공부중</em></span>
         </button>
       </div>
     </div>
     <div class="home-body">
+      <div class="hm-sec-title">노트</div>
       <div class="note-grid" id="hsNotes"></div>
     </div>
     <button class="fab-add-btn" id="hsAddBtn" aria-label="새 노트">
@@ -3872,6 +3889,21 @@
     </div>
   </div>
 
+
+  <!-- 타이머 탭 화면 — 과목 앞 시작 버튼을 누르면 공부 화면으로 바뀐다 -->
+  <div class="timer-view" id="timerView">
+    <div class="tv-head">
+      <span class="tv-dday">D-36</span>
+      <span class="tv-date" id="tvDate">4. 4 (토)</span>
+      <button class="tv-more" aria-label="더보기"><i data-lucide="more-vertical" style="width:20px;height:20px;"></i></button>
+      <div class="tv-time-wrap">
+        <div class="tv-time" id="tvTime">0:00:00</div>
+        <i data-lucide="clock" style="width:18px;height:18px;opacity:0.85;"></i>
+      </div>
+      <div class="tv-sub" id="tvSub">1분 57초</div>
+    </div>
+    <div class="tv-list" id="tvList"></div>
+  </div>
 
   <!-- 공부 탭 화면 (Figma 6382:861492) — 툴바·캔버스를 대체한다 -->
   <div class="study-view" id="studyView">
@@ -5853,7 +5885,6 @@
 
   // ── Home screen ───────────────────────────────────────────
   const homeScreen = document.getElementById('homeScreen');
-  const studyBtn   = document.querySelector('.study-btn');
   const tabLabels  = document.querySelector('.tab-labels');
   const tabsSection = document.querySelector('.tabs-section');
 
@@ -5988,7 +6019,6 @@
 
   // ── 홈 탭 / 타이머 버튼 ────────────────────────────────
   const homeTab = tabLabels.querySelector('.tab-home:not(.closing)');
-  const studyBtnWrap = document.getElementById('studyBtnWrap');
 
   // 홈은 이제 탭이다. 아래 두 함수는 홈 탭을 켜고/끄는 얇은 래퍼로 남긴다
   // (기존 호출부 openTabFromHome 등이 그대로 동작하도록).
@@ -6017,104 +6047,91 @@
     if (window.lucide) lucide.createIcons({ nodes: [grid] });
   })();
 
-  // ══ 공부 버튼 = 탭 ══════════════════════════════════════════
-  // 별도 탭을 만들지 않는다. 이 버튼 자체가 하나의 탭처럼 동작한다.
-  //   공부 전        : 유리 버튼(비활성 느낌) + 플레이 아이콘
-  //   공부중·미선택  : 유리 버튼 + 보라 점 + 시간 + 일시정지
-  //   공부중·선택    : 흰 배경 버튼 + 진한 글자 (공부 화면 표시)
-  // 다른 탭을 누르면 선택만 풀리고 시간은 계속 흐른다.
-  let studyRunning = false, studySelected = false;
+  // ══ 타이머 탭 ══════════════════════════════════════════════
+  // 홈의 "타이머"를 누르면 고유한 탭이 열리고, 그 탭 안에서
+  //   시작 전 : 타이머 화면(과목·할일 목록)
+  //   공부 중 : 기존 공부 화면
+  // 을 오간다. 과목 앞 시작 버튼 → 공부 화면, 공부 화면의 일시정지 → 타이머 화면.
+  let studyRunning = false;   // 공부 화면이 도는 중인지
+  let runningSubj  = null;    // 공부 중인 과목
+  let lastTab      = null;    // 스플릿에서 오른쪽에 띄울 탭
 
-  const PLAY_SVG  = '<i data-lucide="play" style="width:14px;height:14px;fill:currentColor;stroke:none;"></i>';
-  const DOT_HTML  = '<span class="sb-dot"></span>';
+  const timerView = document.getElementById('timerView');
 
-  // 타이머 버튼 ↔ 공부 탭 — 지금 모습이 아래로 내려가 사라진 뒤, 바뀐 모습이 올라온다
-  let morphT = [];
-  function morphStudyBtn(onSwap) {
-    morphT.forEach(clearTimeout); morphT = [];
-    const el = studyBtn, wrap = studyBtnWrap;
+  const TIMER_SUBJECTS = [
+    { name: '국어',   color: '#ff5722', sec: 0, todos: [{ t: '화법과 작문 오답노트' }, { t: '오답노트' }] },
+    { name: '영어',   color: '#ffb020', sec: 0, todos: [{ t: '과목 컬러 고민', done: true }, { t: '오답노트' }] },
+    { name: '수학',   color: '#22c55e', sec: 0, todos: [] },
+    { name: '챌린지', color: '#1c1c1e', sec: 0, icon: 'rotate-cw',
+      todos: [{ t: '오답노트' }, { t: '오답노트', time: '오후 3:00', round: true }] },
+  ];
 
-    // 지금 모습: 아래로 내려가며 사라지고, 그 자리(폭)도 0으로 접혀 탭들이 왼쪽 끝까지 붙는다
-    wrap.style.width = wrap.offsetWidth + 'px';
-    void wrap.offsetWidth;
-    wrap.classList.add('morphing');
-    el.classList.add('morphing');
-    wrap.style.width       = '0px';
-    wrap.style.marginRight = '0px';
-    el.style.transform = 'translateY(16px)';
-    el.style.opacity   = '0';
-
-    morphT.push(setTimeout(() => {
-      if (onSwap) onSwap();
-      renderStudyBtn();                    // 여기서 알약 ↔ 탭이 바뀐다 (아직 안 보인다)
-
-      // 바뀐 모습의 자연 폭을 재고, 다시 0에서 펴면서 탭들을 오른쪽으로 밀어낸다
-      wrap.style.transition = 'none';
-      wrap.style.width = 'auto';
-      const w = wrap.offsetWidth;
-      wrap.style.width = '0px';
-      el.style.transition = 'none';        // 버튼은 아래에서 다시 시작
-      el.style.transform  = 'translateY(16px)';
-      el.style.opacity    = '0';
-      void el.offsetWidth;                 // 리플로우 — 시작 위치 확정
-      wrap.style.transition  = '';
-      wrap.style.width       = w + 'px';
-      wrap.style.marginRight = '';         // 클래스 값(-10/-30)으로 되돌아가며 전환
-      el.style.transition = '';
-      el.style.transform  = '';
-      el.style.opacity    = '';
-
-      morphT.push(setTimeout(() => {
-        el.classList.remove('morphing');
-        wrap.classList.remove('morphing');
-        wrap.style.width = '';             // 다시 내용 폭에 맡긴다
-        wrap.style.marginRight = '';
-      }, 340));
-    }, 290));
+  function renderTimerView() {
+    const list = document.getElementById('tvList');
+    list.innerHTML = '';
+    TIMER_SUBJECTS.forEach((s, i) => {
+      const row = document.createElement('div');
+      row.className = 'tv-row subj';
+      row.innerHTML =
+        `<button class="tv-play" data-subj="${i}" style="background:${s.color};" aria-label="${s.name} 시작">` +
+          `<i data-lucide="${s.icon || 'play'}" style="width:12px;height:12px;${s.icon ? '' : 'fill:currentColor;stroke:none;'}"></i>` +
+        `</button>` +
+        `<span class="tv-name">${s.name}</span>` +
+        `<span class="tv-time-cell">${fmtStudy(s.sec)}</span>`;
+      list.appendChild(row);
+      s.todos.forEach(td => {
+        const tr = document.createElement('div');
+        tr.className = 'tv-row todo';
+        tr.innerHTML =
+          `<span class="tv-name">${td.t}</span>` +
+          (td.time ? `<span class="tv-time-cell">${td.time}</span>` : '') +
+          `<span class="tv-check${td.round ? ' round' : ''}${td.done ? ' on' : ''}"></span>`;
+        list.appendChild(tr);
+      });
+    });
+    if (window.lucide) lucide.createIcons({ nodes: [list] });
   }
 
-  function renderStudyBtn() {
-    studyBtn.classList.toggle('running', studyRunning);
-    studyBtn.classList.toggle('selected', studySelected);
-    // 공부를 시작하면 알약 버튼이 다른 탭과 같은 탭 모양이 된다
-    studyBtnWrap.classList.toggle('as-tab', studyRunning);
-    const prefix = studySelected ? 'active' : 'inactive';
-    document.getElementById('sbCurveL').src = `assets/tab-${prefix}-left.svg`;
-    document.getElementById('sbCurveR').src = `assets/tab-${prefix}-right.svg`;
-    const ic = document.getElementById('sbIcon');
-    ic.innerHTML = studyRunning ? DOT_HTML : PLAY_SVG;
-    if (window.lucide) lucide.createIcons({ nodes: [ic] });
-  }
+  document.getElementById('tvList').addEventListener('click', e => {
+    const play = e.target.closest('.tv-play');
+    if (play) { startStudy(+play.dataset.subj); return; }
+    const chk = e.target.closest('.tv-check');
+    if (chk) chk.classList.toggle('on');
+  });
 
-  // 공부 화면을 이 버튼이 대표하므로, 선택되면 모든 탭을 비활성으로 돌린다.
-  // 스플릿뷰에서 오른쪽에 띄울 탭이므로 직전 탭을 기억해 둔다.
-  let lastTab = null;
-  function selectStudy(morph) {
-    lastTab = tabLabels.querySelector('.tab.active:not(.closing)') || lastTab;
-    studySelected = true;
-    setTabActive(null); // 안에서 updateView가 불리며 공부 화면이 뜬다
-    if (morph) morphStudyBtn(); else renderStudyBtn();
+  // 과목 시작 → 공부 화면 / 공부 화면의 일시정지 → 타이머 화면
+  function startStudy(idx) {
+    runningSubj = idx;
+    studyRunning = true;
+    startStudyTimer();
+    updateView();
   }
-
-  function endStudy() {
-    stopStudyTimer();
+  function pauseStudy() {
     studyRunning = false;
-    const wasSelected = studySelected;
-    studySelected = false;
-    // 탭이 아래로 내려가 닫히고, 그 자리에서 타이머 알약이 다시 올라온다
-    morphStudyBtn(() => { document.getElementById('studyTimerTime').textContent = '00:00:00'; });
-    // 선택 상태였다면 갈 곳이 없으므로 홈 탭으로 보낸다
-    if (wasSelected) setTabActive(homeTab || tabLabels.querySelector('.tab:not(.closing)'));
+    stopStudyTimer();
+    const t = timerTabEl();
+    if (t && !t.classList.contains('active')) setTabActive(t);
     else updateView();
   }
+  document.getElementById('svPause').addEventListener('click', pauseStudy);
 
-  // 스플릿 중에는 탭 바 타이머가 접혀 있으므로, 공부 화면 안의 버튼으로도 공부를 끌 수 있다
-  document.getElementById('svPause').addEventListener('click', () => endStudy());
-
-  studyBtn.addEventListener('click', () => {
-    const starting = !studyRunning;
-    if (starting) { studyRunning = true; startStudyTimer(); }
-    selectStudy(starting); // 공부를 시작할 때만 알약 → 탭 전환 애니메이션
+  // ── 홈의 빠른 실행 → 고유한 탭 ────────────────────────────
+  const QUICK_TABS = {
+    timer:    { name: '타이머', icon: 'timer' },
+    todo:     { name: '할 일',  icon: 'check-square' },
+    schedule: { name: '일정',   icon: 'calendar' },
+    group:    { name: '그룹',   icon: 'users' },
+  };
+  function quickTabEl(key) { return tabLabels.querySelector(`.tab[data-quick="${key}"]:not(.closing)`); }
+  function timerTabEl() { return quickTabEl('timer'); }
+  function openQuickTab(key) {
+    const exist = quickTabEl(key);
+    if (exist) { setTabActive(exist); return; } // 이미 있으면 그 탭으로 — 두 개가 생기지 않는다
+    const q = QUICK_TABS[key];
+    if (q) addHomeTab(q.name, q.icon, 'quick', null, key);
+  }
+  document.querySelectorAll('.hm-card').forEach(btn => {
+    btn.addEventListener('click', () => openQuickTab(btn.dataset.quick));
   });
 
   // ── 공부 타이머 — 버튼과 공부 화면의 시간이 함께 흘러간다 ──
@@ -6125,18 +6142,21 @@
   }
   function paintStudyTime() {
     const t = fmtStudy(studySec);
-    document.getElementById('studyTimerTime').textContent = t;
-    const svT = document.getElementById('svTime');
-    if (svT) svT.textContent = t;
+    const svT = document.getElementById('svTime');   if (svT) svT.textContent = t;
+    const tvT = document.getElementById('tvTime');   if (tvT) tvT.textContent = t;
+    const hmT = document.getElementById('hmTimerVal'); if (hmT) hmT.textContent = t;
   }
+  // 일시정지해도 시간은 남는다 — 다시 시작하면 이어서 흐른다
   function startStudyTimer() {
-    studySec = 0; paintStudyTime();
     clearInterval(studyTick);
-    studyTick = setInterval(() => { studySec++; paintStudyTime(); }, 1000);
+    studyTick = setInterval(() => {
+      studySec++;
+      if (runningSubj != null && TIMER_SUBJECTS[runningSubj]) TIMER_SUBJECTS[runningSubj].sec++;
+      paintStudyTime();
+    }, 1000);
+    paintStudyTime();
   }
-  function stopStudyTimer() { clearInterval(studyTick); studyTick = null; studySec = 0; }
-
-  renderStudyBtn(); // 최초 상태(공부 전) 그리기
+  function stopStudyTimer() { clearInterval(studyTick); studyTick = null; }
 
   // ── Tab management ─────────────────────────────────────
 
@@ -6170,8 +6190,6 @@
       const coveredRight = !!tabs[i + 1] && tabs[i + 1].classList.contains('active');
       tabShadowR(tab).classList.toggle('on', coveredRight);
     });
-    // 타이머 탭은 맨 왼쪽 탭이다 — 선택되면 최상단, 아니면 비활성 탭들보다 위(홈 탭 포함)
-    studyBtnWrap.style.zIndex = studySelected ? String(n + 3) : String(n + 1);
   }
 
   // 우측 그림자 레이어는 필요할 때 만들어 붙인다 (정적 탭·새로 만든 탭 모두 커버)
@@ -6187,9 +6205,6 @@
   }
 
   function setTabActive(tab) {
-    // 실제 탭을 고르면 공부 버튼의 선택 상태만 풀린다 — 타이머는 계속 돈다.
-    // 스플릿뷰에서는 왼쪽 공부 화면을 유지한 채 오른쪽 탭만 바뀐다.
-    if (tab && studySelected && !splitOn) { studySelected = false; renderStudyBtn(); }
     tabLabels.querySelectorAll('.tab:not(.closing)').forEach(t => {
       const isTarget = t === tab;
       t.classList.toggle('active', isTarget);
@@ -6301,28 +6316,13 @@
         resetRightPane();
       }, 330);
     }
-    // 탭 영역도 함께 갈라진다 — 타이머 탭이 왼쪽 패널 폭을 채우며 나머지 탭들을
-    // 우측 패널 모서리까지 밀어낸다. width:auto ↔ calc()는 전환이 되지 않으므로
-    // 양쪽 끝을 실제 px로 잡아 애니메이션한 뒤 인라인 값을 지운다.
-    const wrapFrom = studyBtnWrap.offsetWidth;
     tabBar.classList.toggle('split', on);
-    if (!instant) {
-      studyBtnWrap.style.transition = 'none';
-      studyBtnWrap.style.width = '';                       // 바뀐 상태의 목표 폭
-      const wrapTo = studyBtnWrap.offsetWidth;
-      studyBtnWrap.style.width = wrapFrom + 'px';          // 현재 폭에서 시작
-      void studyBtnWrap.offsetWidth;                       // 리플로우
-      studyBtnWrap.style.transition = '';
-      studyBtnWrap.style.width = wrapTo + 'px';
-      clearTimeout(wrapWT);
-      wrapWT = setTimeout(() => { studyBtnWrap.style.width = ''; }, 380);
-    }
     // 좁아진 폭에 카드가 다 들어오도록 캔버스를 축소했다가, 풀리면 원래 배율로 되돌린다
     const paneW = workspaceEl.clientWidth * 0.75 - 12; // 우측 75% - (가운데 4 + 바깥 8)
     if (window.canvasZoom) window.canvasZoom.setSplit(on, paneW);
-    // 오른쪽에 뜬 탭은 선택된 상태로 보인다. 스플릿을 풀면 공부 화면만 남으므로 선택 해제.
+    // 스플릿을 켜면 오른쪽에 띄울 탭이 선택되고, 풀면 다시 타이머 탭(=공부 화면)으로 돌아온다
     if (on) setTabActive((lastTab && lastTab.isConnected) ? lastTab : (homeTab || tabLabels.querySelector('.tab:not(.closing)')));
-    else if (studySelected) setTabActive(null);
+    else if (studyRunning) { const t = timerTabEl(); if (t && !t.classList.contains('active')) setTabActive(t); }
   }
   svPanelBtn.addEventListener('click', () => setSplit(!splitOn));
 
@@ -6333,20 +6333,26 @@
     const noteType  = activeTab?.dataset.noteType || 'scroll'; // scroll/calendar/weekly/monthly
     const tabName   = activeTab?.dataset.tabName  || '';
 
-    // 공부 버튼이 선택되어 있으면 캔버스 대신 공부 화면을 쓴다.
-    // 단 스플릿뷰에서는 공부 화면(좌)과 선택한 탭(우)이 함께 보인다.
-    const isStudy   = studySelected;
-    const showTab   = !isStudy || splitOn; // 탭 화면(홈·노트·플레이스홀더)을 그릴지
-    studyView.classList.toggle('show', !!isStudy);
+    // 타이머 탭은 공부 전에는 타이머 화면, 공부 중에는 공부 화면을 쓴다.
+    // 스플릿뷰에서는 공부 화면(좌)이 유지된 채 선택한 탭(우)이 함께 보인다.
+    const isTimer   = activeTab?.dataset.quick === 'timer';
+    const showStudy = studyRunning && (isTimer || splitOn);
+    const showTimer = isTimer && !studyRunning;
+    const showTab   = !showStudy || splitOn; // 탭 화면(홈·노트·플레이스홀더)을 그릴지
+
+    studyView.classList.toggle('show', showStudy);
+    timerView.classList.toggle('show', showTimer);
+    if (showTimer) renderTimerView();
     // 홈은 별도 화면이 아니라 홈 탭이 활성일 때 보이는 이 탭의 화면이다
     homeScreen.classList.toggle('hs-visible', !!isHome && showTab);
 
     const isNote = showTab && !isHome && !isQuick;
-    // 페이지 패널 플로팅 버튼은 노트 화면에서만 뜬다 (홈·플레이스홀더에는 패널이 없다)
+    // 페이지 패널 플로팅 버튼은 노트 화면에서만 뜬다 (홈·타이머·플레이스홀더에는 패널이 없다)
     panelToggleBtn.style.display = isNote ? '' : 'none';
-    viewPlaceholder.style.display = (isQuick && showTab) ? 'flex' : 'none';
-    viewPlaceholderLabel.textContent = (isQuick && showTab) ? tabName : '';
-    if (!isStudy) setSplit(false, true); // 공부 화면을 벗어나면 스플릿도 곧바로 풀린다
+    const showPlaceholder = isQuick && !isTimer && showTab;
+    viewPlaceholder.style.display = showPlaceholder ? 'flex' : 'none';
+    viewPlaceholderLabel.textContent = showPlaceholder ? tabName : '';
+    if (!showStudy) setSplit(false, true); // 공부 화면을 벗어나면 스플릿도 곧바로 풀린다
 
     if (isNote) setCanvasMode(noteType, activeTab);
   }
@@ -6356,7 +6362,7 @@
     addHomeTab(name, icon, type || 'note', noteType);
   }
 
-  function addHomeTab(name, icon, type, noteType) {
+  function addHomeTab(name, icon, type, noteType, quickKey) {
     // Deactivate current active tab
     const prevActive = tabLabels.querySelector('.tab.active:not(.closing)');
     if (prevActive) setTabActive(null); // clear all active states first
@@ -6367,6 +6373,7 @@
     newTab.dataset.tabType = type;
     newTab.dataset.tabName = name;
     newTab.dataset.noteType = noteType || 'scroll';
+    if (quickKey) newTab.dataset.quick = quickKey; // 타이머·할일·일정·그룹은 하나씩만 열린다
     if (newTab.dataset.noteType === 'calendar') {
       const t = new Date();
       newTab._calState = {
