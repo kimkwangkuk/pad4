@@ -3116,7 +3116,17 @@
       overflow: hidden auto; scrollbar-width: none;
     }
     .qv-panel::-webkit-scrollbar { display: none; }
-    .qv-head { padding: 26px 24px 14px; }
+    .qv-head { display: flex; align-items: center; gap: 16px; padding: 26px 24px 14px; }
+    .qv-head-txt { flex: 1 1 0; min-width: 0; }
+    /* 일 / 주 / 월 보기 전환 */
+    .qv-seg { display: none; gap: 2px; padding: 3px; border-radius: 100px; background: rgba(0,0,0,0.05); flex-shrink: 0; }
+    .qv-seg button {
+      min-width: 52px; height: 28px; padding: 0 12px; border: none; border-radius: 100px;
+      background: none; cursor: pointer; -webkit-tap-highlight-color: transparent;
+      font-family: 'Pretendard', sans-serif; font-size: 13px; font-weight: 500;
+      color: rgba(0,0,0,0.45); letter-spacing: -0.039px;
+    }
+    .qv-seg button.on { background: #fff; color: rgba(0,0,0,0.86); box-shadow: 0 1px 3px rgba(0,0,0,0.12); }
     .qv-title { font-size: 22px; font-weight: 700; color: rgba(0,0,0,0.86); letter-spacing: -0.066px; }
     .qv-sub { margin-top: 4px; font-size: 14px; font-weight: 400; color: rgba(0,0,0,0.45); letter-spacing: -0.042px; }
     .qv-body { padding: 0 24px 40px; }
@@ -3992,8 +4002,11 @@
   <div class="quick-view" id="quickView">
    <div class="qv-panel">
     <div class="qv-head">
-      <div class="qv-title" id="qvTitle"></div>
-      <div class="qv-sub" id="qvSub"></div>
+      <div class="qv-head-txt">
+        <div class="qv-title" id="qvTitle"></div>
+        <div class="qv-sub" id="qvSub"></div>
+      </div>
+      <div class="qv-seg" id="qvSeg"></div>
     </div>
     <div class="qv-body" id="qvBody"></div>
    </div>
@@ -6253,17 +6266,58 @@
   const quickView = document.getElementById('quickView');
   const CHECK_SVG = '<i data-lucide="check" style="width:13px;height:13px;"></i>';
 
-  const QV_TODO = [
-    { sec: '오늘', items: [
-      { t: '영어 수업', s: '오전 09:00', done: true },
-      { t: '수학 문제집 20p', s: '개념원리 3단원' },
-      { t: '국어 오답노트 정리' },
-    ]},
-    { sec: '내일', items: [
-      { t: '모의고사 대비 3회차' },
-      { t: '영단어 100개' },
-    ]},
-  ];
+  // 할 일 — 일 / 주 / 월 세 가지 보기
+  let todoRange = 'day';
+  const TODO_RANGES = [['day', '일'], ['week', '주'], ['month', '월']];
+  const QV_TODO = {
+    day: {
+      sub: '오늘 3개 · 내일 2개',
+      list: [
+        { sec: '오늘 · 4월 4일 (토)', items: [
+          { t: '영어 수업', s: '오전 09:00', done: true },
+          { t: '수학 문제집 20p', s: '개념원리 3단원' },
+          { t: '국어 오답노트 정리' },
+        ]},
+        { sec: '내일', items: [
+          { t: '모의고사 대비 3회차' },
+          { t: '영단어 100개' },
+        ]},
+      ],
+    },
+    week: {
+      sub: '이번 주 9개 · 3개 완료',
+      list: [
+        { sec: '월', items: [{ t: '영단어 50개', done: true }, { t: '수학 문제집 15p' }] },
+        { sec: '화', items: [{ t: '국어 비문학 3지문' }] },
+        { sec: '수', items: [{ t: '영어 듣기 모의고사', done: true }] },
+        { sec: '목', items: [{ t: '수학 오답노트' }] },
+        { sec: '금', items: [{ t: '과학 실험 보고서', s: '제출 마감' }] },
+        { sec: '토 · 오늘', items: [{ t: '영어 수업', s: '오전 09:00', done: true }, { t: '수학 문제집 20p' }] },
+        { sec: '일', items: [{ t: '모의고사 대비 3회차' }] },
+      ],
+    },
+    month: {
+      sub: '4월 8개 · 2개 완료',
+      list: [
+        { sec: '1주 · 4/1 – 4/7', items: [
+          { t: '중간고사 대비 계획 세우기', done: true },
+          { t: '영단어 300개' },
+        ]},
+        { sec: '2주 · 4/8 – 4/14', items: [
+          { t: '중간고사', s: '4/12 – 4/14' },
+          { t: '오답노트 정리' },
+        ]},
+        { sec: '3주 · 4/15 – 4/21', items: [
+          { t: '수행평가 준비', done: true },
+          { t: '독서 감상문' },
+        ]},
+        { sec: '4주 · 4/22 – 4/30', items: [
+          { t: '모의고사' },
+          { t: '학원 레벨테스트', s: '4/28' },
+        ]},
+      ],
+    },
+  };
   const QV_SCHEDULE = [
     { sec: '오늘 · 4월 4일 (토)', items: [
       { t: '영어 수업', s: '오전 09:00 – 12:00', c: '#3b82f6' },
@@ -6293,13 +6347,17 @@
   }
 
   const QUICK_VIEWS = {
-    todo: () => ({
-      title: '할 일', sub: '오늘 3개 · 내일 2개',
-      body: qvSections(QV_TODO, it =>
-        `<div class="qv-row${it.done ? ' done' : ''}">` +
-        `<span class="qv-chk${it.done ? ' on' : ''}">${it.done ? CHECK_SVG : ''}</span>` +
-        `<span class="t">${it.t}${it.s ? `<small>${it.s}</small>` : ''}</span></div>`),
-    }),
+    todo: () => {
+      const d = QV_TODO[todoRange];
+      return {
+        title: '할 일', sub: d.sub,
+        seg: TODO_RANGES.map(([v, l]) => ({ v, l, on: v === todoRange })),
+        body: qvSections(d.list, it =>
+          `<div class="qv-row${it.done ? ' done' : ''}">` +
+          `<span class="qv-chk${it.done ? ' on' : ''}">${it.done ? CHECK_SVG : ''}</span>` +
+          `<span class="t">${it.t}${it.s ? `<small>${it.s}</small>` : ''}</span></div>`),
+      };
+    },
     schedule: () => ({
       title: '일정', sub: '중간고사 2일차',
       body: qvSections(QV_SCHEDULE, it =>
@@ -6340,10 +6398,22 @@
     const v = make();
     document.getElementById('qvTitle').textContent = v.title;
     document.getElementById('qvSub').textContent = v.sub;
+    const seg = document.getElementById('qvSeg');
+    seg.innerHTML = (v.seg || []).map(o =>
+      `<button type="button" data-range="${o.v}"${o.on ? ' class="on"' : ''}>${o.l}</button>`).join('');
+    seg.style.display = v.seg ? 'flex' : 'none';
     document.getElementById('qvBody').innerHTML = v.body;
     if (window.lucide) lucide.createIcons({ nodes: [quickView] });
     return true;
   }
+
+  // 일 / 주 / 월 보기 전환
+  document.getElementById('qvSeg').addEventListener('click', e => {
+    const b = e.target.closest('button[data-range]');
+    if (!b) return;
+    todoRange = b.dataset.range;
+    renderQuickView('todo');
+  });
 
   // 할 일 체크는 그 자리에서 토글된다
   document.getElementById('qvBody').addEventListener('click', e => {
