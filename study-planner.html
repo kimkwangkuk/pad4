@@ -2720,10 +2720,14 @@
     .nbp { width: 170px; height: 226.667px; display: flex; align-items: center; justify-content: center; }
     .nbp-screen {
       position: relative; width: 170px; aspect-ratio: 4 / 3;
-      border-radius: 10px; overflow: hidden; background: #fff;
-      box-shadow: 0 0 0 1px rgba(0,0,0,0.07), 0 6px 18px rgba(0,0,0,0.12);
+      padding: 5px; background: #fff; border-radius: 9px; overflow: hidden;
+      box-shadow: 1px 1px 3px rgba(0,0,0,0.15), 0 5px 10px rgba(0,0,0,0.05);
     }
-    .nbp-screen .card { border-radius: 0; box-shadow: none; }
+    .nbp-inner {
+      position: relative; width: 100%; height: 100%;
+      border: 0.5px solid rgba(0,0,0,0.12); border-radius: 5px; overflow: hidden;
+    }
+    .nbp-inner .card { border-radius: 0; box-shadow: none; }
 
     /* ── 새 폴더 팝업 (Figma 1707486774) ── */
     .nfd-backdrop {
@@ -2878,12 +2882,16 @@
     /* 스마트 패드는 가로 섬네일이라 4열 */
     .ib-grid.pad { grid-template-columns: repeat(4, 1fr); column-gap: 16px; row-gap: 26px; }
     .ib-grid.pad .ib-thumbwrap { aspect-ratio: 4 / 3; align-items: stretch; }
-    /* 섬네일이 종이 한 장이 아니라 화면이다 — 안쪽 여백 없이 프레임을 꽉 채운다 */
+    /* 섬네일 = 흰 프레임 + 그 안에 테두리 있는 화면 (Figma 7902:965588) */
     .ib-grid.pad .ib-thumb {
-      width: 100%; height: 100%; padding: 0; border-radius: 10px; overflow: hidden;
+      width: 100%; height: 100%; padding: 5px; background: #fff;
+      border-radius: 9px; overflow: hidden;
+      box-shadow: 1px 1px 3px rgba(0,0,0,0.15), 0 5px 10px rgba(0,0,0,0.05);
     }
-    .ib-grid.pad .ib-page { border-radius: 10px; }
-    /* 화면형이라 종이 모서리 라운드도 쓰지 않는다 */
+    .ib-grid.pad .ib-page {
+      border: 0.5px solid rgba(0,0,0,0.12); border-radius: 5px; overflow: hidden;
+    }
+    /* 안쪽은 종이가 아니라 화면 — 모서리 라운드·그림자를 쓰지 않는다 */
     .ib-grid.pad .ib-page .card { border-radius: 0; box-shadow: none; }
     .ib-desc {
       margin-top: 4px; text-align: left;
@@ -2954,7 +2962,12 @@
       box-shadow: 0 0 0 1px rgba(0,0,0,0.07), 0 10px 30px rgba(0,0,0,0.14);
     }
     .ids-hero-page.land { height: auto; width: 100%; max-width: 707px; aspect-ratio: 4 / 3; }
-    /* 스마트 패드 미리보기는 종이가 아니라 화면 — 안쪽 카드도 라운드 없이 꽉 채운다 */
+    /* 스마트 패드 미리보기 — 화면이므로 안쪽은 꽉 차고, 프레임은 테두리·그림자로만
+       (여백을 주면 썸네일 스케일 계산이 어긋난다) */
+    .ids-hero-page.pad {
+      border-radius: 10px;
+      box-shadow: 0 0 0 1px rgba(0,0,0,0.12), 2px 2px 8px rgba(0,0,0,0.14), 0 10px 26px rgba(0,0,0,0.08);
+    }
     .ids-hero-page.pad .card { border-radius: 0; box-shadow: none; }
 
     /* 오른쪽 — 정보 */
@@ -6301,7 +6314,7 @@
         <div class="chev">⌄</div>
       </div>
     `;
-    card.addEventListener('click', () => openTabFromHome(note.name, note.icon || 'file-text', 'note', note.noteType || 'scroll', note.padTpl));
+    card.addEventListener('click', () => openTabFromHome(note.name, note.icon || 'file-text', 'note', note.noteType || 'scroll', note.padTpl, homeKeyOf(note)));
     const chevEl = card.querySelector('.chev');
     const nameEl = card.querySelector('.nname');
     chevEl.addEventListener('click', (e) => {
@@ -6316,16 +6329,16 @@
     const card = document.createElement('div');
     card.className = 'note-card';
     card.innerHTML = `
-      <div class="nbp"><div class="nbp-screen"></div></div>
+      <div class="nbp"><div class="nbp-screen"><div class="nbp-inner"></div></div></div>
       <div class="note-info">
         <div class="txt"><div class="nname">${note.name}</div><div class="ntime">${note.date}</div></div>
         <div class="chev">⌄</div>
       </div>
     `;
     setTimeout(() => {
-      window.paintPagePreview?.(card.querySelector('.nbp-screen'), { orient: 'landscape', tpl: note.padTpl });
+      window.paintPagePreview?.(card.querySelector('.nbp-inner'), { orient: 'landscape', tpl: note.padTpl });
     }, 0);
-    card.addEventListener('click', () => openTabFromHome(note.name, note.icon || 'tablet', 'note', 'pad', note.padTpl));
+    card.addEventListener('click', () => openTabFromHome(note.name, note.icon || 'tablet', 'note', 'pad', note.padTpl, homeKeyOf(note)));
     const chevEl = card.querySelector('.chev');
     const nameEl = card.querySelector('.nname');
     chevEl.addEventListener('click', (e) => { e.stopPropagation(); openHomeNoteMenu(chevEl, note, nameEl); });
@@ -7030,12 +7043,19 @@
     if (isNote) setCanvasMode(noteType, activeTab);
   }
 
-  function openTabFromHome(name, icon, type, noteType, padTpl) {
+  // 홈에서 여는 항목(노트·패드)은 항상 고유한 탭 하나만 갖는다 — 다시 눌러도 그 탭으로 간다
+  let _homeKeySeq = 0;
+  function homeKeyOf(note) { return note.key || (note.key = 'h' + (++_homeKeySeq)); }
+  function openTabFromHome(name, icon, type, noteType, padTpl, key) {
     closeHomeScreen();
-    addHomeTab(name, icon, type || 'note', noteType, null, padTpl);
+    if (key) {
+      const exist = tabLabels.querySelector(`.tab[data-home-key="${key}"]:not(.closing)`);
+      if (exist) { setTabActive(exist); return; }
+    }
+    addHomeTab(name, icon, type || 'note', noteType, null, padTpl, key);
   }
 
-  function addHomeTab(name, icon, type, noteType, quickKey, padTpl) {
+  function addHomeTab(name, icon, type, noteType, quickKey, padTpl, homeKey) {
     // Deactivate current active tab
     const prevActive = tabLabels.querySelector('.tab.active:not(.closing)');
     if (prevActive) setTabActive(null); // clear all active states first
@@ -7048,6 +7068,7 @@
     newTab.dataset.noteType = noteType || 'scroll';
     if (quickKey) newTab.dataset.quick = quickKey; // 타이머·할일·일정·그룹은 하나씩만 열린다
     if (padTpl) newTab.dataset.padTpl = padTpl;    // 스마트 패드는 템플릿마다 화면이 다르다
+    if (homeKey) newTab.dataset.homeKey = homeKey; // 같은 항목은 탭 하나만 열린다
     if (newTab.dataset.noteType === 'calendar') {
       const t = new Date();
       newTab._calState = {
