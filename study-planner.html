@@ -334,11 +334,13 @@
     /* ── 스마트 패드 — 종이가 아니라 화면을 꽉 채우는 반응형 페이지 ──
        확대가 아니라 레이아웃이 늘어난다: 글자 크기는 그대로고 남는 공간을
        과목 목록과 타임테이블이 나눠 갖는다 */
-    .canvas-zoom-wrap[data-mode="pad"] { padding: 8px; }
+    /* 캔버스(아트보드) 위에 놓인 종이가 아니라, 홈처럼 프레임을 그대로 채운다 */
+    .canvas-zoom-wrap[data-mode="pad"] { padding: 0; }
     [data-mode="pad"] .card {
       width: 100%;
-      height: calc(100vh - 36px - 32px); /* 탭 바 + 프레임/캔버스 여백 */
+      height: calc(100vh - 52px); /* 탭 바 36 + 프레임 여백 16 */
       border-radius: 12px;
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,0.10); /* 종이 그림자 대신 테두리 */
     }
     [data-mode="pad"] .card-inner { flex: 1 1 auto; min-height: 0; }
     [data-mode="pad"] .card-ad { display: none; }          /* 패드에는 하단 배너 없음 */
@@ -2805,12 +2807,13 @@
       width: 100%; aspect-ratio: 1 / 1;
       display: flex; align-items: flex-end; justify-content: center;
     }
+    /* 섬네일은 흰 프레임 안에 페이지가 담긴 모습 */
     .ib-thumb {
       position: relative; height: 100%; width: auto; aspect-ratio: 160 / 214;
-      background: #fff; border-radius: 10px; overflow: hidden;
-      /* 종이 한 장이 아니라 프레임에 담긴 모습으로 */
+      background: #fff; border-radius: 12px; padding: 6px; box-sizing: border-box;
       box-shadow: 0 0 0 1px rgba(0,0,0,0.07), 0 6px 18px rgba(0,0,0,0.12);
     }
+    .ib-page { position: relative; width: 100%; height: 100%; overflow: hidden; border-radius: 6px; background: #fff; }
     .ib-thumb.land { height: auto; width: 100%; aspect-ratio: 4 / 3; }
     .ib-lock {
       position: absolute; left: 5px; bottom: 5px; z-index: 2;
@@ -3048,7 +3051,7 @@
 
     /* 마지막 단계 — 표지 선택 팝업 위에 겹쳐 뜨는 이름 입력 미니 팝업 */
     .nwz-ask {
-      position: absolute; inset: 0; z-index: 5;
+      position: fixed; inset: 0; z-index: 5400;
       display: flex; align-items: center; justify-content: center;
       background: rgba(0,0,0,0.12);
     }
@@ -4058,17 +4061,6 @@
       <div class="nwz-grid" id="nwzGrid"></div>
       <div class="nwz-custom" id="nwzCustom" style="display:none;"></div>
     </div>
-    <!-- 마지막 단계 — 팝업 안에 뜨는 이름 입력 미니 팝업 -->
-    <div class="nwz-ask" id="nwzAsk" hidden>
-      <div class="nwz-ask-box">
-        <div class="nwz-ask-title">노트 이름</div>
-        <input class="nwz-ask-input" id="nwzNameInput" type="text" placeholder="내 데일리 플래너">
-        <div class="nwz-ask-btns">
-          <button class="nwz-ask-btn" id="nwzAskCancel" type="button">취소</button>
-          <button class="nwz-ask-btn primary" id="nwzAskOk" type="button">노트 생성</button>
-        </div>
-      </div>
-    </div>
   </div>
 
 
@@ -4104,6 +4096,18 @@
     </div>
     <div class="tv-list" id="tvList"></div>
    </div>
+  </div>
+
+  <!-- 마지막 단계 — 이름 입력 팝업 (표지 선택 위에 겹치거나, 스마트 패드는 단독으로 뜬다) -->
+  <div class="nwz-ask" id="nwzAsk" hidden>
+    <div class="nwz-ask-box">
+      <div class="nwz-ask-title">이름</div>
+      <input class="nwz-ask-input" id="nwzNameInput" type="text" placeholder="내 데일리 플래너">
+      <div class="nwz-ask-btns">
+        <button class="nwz-ask-btn" id="nwzAskCancel" type="button">취소</button>
+        <button class="nwz-ask-btn primary" id="nwzAskOk" type="button">만들기</button>
+      </div>
+    </div>
   </div>
 
   <!-- 공부 탭 화면 (Figma 6382:861492) — 툴바·캔버스를 대체한다 -->
@@ -8004,16 +8008,17 @@
       ibVisibleItems().forEach(item => {
         const cell = document.createElement('div');
         cell.className = 'ib-cell';
-        // 캡션은 "이름 (세로/가로)" — 같은 속지의 방향 차이를 목록에서 바로 알 수 있다
-        const oriTxt = item.orient === 'landscape' ? '가로' : '세로';
-        cell.innerHTML = `<div class="ib-thumbwrap"><div class="ib-thumb${item.orient === 'landscape' ? ' land' : ''}"></div></div>` +
-                         `<div class="ib-name">${item.name} (${oriTxt})</div>`;
+        // 스마트 패드는 화면형이라 항상 가로 섬네일. 무지 노트는 속지 방향을 따른다
+        const land = ibMode === 'smart' || item.orient === 'landscape';
+        const cap = ibMode === 'smart' ? item.name : `${item.name} (${item.orient === 'landscape' ? '가로' : '세로'})`;
+        cell.innerHTML = `<div class="ib-thumbwrap"><div class="ib-thumb${land ? ' land' : ''}"><div class="ib-page"></div></div></div>` +
+                         `<div class="ib-name">${cap}</div>`;
         cell.addEventListener('click', () => openInsertDetail(item));
         grid.appendChild(cell);
         // paintPage가 썸네일 내용을 비우므로 잠금 배지는 그 뒤에 얹는다
         setTimeout(() => {
-          const th = cell.querySelector('.ib-thumb');
-          paintPage(th, item);
+          const th = cell.querySelector('.ib-page');
+          paintPage(th, ibMode === 'smart' ? { ...item, orient: 'landscape' } : item);
           if (!item.unlocked) {
             const lock = document.createElement('div');
             lock.className = 'ib-lock';
@@ -8034,8 +8039,9 @@
       $('idsDesc').textContent = item.plain ? PLAIN_DESC : INSERT_DESC;
       $('idsBadge').hidden = !!item.unlocked; // 잠긴 속지만 프리미엄 배지
       const page = $('idsHeroPage');
-      page.classList.toggle('land', item.orient === 'landscape');
-      setTimeout(() => paintPage(page, item, null), 0);
+      const padMode = ibMode === 'smart';
+      page.classList.toggle('land', padMode || item.orient === 'landscape');
+      setTimeout(() => paintPage(page, padMode ? { ...item, orient: 'landscape' } : item, null), 0);
       $('idsTags').innerHTML = item.plain ? ''
         : INSERT_TAGS.map(t => `<span class="ids-tag">${t}</span>`).join('');
       renderIdsColors();
@@ -8056,7 +8062,8 @@
       st.color = sw.dataset.color;
       renderIdsColors();
       const col = INSERT_COLORS.find(c => c.id === st.color);
-      paintPage($('idsHeroPage'), st.insert, col ? col.color : null);
+      const it = ibMode === 'smart' ? { ...st.insert, orient: 'landscape' } : st.insert;
+      paintPage($('idsHeroPage'), it, col ? col.color : null);
     });
 
     // 밝기 모드 드롭다운 (자동 / 밝게 / 어둡게)
@@ -8078,11 +8085,12 @@
     $('idsClose').addEventListener('click', closeInsertDetail);
     idsBackdrop.addEventListener('click', closeInsertDetail);
 
-    // "이 템플릿으로 노트 생성" → 팝업을 닫고, 닫힌 뒤 표지 선택으로 넘어간다
-    // (색상은 상세 팝업 안에서 이미 골랐으므로 별도 색상 선택 단계는 없다)
+    // "이 템플릿으로 노트 생성" → 팝업을 닫고 다음 단계로.
+    // 스마트 패드는 표지가 없으므로 표지 선택을 건너뛰고 바로 이름을 묻는다.
     $('idsUse').addEventListener('click', () => {
+      const isPad = ibMode === 'smart';
       closeInsertDetail();
-      setTimeout(() => openWizard(), 240);
+      setTimeout(() => { if (isPad) openNameAsk(); else openWizard(); }, 240);
     });
 
     // ── 4) 표지 선택 → 5) 노트 이름 ───────────────────────────
@@ -8108,8 +8116,11 @@
     // 이름 입력 미니 팝업 (표지 선택 팝업 위에 겹쳐 뜬다)
     function openNameAsk() {
       const input = $('nwzNameInput');
+      const isPad = ibMode === 'smart';
       input.value = '';
       input.placeholder = st.type ? `내 ${st.type.name}` : '내 데일리 플래너';
+      $('nwzAsk').querySelector('.nwz-ask-title').textContent = isPad ? '스마트 패드 이름' : '노트 이름';
+      $('nwzAsk').querySelector('#nwzAskOk').textContent = isPad ? '패드 생성' : '노트 생성';
       $('nwzAsk').hidden = false;
       setTimeout(() => input.focus(), 0);
     }
@@ -8184,14 +8195,15 @@
     $('nwzAskOk').addEventListener('click', () => {
       const input = $('nwzNameInput');
       const name = (input.value || '').trim() || input.placeholder;
-      const cover = currentCover();
+      const isPadNote = ibMode === 'smart';        // 스마트 패드는 표지가 없다
+      const cover = isPadNote ? null : currentCover();
       closeWizard();
       showScreen(ibScreen, false); // 목록 화면이 오른쪽으로 빠지며 홈이 드러난다
       input.value = '';
 
       // 홈 목록에도 새 노트를 꽂아준다 — 표지 색은 방금 고른 값을 그대로 쓴다
       // 스마트 패드는 종이가 아니라 화면 — 속지 추가·펜 입력이 없는 pad 타입으로 연다
-      const isPad = ibMode === 'smart';
+      const isPad = isPadNote;
       const note = {
         name, date: '방금 전', icon: isPad ? 'tablet' : 'notebook-pen',
         color: cover ? cover.bg : '#f2f2f2',
