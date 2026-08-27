@@ -2716,6 +2716,14 @@
       display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,0.9);
     }
     .nbf { width: 170px; height: 226.667px; display: flex; align-items: center; justify-content: center; }
+    /* 스마트 패드는 표지가 없다 — 스토어와 같은 화면 섬네일로 보여준다 */
+    .nbp { width: 170px; height: 226.667px; display: flex; align-items: center; justify-content: center; }
+    .nbp-screen {
+      position: relative; width: 170px; aspect-ratio: 4 / 3;
+      border-radius: 10px; overflow: hidden; background: #fff;
+      box-shadow: 0 0 0 1px rgba(0,0,0,0.07), 0 6px 18px rgba(0,0,0,0.12);
+    }
+    .nbp-screen .card { border-radius: 0; box-shadow: none; }
 
     /* ── 새 폴더 팝업 (Figma 1707486774) ── */
     .nfd-backdrop {
@@ -6303,6 +6311,27 @@
     return card;
   }
 
+  // 스마트 패드 카드 — 책 표지 대신 스토어와 같은 화면 섬네일을 놓는다
+  function buildPadCardEl(note) {
+    const card = document.createElement('div');
+    card.className = 'note-card';
+    card.innerHTML = `
+      <div class="nbp"><div class="nbp-screen"></div></div>
+      <div class="note-info">
+        <div class="txt"><div class="nname">${note.name}</div><div class="ntime">${note.date}</div></div>
+        <div class="chev">⌄</div>
+      </div>
+    `;
+    setTimeout(() => {
+      window.paintPagePreview?.(card.querySelector('.nbp-screen'), { orient: 'landscape', tpl: note.padTpl });
+    }, 0);
+    card.addEventListener('click', () => openTabFromHome(note.name, note.icon || 'tablet', 'note', 'pad', note.padTpl));
+    const chevEl = card.querySelector('.chev');
+    const nameEl = card.querySelector('.nname');
+    chevEl.addEventListener('click', (e) => { e.stopPropagation(); openHomeNoteMenu(chevEl, note, nameEl); });
+    return card;
+  }
+
   // 폴더 카드 — 노트 카드와 같은 틀에 책 대신 폴더를 놓는다
   function buildFolderCardEl(folder) {
     const card = document.createElement('div');
@@ -6323,8 +6352,14 @@
     return card;
   }
 
+  function buildHomeCardEl(note) {
+    if (note.folder) return buildFolderCardEl(note);
+    if (note.noteType === 'pad') return buildPadCardEl(note);
+    return buildNoteCardEl(note);
+  }
+
   HOME_NOTES.forEach(note => {
-    hsNotesEl.appendChild(note.folder ? buildFolderCardEl(note) : buildNoteCardEl(note));
+    hsNotesEl.appendChild(buildHomeCardEl(note));
   });
 
   lucide.createIcons({ nodes: [homeScreen] });
@@ -8060,6 +8095,7 @@
     const nwzPopup = $('nwzPopup'), nwzBackdrop = $('nwzBackdrop');
 
     // 속지 미리보기는 기존 스터디 카드 템플릿을 축소해 그린다
+    window.paintPagePreview = (el, item, tint) => paintPage(el, item, tint); // 홈 카드 섬네일용
     function paintPage(el, item, tintColor) {
       el.innerHTML = '';
       // 타임라인 템플릿은 타임라인 화면을 그대로 축소해 보여준다
@@ -8400,7 +8436,7 @@
       };
       HOME_NOTES.unshift(note);
       if (!isPad) createTodayPageForNewNote();
-      const cardEl = buildNoteCardEl(note);
+      const cardEl = buildHomeCardEl(note);
       if (window.lucide) lucide.createIcons({ nodes: [cardEl] });
       // 목록 화면이 걷힌 다음에 끼어들어야 홈에서 그 움직임이 보인다
       setTimeout(() => {
