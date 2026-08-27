@@ -3109,6 +3109,9 @@
     }
     .timer-view::-webkit-scrollbar { display: none; }
     .timer-view.show { display: block; }
+    /* 공부 화면과 같은 UI이므로 스플릿 기하도 똑같이 — 왼쪽 25%로 좁아진다 */
+    .timer-view { transition: right 0.32s cubic-bezier(0.4, 0, 0.2, 1); }
+    .timer-view.split { right: 75%; }
     .tv-head {
       position: relative; background: #ff6b1a; color: #fff;
       padding: 18px 20px 26px; border-radius: 12px; margin: 8px;
@@ -3118,12 +3121,15 @@
       position: absolute; left: 50%; top: 18px; transform: translateX(-50%);
       font-size: 13px; font-weight: 500; letter-spacing: -0.039px;
     }
-    .tv-more {
-      position: absolute; right: 14px; top: 12px;
-      width: 32px; height: 32px; border: none; background: none; color: #fff; cursor: pointer;
+    .tv-head-ic { position: absolute; right: 10px; top: 10px; display: flex; gap: 2px; }
+    .tv-ic {
+      width: 34px; height: 34px; border: none; border-radius: 100px;
+      background: none; color: #fff; cursor: pointer;
       display: flex; align-items: center; justify-content: center;
       -webkit-tap-highlight-color: transparent;
     }
+    .tv-ic:hover { background: rgba(255,255,255,0.16); }
+    .tv-ic.on { background: rgba(255,255,255,0.24); }
     .tv-time-wrap { margin-top: 18px; display: flex; align-items: center; justify-content: center; gap: 8px; }
     .tv-time { font-size: 40px; font-weight: 700; letter-spacing: -1px; font-variant-numeric: tabular-nums; }
     .tv-sub { margin-top: 6px; text-align: center; font-size: 13px; font-weight: 500; opacity: 0.9; }
@@ -3914,7 +3920,10 @@
     <div class="tv-head">
       <span class="tv-dday">D-36</span>
       <span class="tv-date" id="tvDate">4. 4 (토)</span>
-      <button class="tv-more" aria-label="더보기"><i data-lucide="more-vertical" style="width:20px;height:20px;"></i></button>
+      <div class="tv-head-ic">
+        <button class="tv-ic" id="tvPanelBtn" aria-label="스플릿뷰"><i data-lucide="panel-right" style="width:20px;height:20px;"></i></button>
+        <button class="tv-ic" aria-label="더보기"><i data-lucide="more-vertical" style="width:20px;height:20px;"></i></button>
+      </div>
       <div class="tv-time-wrap">
         <div class="tv-time" id="tvTime">0:00:00</div>
         <i data-lucide="clock" style="width:18px;height:18px;opacity:0.85;"></i>
@@ -6292,6 +6301,7 @@
   // 공부 화면 우측 상단 패널 버튼을 누르면 공부 화면이 흰 프레임 안에서 왼쪽 절반으로
   // 좁아지고, 오른쪽에 노트 탭(캔버스)이 스플릿뷰처럼 드러난다. 다시 누르면 되돌아온다.
   const svPanelBtn = document.getElementById('svPanelBtn');
+  const tvPanelBtn = document.getElementById('tvPanelBtn');
   const wsFrame    = document.getElementById('wsFrame');
   const tabBar = document.querySelector('.tab-bar');
   let splitOn = false, splitT = null, wrapWT = null;
@@ -6322,7 +6332,9 @@
     if (!on) lastTab = tabLabels.querySelector('.tab.active:not(.closing)') || lastTab;
     splitOn = on;
     studyView.classList.toggle('split', on);
+    timerView.classList.toggle('split', on);
     svPanelBtn.classList.toggle('on', on);
+    tvPanelBtn.classList.toggle('on', on);
     clearTimeout(splitT);
     if (on) {
       // 폭은 즉시 잡고, 오른쪽 프레임 밖에서 제자리로 밀어 넣는다
@@ -6355,7 +6367,7 @@
     if (window.canvasZoom) window.canvasZoom.setSplit(on, paneW);
     // 스플릿을 켜면 오른쪽에 띄울 탭이 선택되고, 풀면 다시 타이머 탭(=공부 화면)으로 돌아온다
     if (on) setTabActive((lastTab && lastTab.isConnected) ? lastTab : (homeTab || tabLabels.querySelector('.tab:not(.closing)')));
-    else if (studyRunning) { const t = timerTabEl(); if (t && !t.classList.contains('active')) setTabActive(t); }
+    else { const t = timerTabEl(); if (t && !t.classList.contains('active')) setTabActive(t); }
   }
   // 클래스가 정한 목표 폭까지 실제 px로 애니메이션한 뒤 인라인 값을 지운다
   let tabWT = null;
@@ -6373,6 +6385,7 @@
   }
 
   svPanelBtn.addEventListener('click', () => setSplit(!splitOn));
+  tvPanelBtn.addEventListener('click', () => setSplit(!splitOn));
 
   function updateView() {
     const activeTab = tabLabels.querySelector('.tab.active:not(.closing)');
@@ -6383,10 +6396,12 @@
 
     // 타이머 탭은 공부 전에는 타이머 화면, 공부 중에는 공부 화면을 쓴다.
     // 스플릿뷰에서는 공부 화면(좌)이 유지된 채 선택한 탭(우)이 함께 보인다.
+    // 타이머 화면과 공부 화면은 한 UI다 — 스플릿에서는 어느 쪽이든 왼쪽 패널에 남는다
     const isTimer   = activeTab?.dataset.quick === 'timer';
-    const showStudy = studyRunning && (isTimer || splitOn);
-    const showTimer = isTimer && !studyRunning;
-    const showTab   = !showStudy || splitOn; // 탭 화면(홈·노트·플레이스홀더)을 그릴지
+    const onLeft    = isTimer || (splitOn && !!timerTabEl()); // 왼쪽 패널에 타이머/공부 화면을 그릴지
+    const showStudy = onLeft && studyRunning;
+    const showTimer = onLeft && !studyRunning;
+    const showTab   = !onLeft || splitOn; // 탭 화면(홈·노트·플레이스홀더)을 그릴지
 
     studyView.classList.toggle('show', showStudy);
     timerView.classList.toggle('show', showTimer);
@@ -6400,7 +6415,7 @@
     const showPlaceholder = isQuick && !isTimer && showTab;
     viewPlaceholder.style.display = showPlaceholder ? 'flex' : 'none';
     viewPlaceholderLabel.textContent = showPlaceholder ? tabName : '';
-    if (!showStudy) setSplit(false, true); // 공부 화면을 벗어나면 스플릿도 곧바로 풀린다
+    if (!onLeft) setSplit(false, true); // 타이머/공부 화면을 벗어나면 스플릿도 곧바로 풀린다
 
     if (isNote) setCanvasMode(noteType, activeTab);
   }
