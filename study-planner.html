@@ -6287,6 +6287,8 @@
     void tabEl.offsetWidth; // 리플로우 — 시작값 확정
     tabEl.classList.add('closing');
     tabEl.classList.remove('active');
+    tabEl.classList.remove('split-lead'); // 스플릿 리드였다면 그 자격도 함께 사라진다
+    tabEl.style.width = '';
     tabEl.style.maxWidth = '0px';
     tabEl.style.marginRight = '0'; // 인라인으로 걸린 -30px을 애니메이션으로 풀어준다
     setTimeout(() => tabEl.remove(), 260);
@@ -6303,6 +6305,10 @@
     if (wasActive) {
       const next = remaining[Math.min(idx, remaining.length - 1)];
       setTabActive(next);
+    } else {
+      // 활성이 아니어도 화면 갱신은 필요하다 — 닫은 탭이 스플릿 왼쪽 패널을
+      // 차지하고 있었다면(타이머 탭) 그 화면과 스플릿도 함께 정리된다
+      updateView();
     }
   }
 
