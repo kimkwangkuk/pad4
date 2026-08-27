@@ -2777,6 +2777,22 @@
     }
     .ib-hero-pages > div:first-child { right: 46px; }
     .ib-hero-pages > div:last-child  { right: 0; }
+    /* 스마트 패드 — 가로 목업 한 장 + 떠 있는 아이콘 배지 두 개 */
+    .ib-hero-pages.pad { width: 240px; height: 156px; }
+    .ib-hero-pages.pad > .ib-hero-page {
+      right: 0; height: 100%; aspect-ratio: 4 / 3; border-radius: 8px;
+      box-shadow: 0 0 0 1px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.14);
+    }
+    .ib-hero-pages.pad > .ib-hero-page:first-child { display: none; }
+    .ib-hero-badge {
+      position: absolute; display: none;
+      width: 36px; height: 36px; border-radius: 11px; background: #fff;
+      align-items: center; justify-content: center; color: rgba(0,0,0,0.7);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.16);
+    }
+    .ib-hero-pages.pad .ib-hero-badge { display: flex; }
+    .ib-hero-badge.a { right: -12px; top: -14px; }
+    .ib-hero-badge.b { left: -6px; bottom: 10px; }
 
     .ib-filters {
       display: flex; align-items: center; gap: 8px;
@@ -2801,6 +2817,16 @@
       display: grid; grid-template-columns: repeat(3, 1fr);
       column-gap: 20px; row-gap: 28px;
       padding-top: 22px; padding-bottom: 48px;
+    }
+    /* 스마트 패드는 가로 섬네일이라 4열 */
+    .ib-grid.pad { grid-template-columns: repeat(4, 1fr); column-gap: 16px; row-gap: 26px; }
+    .ib-grid.pad .ib-thumbwrap { aspect-ratio: 4 / 3; align-items: stretch; }
+    .ib-grid.pad .ib-thumb { width: 100%; height: 100%; }
+    .ib-desc {
+      margin-top: 4px;
+      font-family: 'Pretendard', sans-serif; font-size: 12px; font-weight: 400;
+      color: rgba(0,0,0,0.45); letter-spacing: -0.036px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
     .ib-cell { cursor: pointer; -webkit-tap-highlight-color: transparent; }
     .ib-thumbwrap {
@@ -3997,7 +4023,12 @@
         <div class="ib-hero-t" id="ibHeroT"></div>
         <div class="ib-hero-s" id="ibHeroS"></div>
       </div>
-      <div class="ib-hero-pages"><div id="ibHeroP1"></div><div id="ibHeroP2"></div></div>
+      <div class="ib-hero-pages" id="ibHeroPages">
+        <div class="ib-hero-page" id="ibHeroP1"></div>
+        <div class="ib-hero-page" id="ibHeroP2"></div>
+        <span class="ib-hero-badge a"><i data-lucide="check-square" style="width:20px;height:20px;"></i></span>
+        <span class="ib-hero-badge b"><i data-lucide="timer" style="width:20px;height:20px;"></i></span>
+      </div>
     </div>
     <div class="ib-filters">
       <div id="ibChips" style="display:flex;gap:8px;"></div>
@@ -4101,11 +4132,11 @@
   <!-- 마지막 단계 — 이름 입력 팝업 (표지 선택 위에 겹치거나, 스마트 패드는 단독으로 뜬다) -->
   <div class="nwz-ask" id="nwzAsk" hidden>
     <div class="nwz-ask-box">
-      <div class="nwz-ask-title">이름</div>
+      <div class="nwz-ask-title">노트 이름</div>
       <input class="nwz-ask-input" id="nwzNameInput" type="text" placeholder="내 데일리 플래너">
       <div class="nwz-ask-btns">
         <button class="nwz-ask-btn" id="nwzAskCancel" type="button">취소</button>
-        <button class="nwz-ask-btn primary" id="nwzAskOk" type="button">만들기</button>
+        <button class="nwz-ask-btn primary" id="nwzAskOk" type="button">노트 생성</button>
       </div>
     </div>
   </div>
@@ -7843,6 +7874,18 @@
       { id: 'i8', name: '주간 타임블록',             group: '주간', orient: 'landscape', tint: '#fff3a4', unlocked: false },
       { id: 'i9', name: '먼슬리 그리드',             group: '월간', orient: 'portrait',  tint: '#e8f5ea', unlocked: true },
     ];
+    // 스마트 패드 템플릿 — 종이가 아니라 화면이라 방향 구분 없이 가로 한 종류로 보여준다
+    const PAD_TEMPLATES = [
+      { id: 't1', name: '스터디 타이머',      desc: '과목별 공부 기록',                    tint: '#ff6b1a', unlocked: true },
+      { id: 't2', name: '타임라인',           desc: '하루를 공부 기록 일정으로 채우고 확인', tint: '#ffffff', unlocked: true },
+      { id: 't3', name: '일간 스터디 플래너', desc: '할일 정리, 총 시간관리',              tint: '#ffffff', unlocked: true },
+      { id: 't4', name: '주간 스터디 플래너', desc: '과목별 공부 기록',                    tint: '#f6efe6', unlocked: false },
+      { id: 't5', name: '캘린더',             desc: '하루 공부 기록 일정으로 채우고 확인',  tint: '#ffffff', unlocked: false },
+      { id: 't6', name: '주간 루틴',          desc: '주 단위 루틴 관리',                   tint: '#e6f0ff', unlocked: false },
+      { id: 't7', name: '월간 루틴',          desc: '월 단위 습관 관리',                   tint: '#e8f5ea', unlocked: false },
+    ];
+    PAD_TEMPLATES.forEach(t => { t.orient = 'landscape'; });
+
     // 무지 노트용 속지 — 스터디 템플릿과 달리 빈 종이(무지·줄·모눈·도트)만 고른다
     const PLAIN_INSERTS = [
       { id: 'b1', name: '무지', plain: 'blank', orient: 'portrait',  unlocked: true },
@@ -7959,12 +8002,15 @@
       $('ibTitle').textContent = type.name;
       $('ibHeroT').textContent = type.name;
       $('ibHeroS').textContent = type.desc;
-      const heroItem = ibMode === 'plain'
-        ? { orient: 'portrait', plain: 'line' }
-        : { orient: 'portrait' };
+      const isPadList = ibMode === 'smart';
+      $('ibHeroPages').classList.toggle('pad', isPadList);
+      const heroItem = isPadList
+        ? { orient: 'landscape' }
+        : (ibMode === 'plain' ? { orient: 'portrait', plain: 'line' } : { orient: 'portrait' });
       setTimeout(() => {
         paintPage($('ibHeroP1'), heroItem, null);
         paintPage($('ibHeroP2'), heroItem, null);
+        if (window.lucide) lucide.createIcons({ nodes: [$('ibHeroPages')] });
       }, 0);
       renderIbFilters();
       renderIbGrid();
@@ -7973,6 +8019,9 @@
     $('nnfBack2').addEventListener('click', () => showScreen(ibScreen, false));
 
     function renderIbFilters() {
+      // 스마트 패드는 필터 없이 템플릿만 쭉 보여준다
+      const filters = document.querySelector('.ib-filters');
+      if (filters) filters.style.display = ibMode === 'smart' ? 'none' : '';
       const chips = $('ibChips');
       chips.innerHTML = '';
       // 무지 노트는 분류 칩 없이 방향만 고른다
@@ -7995,6 +8044,7 @@
     }
 
     function ibVisibleItems() {
+      if (ibMode === 'smart') return PAD_TEMPLATES; // 패드는 분류·방향 필터가 없다
       const list = ibMode === 'plain' ? PLAIN_INSERTS : INSERTS.filter(it => it.group === st.group);
       return list
         .filter(it => st.orient === '전체'
@@ -8005,14 +8055,17 @@
     function renderIbGrid() {
       const grid = $('ibGrid');
       grid.innerHTML = '';
+      grid.classList.toggle('pad', ibMode === 'smart');
       ibVisibleItems().forEach(item => {
         const cell = document.createElement('div');
         cell.className = 'ib-cell';
-        // 스마트 패드는 화면형이라 항상 가로 섬네일. 무지 노트는 속지 방향을 따른다
-        const land = ibMode === 'smart' || item.orient === 'landscape';
-        const cap = ibMode === 'smart' ? item.name : `${item.name} (${item.orient === 'landscape' ? '가로' : '세로'})`;
+        // 스마트 패드는 화면형이라 항상 가로 섬네일 + 설명 한 줄. 무지 노트는 속지 방향을 따른다
+        const isPadItem = ibMode === 'smart';
+        const land = isPadItem || item.orient === 'landscape';
+        const cap = isPadItem ? item.name : `${item.name} (${item.orient === 'landscape' ? '가로' : '세로'})`;
         cell.innerHTML = `<div class="ib-thumbwrap"><div class="ib-thumb${land ? ' land' : ''}"><div class="ib-page"></div></div></div>` +
-                         `<div class="ib-name">${cap}</div>`;
+                         `<div class="ib-name">${cap}</div>` +
+                         (isPadItem && item.desc ? `<div class="ib-desc">${item.desc}</div>` : '');
         cell.addEventListener('click', () => openInsertDetail(item));
         grid.appendChild(cell);
         // paintPage가 썸네일 내용을 비우므로 잠금 배지는 그 뒤에 얹는다
@@ -8035,9 +8088,11 @@
     function openInsertDetail(item) {
       st.insert = item;
       $('idsName').textContent = item.name;
-      $('idsOrient').textContent = item.orient === 'landscape' ? '가로형' : '세로형';
-      $('idsDesc').textContent = item.plain ? PLAIN_DESC : INSERT_DESC;
+      $('idsOrient').textContent = ibMode === 'smart' ? '스마트 패드'
+        : (item.orient === 'landscape' ? '가로형' : '세로형');
+      $('idsDesc').textContent = item.desc || (item.plain ? PLAIN_DESC : INSERT_DESC);
       $('idsBadge').hidden = !!item.unlocked; // 잠긴 속지만 프리미엄 배지
+      $('idsUse').textContent = ibMode === 'smart' ? '이 템플릿으로 패드 만들기' : '이 템플릿으로 노트 생성';
       const page = $('idsHeroPage');
       const padMode = ibMode === 'smart';
       page.classList.toggle('land', padMode || item.orient === 'landscape');
@@ -8089,8 +8144,10 @@
     // 스마트 패드는 표지가 없으므로 표지 선택을 건너뛰고 바로 이름을 묻는다.
     $('idsUse').addEventListener('click', () => {
       const isPad = ibMode === 'smart';
+      const padName = st.insert?.name || '스마트 패드';
       closeInsertDetail();
-      setTimeout(() => { if (isPad) openNameAsk(); else openWizard(); }, 240);
+      // 패드는 표지도 이름 설정도 없다 — 템플릿 이름 그대로 바로 만들어진다
+      setTimeout(() => { if (isPad) createNoteOrPad(padName, true); else openWizard(); }, 240);
     });
 
     // ── 4) 표지 선택 → 5) 노트 이름 ───────────────────────────
@@ -8116,11 +8173,8 @@
     // 이름 입력 미니 팝업 (표지 선택 팝업 위에 겹쳐 뜬다)
     function openNameAsk() {
       const input = $('nwzNameInput');
-      const isPad = ibMode === 'smart';
       input.value = '';
       input.placeholder = st.type ? `내 ${st.type.name}` : '내 데일리 플래너';
-      $('nwzAsk').querySelector('.nwz-ask-title').textContent = isPad ? '스마트 패드 이름' : '노트 이름';
-      $('nwzAsk').querySelector('#nwzAskOk').textContent = isPad ? '패드 생성' : '노트 생성';
       $('nwzAsk').hidden = false;
       setTimeout(() => input.focus(), 0);
     }
@@ -8192,23 +8246,17 @@
     // "노트 생성" — 이름을 확정하고 노트를 만든다.
     // 팝업과 목록 화면을 닫아 홈으로 되돌아간 뒤, 새 노트가 맨 앞에 끼어드는
     // 모습을 보여준다 (기존 카드들은 밀려나는 자리로 부드럽게 이동).
-    $('nwzAskOk').addEventListener('click', () => {
-      const input = $('nwzNameInput');
-      const name = (input.value || '').trim() || input.placeholder;
-      const isPadNote = ibMode === 'smart';        // 스마트 패드는 표지가 없다
-      const cover = isPadNote ? null : currentCover();
+    // 노트/패드를 실제로 만든다. 스마트 패드는 표지도 이름 설정도 없다.
+    function createNoteOrPad(name, isPad) {
+      const cover = isPad ? null : currentCover();
       closeWizard();
       showScreen(ibScreen, false); // 목록 화면이 오른쪽으로 빠지며 홈이 드러난다
-      input.value = '';
 
-      // 홈 목록에도 새 노트를 꽂아준다 — 표지 색은 방금 고른 값을 그대로 쓴다
-      // 스마트 패드는 종이가 아니라 화면 — 속지 추가·펜 입력이 없는 pad 타입으로 연다
-      const isPad = isPadNote;
       const note = {
         name, date: '방금 전', icon: isPad ? 'tablet' : 'notebook-pen',
         color: cover ? cover.bg : '#f2f2f2',
         pattern: null,
-        noteType: isPad ? 'pad' : 'scroll'
+        noteType: isPad ? 'pad' : 'scroll'   // 패드는 속지 추가·펜 입력이 없는 화면형
       };
       HOME_NOTES.unshift(note);
       if (!isPad) createTodayPageForNewNote();
@@ -8217,8 +8265,15 @@
       // 목록 화면이 걷힌 다음에 끼어들어야 홈에서 그 움직임이 보인다
       setTimeout(() => {
         insertHomeNote(cardEl);
-        window.toast?.show('노트가 만들어졌습니다');
+        window.toast?.show(isPad ? '스마트 패드가 만들어졌습니다' : '노트가 만들어졌습니다');
       }, 430);
+    }
+
+    $('nwzAskOk').addEventListener('click', () => {
+      const input = $('nwzNameInput');
+      const name = (input.value || '').trim() || input.placeholder;
+      input.value = '';
+      createNoteOrPad(name, false);
     });
 
     // 새 노트에는 오늘자 페이지 한 장이 미리 깔려 있다 — 고른 속지 방향·색을 그대로 반영한다
