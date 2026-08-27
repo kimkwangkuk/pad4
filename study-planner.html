@@ -8056,14 +8056,22 @@
       { id: 'i9', name: '먼슬리 그리드',             group: '월간', orient: 'portrait',  tint: '#e8f5ea', unlocked: true },
     ];
     // 스마트 패드 템플릿 — 종이가 아니라 화면이라 방향 구분 없이 가로 한 종류로 보여준다
+    // desc = 목록 캡션(한 줄) · long = 상세 팝업 소개
     const PAD_TEMPLATES = [
-      { id: 't1', name: '스터디 타이머',      desc: '과목별 공부 기록',                    tint: '#ff6b1a', unlocked: true },
-      { id: 't2', name: '타임라인',           desc: '하루를 공부 기록 일정으로 채우고 확인', tint: '#ffffff', unlocked: true, tpl: 'timeline' },
-      { id: 't3', name: '일간 스터디 플래너', desc: '할일 정리, 총 시간관리',              tint: '#ffffff', unlocked: true },
-      { id: 't4', name: '주간 스터디 플래너', desc: '과목별 공부 기록',                    tint: '#f6efe6', unlocked: false },
-      { id: 't5', name: '캘린더',             desc: '하루 공부 기록 일정으로 채우고 확인',  tint: '#ffffff', unlocked: false },
-      { id: 't6', name: '주간 루틴',          desc: '주 단위 루틴 관리',                   tint: '#e6f0ff', unlocked: false },
-      { id: 't7', name: '월간 루틴',          desc: '월 단위 습관 관리',                   tint: '#e8f5ea', unlocked: false },
+      { id: 't1', name: '스터디 타이머', desc: '과목별 공부 기록', tint: '#ff6b1a', unlocked: true,
+        long: '과목을 눌러 바로 공부를 시작하고, 쌓인 시간이 과목별로 정리됩니다. 할 일도 과목 아래에 함께 둘 수 있어요.' },
+      { id: 't2', name: '타임라인', desc: '공부 기록을 타임라인으로', tint: '#ffffff', unlocked: true, tpl: 'timeline',
+        long: '하루 공부 기록이 시간 축에 그대로 쌓입니다. 일정과 할 일도 한 화면에서 함께 관리하세요.' },
+      { id: 't3', name: '일간 스터디 플래너', desc: '할 일 정리, 총 시간 관리', tint: '#ffffff', unlocked: true,
+        long: '오늘의 할 일과 과목별 공부 시간을 한 장에서 봅니다. 타임테이블이 하루를 10분 단위로 채워줘요.' },
+      { id: 't4', name: '주간 스터디 플래너', desc: '한 주 공부 기록', tint: '#f6efe6', unlocked: false,
+        long: '한 주를 한눈에 놓고 과목별 공부량을 비교합니다. 요일마다 할 일과 기록이 함께 정리돼요.' },
+      { id: 't5', name: '캘린더', desc: '일정과 기록을 달력으로', tint: '#ffffff', unlocked: false,
+        long: '공부 기록과 일정이 달력 위에 그대로 표시됩니다. 어느 날 얼마나 했는지 한눈에 확인하세요.' },
+      { id: 't6', name: '주간 루틴', desc: '주 단위 루틴 관리', tint: '#e6f0ff', unlocked: false,
+        long: '매주 반복하는 습관을 체크로 관리합니다. 달성률이 주 단위로 정리돼요.' },
+      { id: 't7', name: '월간 루틴', desc: '월 단위 습관 관리', tint: '#e8f5ea', unlocked: false,
+        long: '한 달 동안의 습관을 이어서 채웁니다. 얼마나 꾸준했는지 월 단위로 볼 수 있어요.' },
     ];
     PAD_TEMPLATES.forEach(t => { t.orient = 'landscape'; });
 
@@ -8280,7 +8288,7 @@
       $('idsName').textContent = item.name;
       $('idsOrient').textContent = ibMode === 'smart' ? '스마트 패드'
         : (item.orient === 'landscape' ? '가로형' : '세로형');
-      $('idsDesc').textContent = item.desc || (item.plain ? PLAIN_DESC : INSERT_DESC);
+      $('idsDesc').textContent = item.long || item.desc || (item.plain ? PLAIN_DESC : INSERT_DESC);
       $('idsBadge').hidden = !!item.unlocked; // 잠긴 속지만 프리미엄 배지
       $('idsUse').textContent = ibMode === 'smart' ? '이 템플릿으로 패드 만들기' : '이 템플릿으로 노트 생성';
       const page = $('idsHeroPage');
