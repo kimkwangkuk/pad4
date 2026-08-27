@@ -6922,21 +6922,15 @@
     tabLabels.appendChild(newTab);
     lucide.createIcons({ nodes: [newTab] });
 
-    // 등장 트랜지션 — 탭 바 아래에서 위로 솟아오른다. 자리(폭)는 함께 열려
-    // 옆 탭들이 튀지 않고 밀린다 (탭 바가 overflow:hidden이라 아래는 잘려 보인다)
-    const naturalW = newTab.offsetWidth;
-    newTab.style.transition  = 'none';
-    newTab.style.maxWidth    = '0px';
-    newTab.style.marginRight = '0px';
-    newTab.style.opacity     = '0';
-    newTab.style.transform   = 'translateY(18px)';
+    // 등장 트랜지션 — 탭 바 아래에서 위로 솟아오르기만 한다 (가로 이동 없음).
+    // 탭 바가 overflow:hidden이라 아래쪽은 잘려 보인다.
+    newTab.style.transition = 'none';
+    newTab.style.opacity    = '0';
+    newTab.style.transform  = 'translateY(18px)';
     void newTab.offsetWidth; // 리플로우 — 시작 상태 확정
-    newTab.style.transition  = '';
-    newTab.style.maxWidth    = naturalW + 'px';
-    newTab.style.marginRight = '';
-    newTab.style.opacity     = '';
-    newTab.style.transform   = '';
-    setTimeout(() => { newTab.style.maxWidth = ''; }, 300);
+    newTab.style.transition = '';
+    newTab.style.opacity    = '';
+    newTab.style.transform  = '';
 
     // Deactivate all others now that new tab is in DOM
     tabLabels.querySelectorAll('.tab:not(.active)').forEach(t => {
@@ -6952,7 +6946,14 @@
       t.querySelectorAll('.tab-inner svg').forEach(svg => { svg.style.color = 'rgba(0,0,0,0.4)'; });
     });
 
+    // 앞 탭의 마진(-30px 겹침)이 애니메이션되면 새 탭이 옆으로 끌려 보인다 —
+    // 레이아웃 값은 트랜지션 없이 즉시 적용한다
+    const others = Array.from(tabLabels.querySelectorAll('.tab')).filter(t => t !== newTab);
+    others.forEach(t => { t.style.transition = 'none'; });
     refreshTabLayout();
+    void tabLabels.offsetWidth;
+    others.forEach(t => { t.style.transition = ''; });
+
     updateView();
     if (tabsSection) tabsSection.scrollLeft = tabsSection.scrollWidth; // 새 탭이 보이도록 끝으로
   }
