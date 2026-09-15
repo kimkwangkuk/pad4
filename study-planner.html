@@ -2857,6 +2857,15 @@
     }
     .cvl-grid::-webkit-scrollbar { display: none; }
     .cvl-grid .nwz-cover-none { font-size: 11px; }
+    /* 목록 아래 — 지금 표지를 화면 전체 편집으로 */
+    .cvl-edit {
+      flex-shrink: 0; margin-top: 14px; height: 42px; width: 100%;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      border: none; border-radius: 100px; background: rgba(0,0,0,0.06); cursor: pointer;
+      font-family: 'Pretendard', sans-serif; font-size: 14px; font-weight: 600;
+      color: rgba(0,0,0,0.86); letter-spacing: -0.042px; -webkit-tap-highlight-color: transparent;
+    }
+    .cvl-edit:hover { background: rgba(0,0,0,0.09); }
     .cvl-grid .nwz-cover-label { font-size: 8px; }
 
     /* 왼쪽 — 미리보기 */
@@ -4075,11 +4084,7 @@
           </label>
           <button class="nwz-set-row" id="nwzCoverListBtn" type="button">
             <span>표지</span>
-            <em>표지 목록<i data-lucide="chevron-right" style="width:18px;height:18px;"></i></em>
-          </button>
-          <button class="nwz-set-row" id="nwzEditBtn" type="button">
-            <span>표지 디자인</span>
-            <em>세부 편집<i data-lucide="chevron-right" style="width:18px;height:18px;"></i></em>
+            <em>표지 설정<i data-lucide="chevron-right" style="width:18px;height:18px;"></i></em>
           </button>
         </div>
       </div>
@@ -4093,6 +4098,9 @@
   <div class="cvl-pop" id="cvlPop" role="dialog" aria-label="표지 목록">
     <div class="cvl-title">표지 목록</div>
     <div class="cvl-grid" id="cvlGrid"></div>
+    <button class="cvl-edit" id="cvlEditBtn" type="button">
+      <i data-lucide="palette" style="width:17px;height:17px;"></i>세부 설정
+    </button>
   </div>
 
   <!-- 표지 편집 — 화면 전체를 덮으며 아래에서 올라온다. 지금 표지의 색상만 바꾼다.
@@ -8107,7 +8115,7 @@
     // 뒤로 → 다시 속지 상세
     $('idsMakeBack').addEventListener('click', () => { closeCoverList(); setDetailStep('detail'); });
 
-    // ── 표지 목록 — [표지 목록]을 누르면 그 위에 뜨는 오버레이 팝업 ──
+    // ── 표지 목록 — [표지 설정]을 누르면 그 위에 뜨는 오버레이 팝업 (목록 + 세부 설정) ──
     function renderCoverList() {
       const grid = $('cvlGrid');
       grid.innerHTML = '';
@@ -8124,7 +8132,7 @@
       };
       add('none', '<div class="nwz-cover-none">표지 없음</div>');
       NW_COVERS.forEach(c => add(c.id, coverFaceHTML(c.bg)));
-      if (window.lucide) lucide.createIcons({ nodes: [grid] });
+      if (window.lucide) lucide.createIcons({ nodes: [$('cvlPop')] });
     }
     function openCoverList(btn) {
       renderCoverList();
@@ -8175,7 +8183,8 @@
       renderMakePage();
     });
     $('nwzEditCancel').addEventListener('click', closeCoverEdit);
-    $('nwzEditBtn').addEventListener('click', openCoverEdit);
+    // 목록 팝업의 세부 설정 → 목록을 닫고 화면 전체 편집으로
+    $('cvlEditBtn').addEventListener('click', () => { closeCoverList(); openCoverEdit(); });
     $('nwzNameInput').addEventListener('keydown', e => { if (e.key === 'Enter') $('idsMakeOk').click(); });
 
     // 받침 유무로 이/가
