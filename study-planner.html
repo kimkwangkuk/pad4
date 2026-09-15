@@ -8183,22 +8183,19 @@
       return (code - 0xAC00) % 28 ? '이' : '가';
     }
 
-    // 생성 완료 — [확인]은 열린 창들만 닫고, [지금 사용]은 홈으로 돌아가 탭까지 연다
+    // 생성 완료 안내 — [확인]은 안내만 닫고, [지금 사용]은 그 노트 탭을 열어 포커스한다
     const createdDialog = new Dialog({ title: '생성 완료', message: ' ', cancelLabel: '확인', confirmLabel: '지금 사용' });
 
-    // 열린 창(팝업·목록 화면)을 닫고 홈으로 → 새 카드가 끼어들고 →
-    // (지금 사용이면) 카드가 자리 잡은 뒤 탭이 올라오며 그 노트로 포커스된다
-    function finishCreate(note, cardEl, useNow) {
-      closeWizard();
-      showScreen(ibScreen, false); // 목록 화면이 오른쪽으로 빠지며 홈이 드러난다
+    // 지금 사용 — 안내가 닫힌 뒤, 목록 화면이 빠지면서 그 노트 탭이 열리고 포커스된다
+    function useNoteNow(note) {
       setTimeout(() => {
-        insertHomeNote(cardEl);
-        if (useNow) setTimeout(() => openTabFromHome(note.name, note.icon, 'note', note.noteType), 720);
-      }, 430);
+        showScreen(ibScreen, false);
+        openTabFromHome(note.name, note.icon, 'note', note.noteType);
+      }, 200);
     }
 
-    // 체크 — 표지 단계면 노트 생성 페이지로 밀고, 생성 단계면 노트를 만든 뒤
-    // 생성 완료 팝업을 띄운다 (팝업 뒤로 노트 생성 창은 그대로 둔다)
+    // 체크 — 표지 단계면 노트 생성 페이지로 밀고, 생성 단계면 노트를 만든다.
+    // 노트 생성 팝업을 먼저 내리고, 내려간 다음에 생성 완료 안내를 띄운다.
     $('nwzNext').addEventListener('click', () => {
       if (wizStep === 'cover') { setWizStep('make'); return; }
       const input = $('nwzNameInput');
@@ -8215,15 +8212,21 @@
       };
       HOME_NOTES.unshift(note);
       createTodayPageForNewNote();
+      // 홈에는 바로 추가돼 있다 (끼어드는 애니메이션 없이)
       const cardEl = buildNoteCardEl(note);
+      const listEl = document.getElementById('hsNotes');
+      listEl.insertBefore(cardEl, listEl.firstChild);
       if (window.lucide) lucide.createIcons({ nodes: [cardEl] });
 
-      createdDialog.update({
-        message: `‘${name}’${josaIGa(name)} 홈에 추가되었습니다.`,
-        onCancel:  () => finishCreate(note, cardEl, false),
-        onConfirm: () => finishCreate(note, cardEl, true),
-      });
-      createdDialog.open();
+      closeWizard();
+      setTimeout(() => {
+        createdDialog.update({
+          message: `‘${name}’${josaIGa(name)} 홈에 추가되었습니다.`,
+          onCancel:  () => {},            // 확인 — 안내만 닫는다
+          onConfirm: () => useNoteNow(note),
+        });
+        createdDialog.open();
+      }, 240); // 팝업이 내려간 다음에
     });
 
     // 새 노트에는 오늘자 페이지 한 장이 미리 깔려 있다 — 고른 속지 방향·색을 그대로 반영한다
