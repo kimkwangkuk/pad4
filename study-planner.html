@@ -2819,9 +2819,10 @@
                   width 0.36s cubic-bezier(0.32, 0.72, 0, 1);
     }
     .ids-popup.show { opacity: 1; pointer-events: auto; transform: translate(-50%, -50%); }
-    /* 노트 생성(이름) 단계는 내용이 좁아 팝업 폭도 함께 줄인다.
-       .nwz-make의 내용(카드 폭 400px)이 넘치면 overflow-y:auto로 세로 스크롤된다. */
-    .ids-popup.step-name { width: min(600px, calc(100vw - 64px)); }
+    /* 표지 선택 · 노트 생성 단계는 속지 상세(1120px, 좌우 분할)만큼 넓을 필요가 없어
+       팝업 폭도 함께 줄인다. 표지 목록은 4열로 고정해 가로로 너무 늘어놓지 않는다. */
+    .ids-popup.step-covers { width: min(760px, calc(100vw - 64px)); }
+    .ids-popup.step-name   { width: min(600px, calc(100vw - 64px)); }
     /* 속지 상세 → 표지 선택 → 노트 생성: 같은 팝업 안에서 3단계가 옆으로 밀린다.
        실제 위치(translateX)는 JS(setIdsStep)가 단계 인덱스로 계산해 인라인으로 준다. */
     .ids-pages { position: relative; width: 100%; height: 100%; overflow: hidden; }
@@ -2835,28 +2836,21 @@
     /* 넓은 팝업 안에서는 표지·설정을 가운데에 모은다 */
     .ids-page-make .nwz-make { justify-content: center; padding-bottom: 72px; }
 
-    /* 표지 선택 페이지 — 팝업 안 한 단계로, 오버레이가 아니다 */
+    /* 표지 선택 페이지 — 팝업 안 한 단계로, 오버레이가 아니다.
+       4열 고정 — 팝업 폭이 넓어도 칸이 한없이 늘어나 가로로 나열된 느낌이 들지 않는다. */
     .cvl-body {
       flex: 1 1 0; min-height: 0; overflow: hidden;
-      display: flex; flex-direction: column; padding: 8px 40px 32px;
+      display: flex; flex-direction: column; padding: 8px 32px 32px;
     }
     .cvl-grid {
       flex: 1 1 0; min-height: 0; overflow-y: auto; scrollbar-width: none;
-      display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-      gap: 28px 20px; padding: 6px 2px 12px; align-content: start;
+      display: grid; grid-template-columns: repeat(4, minmax(0, 140px));
+      justify-content: center;
+      gap: 28px 24px; padding: 6px 2px 12px; align-content: start;
     }
     .cvl-grid::-webkit-scrollbar { display: none; }
     .cvl-grid .nwz-cover-none { font-size: 12px; }
     .cvl-grid .nwz-cover-label { font-size: 11px; }
-    /* 이름 설정 카드 아래 — 지금 표지를 화면 전체 편집으로 */
-    .cvl-edit {
-      flex-shrink: 0; margin: 4px auto 0; height: 44px; width: min(260px, 100%);
-      display: flex; align-items: center; justify-content: center; gap: 6px;
-      border: none; border-radius: 100px; background: rgba(0,0,0,0.06); cursor: pointer;
-      font-family: 'Pretendard', sans-serif; font-size: 14px; font-weight: 600;
-      color: rgba(0,0,0,0.86); letter-spacing: -0.042px; -webkit-tap-highlight-color: transparent;
-    }
-    .cvl-edit:hover { background: rgba(0,0,0,0.09); }
 
     /* 왼쪽 — 미리보기 */
     .ids-preview {
@@ -4085,14 +4079,11 @@
             <span>이름</span>
             <input id="nwzNameInput" type="text" placeholder="내 데일리 플래너">
           </label>
-          <button class="nwz-set-row" id="idsBackToCovers" type="button">
-            <span>표지</span>
-            <em>변경<i data-lucide="chevron-right" style="width:18px;height:18px;"></i></em>
+          <button class="nwz-set-row" id="idsEditBtn" type="button">
+            <span>표지 디자인</span>
+            <em>세부 설정<i data-lucide="chevron-right" style="width:18px;height:18px;"></i></em>
           </button>
         </div>
-        <button class="cvl-edit" id="idsEditBtn" type="button">
-          <i data-lucide="palette" style="width:17px;height:17px;"></i>세부 설정
-        </button>
       </div>
     </div>
    </div>
@@ -8105,7 +8096,8 @@
         if (instant) el.style.transition = 'none';
         el.style.transform = `translateX(${(i - idx) * 100}%)`;
       });
-      // 노트 생성(이름) 단계는 내용이 좁으니 팝업 폭도 함께 줄인다 (width 트랜지션은 CSS가 맡는다)
+      // 표지 선택·노트 생성 단계는 내용이 좁으니 팝업 폭도 함께 줄인다 (width 트랜지션은 CSS가 맡는다)
+      idsSheet.classList.toggle('step-covers', step === 'covers');
       idsSheet.classList.toggle('step-name', step === 'name');
       if (instant) {
         void idsSheet.offsetWidth; // 리플로우 — 시작 위치 확정
@@ -8123,10 +8115,8 @@
     $('idsUse').addEventListener('click', () => setIdsStep('covers'));
     // 표지 선택의 뒤로 → 다시 속지 상세
     $('idsCoversBack').addEventListener('click', () => setIdsStep('detail'));
-    // 노트 생성의 뒤로 → 다시 표지 선택
+    // 노트 생성의 뒤로 → 다시 표지 선택 (다른 표지를 고르려면 여기서 돌아간다)
     $('idsMakeBack').addEventListener('click', () => setIdsStep('covers'));
-    // 노트 생성 안의 "표지 · 변경" → 표지 선택으로 돌아간다
-    $('idsBackToCovers').addEventListener('click', () => setIdsStep('covers'));
 
     // ── 표지 선택 페이지 — 목록에서 고르면 바로 다음 단계(노트 생성)로 넘어간다 ──
     function renderCoverList() {
@@ -8146,7 +8136,7 @@
       NW_COVERS.forEach(c => add(c.id, coverFaceHTML(c.bg)));
       if (window.lucide) lucide.createIcons({ nodes: [$('idsPageCovers')] });
     }
-    // 이름 설정 카드 아래 "세부 설정" — 지금 고른(또는 기본) 표지의 색상을 화면 전체 편집으로 바꾼다
+    // "표지 디자인 · 세부 설정" — 지금 고른(또는 기본) 표지의 색상을 화면 전체 편집으로 바꾼다
     $('idsEditBtn').addEventListener('click', openCoverEdit);
 
     // ── 표지 편집 — 화면 전체를 덮으며 올라온다. 지금 표지의 색상만 바꾼다 ──
@@ -8190,14 +8180,14 @@
     // 생성 완료 안내 — [확인]은 안내만 닫고, [지금 사용]은 그 노트 탭을 열어 포커스한다
     const createdDialog = new Dialog({ title: '생성 완료', message: ' ', cancelLabel: '확인', confirmLabel: '지금 사용' });
 
-    // 지금 사용 — 안내가 닫힌 뒤 목록 화면이 빠지며 홈으로 돌아가고,
-    // 홈(새 노트가 들어간 모습)을 잠깐 보여준 다음 그 노트 탭이 열리며 포커스된다
+    // 지금 사용 — 안내가 닫힌 뒤(팝업은 이미 닫혀 있다) 목록 화면이 빠지며 홈으로
+    // 돌아가고, 홈(새 노트가 들어간 모습)을 잠깐 보여준 다음 그 노트 탭이 열리며 포커스된다
     function useNoteNow(note) {
-      setTimeout(() => { closeInsertDetail(); showScreen(ibScreen, false); }, 200); // 팝업·목록 화면이 닫힌다
+      setTimeout(() => showScreen(ibScreen, false), 200); // 목록 화면이 빠진다
       setTimeout(() => openTabFromHome(note.name, note.icon, 'note', note.noteType), 200 + 380 + 700);
     }
 
-    // 노트 생성 체크 — 노트를 만들고, 팝업은 그대로 둔 채 그 위에 생성 완료 안내를 띄운다
+    // 노트 생성 체크 — 노트를 만들고, 팝업을 먼저 내린 다음 그 자리에 생성 완료 안내를 띄운다
     $('idsMakeOk').addEventListener('click', () => {
       const input = $('nwzNameInput');
       const name = (input.value || '').trim() || input.placeholder;
@@ -8218,12 +8208,15 @@
       listEl.insertBefore(cardEl, listEl.firstChild);
       if (window.lucide) lucide.createIcons({ nodes: [cardEl] });
 
-      createdDialog.update({
-        message: `‘${name}’${josaIGa(name)} 홈에 추가되었습니다.`,
-        onCancel:  () => {},            // 확인 — 안내만 닫는다 (팝업은 그대로)
-        onConfirm: () => useNoteNow(note),
-      });
-      createdDialog.open();
+      closeInsertDetail();
+      setTimeout(() => {
+        createdDialog.update({
+          message: `‘${name}’${josaIGa(name)} 홈에 추가되었습니다.`,
+          onCancel:  () => {},            // 확인 — 안내만 닫는다
+          onConfirm: () => useNoteNow(note),
+        });
+        createdDialog.open();
+      }, 240); // 팝업이 내려간 다음에
     });
 
     // 새 노트에는 오늘자 페이지 한 장이 미리 깔려 있다 — 고른 속지 방향·색을 그대로 반영한다
