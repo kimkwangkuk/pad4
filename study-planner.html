@@ -2824,8 +2824,10 @@
        유지해, 그 사이를 오갈 때 폭이 다시 늘었다 줄지 않는다. */
     .ids-popup.step-covers,
     .ids-popup.step-name { width: min(700px, calc(100vw - 64px)); }
-    /* 속지 상세 → 표지 선택 → 노트 생성: 같은 팝업 안에서 3단계가 옆으로 밀린다.
-       실제 위치(translateX)는 JS(setIdsStep)가 단계 인덱스로 계산해 인라인으로 준다. */
+    /* 속지 상세 → 표지 선택: 팝업이 먼저 좁아지고, 다 좁아진 다음 표지 목록이
+       아래에서 사르르 위로 떠오른다(속지 상세는 그 사이 옅어지며 물러난다).
+       표지 선택 ↔ 노트 생성은 그 안에서 기존처럼 좌우로 슬라이드한다.
+       실제 위치·타이밍은 JS(setIdsStep)가 인라인 스타일로 준다. */
     .ids-pages { position: relative; width: 100%; height: 100%; overflow: hidden; }
     .ids-page {
       position: absolute; inset: 0;
@@ -2833,7 +2835,10 @@
     }
     .ids-page-detail { display: flex; align-items: stretch; }
     .ids-page-covers,
-    .ids-page-make { display: flex; flex-direction: column; background: #fff; transform: translateX(100%); }
+    .ids-page-make { display: flex; flex-direction: column; background: #fff; }
+    /* 아직 JS가 붙기 전 기본 상태 — 표지 선택은 살짝 가라앉아 숨어 있고, 노트 생성은 오른쪽 밖 */
+    .ids-page-covers { opacity: 0; transform: translateY(20px); }
+    .ids-page-make { transform: translateX(100%); }
     /* 넓은 팝업 안에서는 표지·설정을 가운데에 모은다 */
     .ids-page-make .nwz-make { justify-content: center; padding-bottom: 72px; }
 
@@ -8085,27 +8090,76 @@
         : '<div class="nwz-cover-none">표지 없음</div>';
     }
 
-    // 세 단계가 이 순서로 옆에 나란히 놓여 있다고 보고, 단계 인덱스 차이만큼 옆으로 민다
-    const IDS_STEPS = ['detail', 'covers', 'name'];
-    const idsPageEl = { detail: $('idsPageDetail'), covers: $('idsPageCovers'), name: $('idsPageName') };
-    let idsStep = 'detail';
-    function setIdsStep(step, instant) {
-      idsStep = step;
-      const idx = IDS_STEPS.indexOf(step);
-      IDS_STEPS.forEach((s, i) => {
-        const el = idsPageEl[s];
-        if (instant) el.style.transition = 'none';
-        el.style.transform = `translateX(${(i - idx) * 100}%)`;
+    // 속지 상세 ↔ 표지 선택은 "팝업이 먼저 좁아지고, 그 다음 목록이 사르르 떠오르는"
+    // 전용 시퀀스를 쓴다. 표지 선택 ↔ 노트 생성은 기존처럼 좌우 슬라이드.
+    const idsPageDetail = $('idsPageDetail');
+    const idsPageCovers = $('idsPageCovers');
+    const idsPageName   = $('idsPageName');
+    const WIDTH_MS = 340; // .ids-popup의 width 트랜지션(0.36s)이 끝날 즈음
+    let idsStep = 'detail', idsStepT = null;
+
+    // 표지 선택 ↔ 노트 생성 — 둘 중 어느 쪽이 앞(0%)에 오는지로 좌우 슬라이드한다
+    function layoutCoversName(active, animate) {
+      const idx = active === 'name' ? 1 : 0;
+      [[idsPageCovers, 0], [idsPageName, 1]].forEach(([el, i]) => {
+        el.style.transition = animate ? 'transform 0.36s cubic-bezier(0.32, 0.72, 0, 1)' : 'none';
+        el.style.transform  = `translateX(${(i - idx) * 100}%)`;
       });
+    }
+
+    function setIdsStep(step, instant) {
+      clearTimeout(idsStepT);
+      const prev = idsStep;
+      idsStep = step;
       // 표지 선택·노트 생성 단계는 내용이 좁으니 팝업 폭도 함께 줄인다 (width 트랜지션은 CSS가 맡는다)
       idsSheet.classList.toggle('step-covers', step === 'covers');
       idsSheet.classList.toggle('step-name', step === 'name');
-      if (instant) {
-        void idsSheet.offsetWidth; // 리플로우 — 시작 위치 확정
-        IDS_STEPS.forEach(s => { idsPageEl[s].style.transition = ''; });
-      }
       if (step === 'covers') renderCoverList();
       if (step === 'name') renderMakePage();
+
+      if (instant) {
+        // 초기화 — 애니메이션 없이 곧바로 속지 상세부터 시작한다
+        idsPageDetail.style.transition = 'none';
+        idsPageDetail.style.opacity = '1';
+        idsPageDetail.style.pointerEvents = '';
+        idsPageCovers.style.transition = 'none';
+        idsPageCovers.style.opacity = '0';
+        idsPageCovers.style.transform = 'translateY(20px)';
+        layoutCoversName('covers', false);
+        void idsSheet.offsetWidth; // 리플로우 — 시작 상태 확정
+        idsPageDetail.style.transition = '';
+        idsPageCovers.style.transition = '';
+        idsPageName.style.transition = '';
+        return;
+      }
+
+      if (prev === 'detail' && step === 'covers') {
+        // 속지 상세는 바로 옅어지며 물러나고, 팝업 폭이 줄어든 다음에야
+        // 표지 목록이 살짝 아래에서 사르르 위로 떠오른다
+        idsPageDetail.style.transition = 'opacity 0.18s ease';
+        idsPageDetail.style.opacity = '0';
+        idsPageDetail.style.pointerEvents = 'none';
+        idsPageCovers.style.transition = 'none';
+        idsPageCovers.style.opacity = '0';
+        idsPageCovers.style.transform = 'translateY(20px)';
+        layoutCoversName('covers', false);
+        idsStepT = setTimeout(() => {
+          idsPageCovers.style.transition = 'opacity 0.32s ease, transform 0.42s cubic-bezier(0.22, 1, 0.36, 1)';
+          idsPageCovers.style.opacity = '1';
+          idsPageCovers.style.transform = 'translateY(0)';
+        }, WIDTH_MS);
+      } else if (prev !== 'detail' && step === 'detail') {
+        // 표지 목록이 살짝 가라앉으며 옅어지고, 팝업은 다시 넓어지며 속지 상세가 되돌아온다
+        idsPageCovers.style.transition = 'opacity 0.2s ease, transform 0.26s cubic-bezier(0.4, 0, 0.2, 1)';
+        idsPageCovers.style.opacity = '0';
+        idsPageCovers.style.transform = 'translateY(14px)';
+        idsPageDetail.style.pointerEvents = '';
+        idsPageDetail.style.transition = 'opacity 0.28s ease';
+        idsPageDetail.style.opacity = '1';
+      } else {
+        // 표지 선택 ↔ 노트 생성 — 기존과 같은 가로 슬라이드
+        layoutCoversName(step === 'name' ? 'name' : 'covers', true);
+      }
     }
     function renderMakePage() {
       $('nwzMakeCover').innerHTML = coverFaceHTML(coverBg());
