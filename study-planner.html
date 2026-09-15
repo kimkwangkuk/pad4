@@ -3019,41 +3019,84 @@
     .nwz-edit-btn:hover { background: rgba(0,0,0,0.03); }
 
 
-    /* 마지막 단계 — 표지 선택 팝업 위에 겹쳐 뜨는 이름 입력 미니 팝업 */
-    .nwz-ask {
-      position: absolute; inset: 0; z-index: 5;
-      display: flex; align-items: center; justify-content: center;
-      background: rgba(0,0,0,0.12);
+    /* 표지 선택 → 노트 생성: 한 팝업 안에서 두 페이지가 옆으로 밀린다 */
+    .nwz-pages { position: relative; flex: 1 1 0; min-height: 0; overflow: hidden; }
+    .nwz-page {
+      position: absolute; inset: 0; display: flex; flex-direction: column;
+      transition: transform 0.36s cubic-bezier(0.32, 0.72, 0, 1);
     }
-    .nwz-ask[hidden] { display: none; }
-    .nwz-ask-box {
-      width: 330px; max-width: calc(100% - 48px);
-      padding: 18px 16px 16px; border-radius: 20px; background: #fff;
-      box-shadow: 0 12px 40px rgba(0,0,0,0.18);
+    #nwzPageMake { transform: translateX(100%); }
+    .nwz-popup.step-make #nwzPageCover { transform: translateX(-100%); }
+    .nwz-popup.step-make #nwzPageMake  { transform: translateX(0); }
+    .nwz-popup.no-anim .nwz-page { transition: none; }
+
+    /* 노트 생성 페이지 — 큰 표지 미리보기 + 이름 · 표지 디자인 설정 */
+    .nwz-make {
+      flex: 1 1 0; min-height: 0; overflow-y: auto;
+      display: flex; flex-direction: column; align-items: center; gap: 36px;
+      padding: 12px 24px 36px;
     }
-    .nwz-ask-title {
-      text-align: center; margin-bottom: 14px;
+    .nwz-make-hero .nwz-cover,
+    .nwz-make-hero .nwz-cover-none { width: 210px; box-shadow: 0 6px 18px rgba(0,0,0,0.14); }
+    .nwz-make-hero .nwz-cover-label,
+    .nwz-edit-hero .nwz-cover-label { font-size: 15px; }
+    .nwz-set { width: min(400px, 100%); padding: 0 22px; border-radius: 22px; background: rgba(0,0,0,0.05); }
+    .nwz-set-row {
+      display: flex; align-items: center; gap: 12px;
+      width: 100%; height: 60px; padding: 0; border: none; background: none;
+      cursor: pointer; text-align: left; -webkit-tap-highlight-color: transparent;
+      font-family: 'Pretendard', sans-serif; font-size: 16px; font-weight: 500;
+      color: rgba(0,0,0,0.86); letter-spacing: -0.048px;
+    }
+    .nwz-set-row + .nwz-set-row { border-top: 1px solid rgba(0,0,0,0.08); }
+    .nwz-set-row > span { flex-shrink: 0; }
+    .nwz-set-row input {
+      flex: 1 1 0; min-width: 0; border: none; background: none; outline: none; text-align: right;
+      font-family: 'Pretendard', sans-serif; font-size: 16px; font-weight: 400;
+      color: rgba(0,0,0,0.86); letter-spacing: -0.048px;
+    }
+    .nwz-set-row input::placeholder { color: rgba(0,0,0,0.4); }
+    .nwz-set-row em {
+      margin-left: auto; display: flex; align-items: center; gap: 2px; font-style: normal;
+      font-size: 16px; font-weight: 400; color: rgba(0,0,0,0.45);
+    }
+
+    /* 표지 편집 — 팝업 아래에서 올라오는 시트 */
+    .nwz-edit-dim {
+      position: absolute; inset: 0; z-index: 4; background: rgba(0,0,0,0.18);
+      opacity: 0; pointer-events: none; transition: opacity 0.24s ease;
+    }
+    .nwz-edit-dim.show { opacity: 1; pointer-events: auto; }
+    .nwz-edit {
+      position: absolute; left: 0; right: 0; bottom: 0; z-index: 5; height: 78%;
+      display: flex; flex-direction: column;
+      background: #fff; border-radius: 26px 26px 0 0;
+      box-shadow: 0 -10px 40px rgba(0,0,0,0.14);
+      transform: translateY(100%); transition: transform 0.36s cubic-bezier(0.32, 0.72, 0, 1);
+    }
+    .nwz-edit.show { transform: translateY(0); }
+    .nwz-edit-head {
+      position: relative; flex-shrink: 0; height: 64px;
+      display: flex; align-items: center; justify-content: flex-end; padding: 0 20px;
+    }
+    .nwz-edit-title {
+      position: absolute; left: 50%; transform: translateX(-50%);
       font-family: 'Pretendard', sans-serif; font-size: 15px; font-weight: 600;
       color: rgba(0,0,0,0.86); letter-spacing: -0.045px;
     }
-    .nwz-ask-input {
-      width: 100%; height: 42px; padding: 0 14px;
-      border: none; border-radius: 12px; background: rgba(0,0,0,0.05); outline: none;
-      font-family: 'Pretendard', sans-serif; font-size: 14px; font-weight: 400;
-      color: rgba(0,0,0,0.86); letter-spacing: -0.042px;
+    .nwz-edit-hero { display: flex; justify-content: center; padding: 4px 0 26px; }
+    .nwz-edit-hero .nwz-cover { width: 150px; box-shadow: 0 6px 18px rgba(0,0,0,0.14); }
+    .nwz-edit-label {
+      padding: 0 40px 12px;
+      font-family: 'Pretendard', sans-serif; font-size: 13px; font-weight: 600;
+      color: rgba(0,0,0,0.45); letter-spacing: -0.039px;
     }
-    .nwz-ask-input::placeholder { color: rgba(0,0,0,0.3); }
-    .nwz-ask-btns { display: flex; gap: 8px; margin-top: 12px; }
-    .nwz-ask-btn {
-      flex: 1 1 0; height: 44px; border: none; border-radius: 12px;
-      background: rgba(0,0,0,0.05); color: rgba(0,0,0,0.86); cursor: pointer;
-      -webkit-tap-highlight-color: transparent;
-      font-family: 'Pretendard', sans-serif; font-size: 15px; font-weight: 600;
-      letter-spacing: -0.045px;
+    .nwz-edit-colors { display: flex; flex-wrap: wrap; gap: 14px; padding: 0 40px 30px; }
+    .nwz-sw {
+      width: 34px; height: 34px; padding: 0; border: none; border-radius: 50%; cursor: pointer;
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,0.08); -webkit-tap-highlight-color: transparent;
     }
-    .nwz-ask-btn:hover { background: rgba(0,0,0,0.08); }
-    .nwz-ask-btn.primary { flex: 1.15 1 0; background: rgba(0,0,0,0.86); color: #fff; }
-    .nwz-ask-btn.primary:hover { background: rgba(0,0,0,0.75); }
+    .nwz-sw.sel { outline: 2px solid rgba(0,0,0,0.86); outline-offset: 3px; }
 
 
     /* ─── 홈: 프로필 + 빠른 실행 ─────────────────────── */
@@ -3979,21 +4022,44 @@
       <span class="nwz-title" id="nwzTitle"></span>
       <button class="nwz-nav nwz-next" id="nwzNext" aria-label="다음"></button>
     </div>
-    <div class="nwz-chips" id="nwzChips"></div>
-    <div class="nwz-body">
-      <div class="nwz-grid" id="nwzGrid"></div>
-      <div class="nwz-custom" id="nwzCustom" style="display:none;"></div>
-    </div>
-    <!-- 마지막 단계 — 팝업 안에 뜨는 이름 입력 미니 팝업 -->
-    <div class="nwz-ask" id="nwzAsk" hidden>
-      <div class="nwz-ask-box">
-        <div class="nwz-ask-title">노트 이름</div>
-        <input class="nwz-ask-input" id="nwzNameInput" type="text" placeholder="내 데일리 플래너">
-        <div class="nwz-ask-btns">
-          <button class="nwz-ask-btn" id="nwzAskCancel" type="button">취소</button>
-          <button class="nwz-ask-btn primary" id="nwzAskOk" type="button">노트 생성</button>
+    <!-- 표지 선택 → 노트 생성: 한 팝업 안에서 두 페이지가 옆으로 밀린다 -->
+    <div class="nwz-pages">
+      <div class="nwz-page" id="nwzPageCover">
+        <div class="nwz-chips" id="nwzChips"></div>
+        <div class="nwz-body">
+          <div class="nwz-grid" id="nwzGrid"></div>
+          <div class="nwz-custom" id="nwzCustom" style="display:none;"></div>
         </div>
       </div>
+      <div class="nwz-page" id="nwzPageMake">
+        <div class="nwz-make">
+          <div class="nwz-make-hero" id="nwzMakeCover"></div>
+          <div class="nwz-set">
+            <label class="nwz-set-row">
+              <span>이름</span>
+              <input id="nwzNameInput" type="text" placeholder="내 데일리 플래너">
+            </label>
+            <button class="nwz-set-row" id="nwzEditBtn" type="button">
+              <span>표지 디자인</span>
+              <em>세부 편집<i data-lucide="chevron-right" style="width:18px;height:18px;"></i></em>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 표지 편집 — 아래에서 올라오는 시트. 지금 표지의 색상만 바꾼다 -->
+    <div class="nwz-edit-dim" id="nwzEditDim"></div>
+    <div class="nwz-edit" id="nwzEdit">
+      <div class="nwz-edit-head">
+        <span class="nwz-edit-title">표지 편집</span>
+        <button class="nwz-nav nwz-next" id="nwzEditOk" type="button" aria-label="적용">
+          <i data-lucide="check" style="width:20px;height:20px;color:#fff;"></i>
+        </button>
+      </div>
+      <div class="nwz-edit-hero" id="nwzEditCover"></div>
+      <div class="nwz-edit-label">색상</div>
+      <div class="nwz-edit-colors" id="nwzEditColors"></div>
     </div>
   </div>
 
@@ -7958,41 +8024,109 @@
       return `<div class="nwz-cover" style="background:${c.bg};"><div class="nwz-cover-spine"></div>` +
              '<div class="nwz-cover-label">DAILY<br>PLANNER</div></div>';
     }
+    // 표지 색 — 편집 시트에서 바꾼 색이 있으면 그걸, 없으면 고른 표지의 색 (표지 없음 = null)
+    const COVER_COLORS = ['#35a31b', '#1e7f00', '#0f9d8a', '#5a8dee', '#1d4ed8', '#452c83',
+                          '#a855f7', '#ec4899', '#f34c18', '#ff6b1a', '#f5b700', '#8b5e3c',
+                          '#6b7280', '#1f2937'];
+    function coverBg() {
+      if (st.coverColor) return st.coverColor;
+      const c = currentCover();
+      return c ? c.bg : null;
+    }
+    function coverFaceHTML(bg) {
+      return bg
+        ? `<div class="nwz-cover" style="background:${bg};"><div class="nwz-cover-spine"></div>` +
+          '<div class="nwz-cover-label">DAILY<br>PLANNER</div></div>'
+        : '<div class="nwz-cover-none">표지 없음</div>';
+    }
+
+    // 표지 선택(cover) ↔ 노트 생성(make) — 같은 팝업 안에서 옆으로 밀린다
+    let wizStep = 'cover';
+    function setWizStep(step) {
+      wizStep = step;
+      nwzPopup.classList.toggle('step-make', step === 'make');
+      renderWizardHeader();
+      if (step === 'make') renderMakePage();
+    }
+    function renderWizardHeader() {
+      const prev = $('nwzPrev'), next = $('nwzNext');
+      next.innerHTML = '<i data-lucide="check" style="width:20px;height:20px;color:#fff;"></i>';
+      if (wizStep === 'make') {
+        $('nwzTitle').textContent = '노트 생성';
+        prev.innerHTML = '<i data-lucide="chevron-left" style="width:22px;height:22px;color:rgba(0,0,0,0.86);"></i>';
+        prev.onclick = () => setWizStep('cover');
+      } else {
+        $('nwzTitle').textContent = '노트 표지';
+        prev.innerHTML = '<i data-lucide="x" style="width:20px;height:20px;color:rgba(0,0,0,0.6);"></i>';
+        prev.onclick = closeWizard;
+      }
+      if (window.lucide) lucide.createIcons({ nodes: [$('nwzPrev'), $('nwzNext')] });
+    }
+    function renderMakePage() {
+      $('nwzMakeCover').innerHTML = coverFaceHTML(coverBg());
+      $('nwzNameInput').placeholder = st.type ? `내 ${st.type.name}` : '내 데일리 플래너';
+    }
+
     function openWizard() {
+      st.coverColor = null;
+      $('nwzNameInput').value = '';
+      // 다시 열 때는 표지 선택부터 — 페이지가 미끄러지지 않게 즉시 되돌린다
+      nwzPopup.classList.add('no-anim');
+      setWizStep('cover');
       renderWizard();
+      void nwzPopup.offsetWidth;
+      nwzPopup.classList.remove('no-anim');
       nwzBackdrop.classList.add('show');
       nwzPopup.classList.add('show');
     }
     function closeWizard() {
-      closeNameAsk();
+      closeCoverEdit();
       nwzBackdrop.classList.remove('show');
       nwzPopup.classList.remove('show');
     }
-
-    // 이름 입력 미니 팝업 (표지 선택 팝업 위에 겹쳐 뜬다)
-    function openNameAsk() {
-      const input = $('nwzNameInput');
-      input.value = '';
-      input.placeholder = st.type ? `내 ${st.type.name}` : '내 데일리 플래너';
-      $('nwzAsk').hidden = false;
-      setTimeout(() => input.focus(), 0);
-    }
-    function closeNameAsk() { $('nwzAsk').hidden = true; }
-    $('nwzAskCancel').addEventListener('click', closeNameAsk);
-    $('nwzNameInput').addEventListener('keydown', e => { if (e.key === 'Enter') $('nwzAskOk').click(); });
-    $('nwzAsk').addEventListener('click', e => { if (e.target === $('nwzAsk')) closeNameAsk(); });
     nwzBackdrop.addEventListener('click', closeWizard);
+
+    // ── 표지 편집 시트 — 지금 표지의 색상만 바꾼다 ──
+    let editDraft = null;
+    function renderCoverEdit() {
+      $('nwzEditCover').innerHTML = coverFaceHTML(editDraft);
+      $('nwzEditColors').innerHTML = COVER_COLORS.map(c =>
+        `<button type="button" class="nwz-sw${c === editDraft ? ' sel' : ''}" data-c="${c}" ` +
+        `style="background:${c};" aria-label="${c}"></button>`).join('');
+    }
+    function openCoverEdit() {
+      editDraft = coverBg() || COVER_COLORS[0]; // 표지 없음이면 첫 색에서 시작
+      renderCoverEdit();
+      $('nwzEditDim').classList.add('show');
+      $('nwzEdit').classList.add('show');
+    }
+    function closeCoverEdit() {
+      $('nwzEditDim').classList.remove('show');
+      $('nwzEdit').classList.remove('show');
+    }
+    $('nwzEditColors').addEventListener('click', e => {
+      const sw = e.target.closest('.nwz-sw');
+      if (!sw) return;
+      editDraft = sw.dataset.c;
+      renderCoverEdit();
+    });
+    // 체크 → 색을 확정하고 시트를 내린다. 바깥(딤)을 누르면 적용하지 않고 닫는다
+    $('nwzEditOk').addEventListener('click', () => {
+      st.coverColor = editDraft;
+      closeCoverEdit();
+      if (wizStep === 'make') renderMakePage(); else renderWizard();
+    });
+    $('nwzEditDim').addEventListener('click', closeCoverEdit);
+    $('nwzEditBtn').addEventListener('click', openCoverEdit);
+    $('nwzNameInput').addEventListener('keydown', e => { if (e.key === 'Enter') $('nwzNext').click(); });
 
     function renderWizard() {
       const prev = $('nwzPrev'), grid = $('nwzGrid'), chips = $('nwzChips');
       const next = $('nwzNext'), custom = $('nwzCustom');
       grid.innerHTML = ''; chips.innerHTML = ''; custom.innerHTML = '';
-      // 표지 선택 한 화면 — 확인(체크)을 누르면 이름 입력 미니 팝업이 뜬다
-      next.innerHTML = '<i data-lucide="check" style="width:20px;height:20px;color:#fff;"></i>';
+      // 표지 선택 화면 — 확인(체크)을 누르면 노트 생성 페이지가 옆에서 밀려 들어온다
+      renderWizardHeader();
       {
-        $('nwzTitle').textContent = '노트 표지';
-        prev.innerHTML = '<i data-lucide="x" style="width:20px;height:20px;color:rgba(0,0,0,0.6);"></i>';
-        prev.onclick = closeWizard;
         // 기본 / 직접 설정 세그먼트 탭
         const seg = document.createElement('div');
         seg.className = 'nwz-seg';
@@ -8015,40 +8149,36 @@
           const none = document.createElement('div');
           none.className = 'nwz-cell' + (st.cover === 'none' ? ' sel' : '');
           none.innerHTML = `<div class="nwz-thumbwrap"><div class="nwz-cover-none">표지 없음</div>${NWZ_CHECK}</div>`;
-          none.addEventListener('click', () => { st.cover = 'none'; renderWizard(); });
+          none.addEventListener('click', () => { st.cover = 'none'; st.coverColor = null; renderWizard(); });
           grid.appendChild(none);
           NW_COVERS.forEach(c => {
             const cell = document.createElement('div');
             cell.className = 'nwz-cell' + (st.cover === c.id ? ' sel' : '');
             cell.innerHTML = `<div class="nwz-thumbwrap">${coverHTML(c)}${NWZ_CHECK}</div>`;
-            cell.addEventListener('click', () => { st.cover = c.id; renderWizard(); });
+            cell.addEventListener('click', () => { st.cover = c.id; st.coverColor = null; renderWizard(); });
             grid.appendChild(cell);
           });
         } else {
           // 직접 설정 — 고른 표지를 크게 보여주고 편집 버튼
-          const cover = currentCover();
-          custom.innerHTML = cover ? coverHTML(cover) : '<div class="nwz-cover-none">표지 없음</div>';
+          custom.innerHTML = coverFaceHTML(coverBg());
           const edit = document.createElement('button');
           edit.type = 'button';
           edit.className = 'nwz-edit-btn';
           edit.textContent = '편집하기';
-          edit.addEventListener('click', () => window.toast?.show('표지 편집은 준비 중이에요'));
+          edit.addEventListener('click', openCoverEdit);
           custom.appendChild(edit);
         }
       }
       if (window.lucide) lucide.createIcons({ nodes: [nwzPopup] });
     }
 
-    // 표지 선택 확인 → 이름 입력 미니 팝업
-    $('nwzNext').addEventListener('click', openNameAsk);
-
-    // "노트 생성" — 이름을 확정하고 노트를 만든다.
-    // 팝업과 목록 화면을 닫아 홈으로 되돌아간 뒤, 새 노트가 맨 앞에 끼어드는
-    // 모습을 보여준다 (기존 카드들은 밀려나는 자리로 부드럽게 이동).
-    $('nwzAskOk').addEventListener('click', () => {
+    // 체크 — 표지 단계면 노트 생성 페이지로 밀고, 생성 단계면 노트를 만든다.
+    // 만들면 팝업과 목록 화면을 닫아 홈으로 되돌아간 뒤, 새 노트가 맨 앞에 끼어든다.
+    $('nwzNext').addEventListener('click', () => {
+      if (wizStep === 'cover') { setWizStep('make'); return; }
       const input = $('nwzNameInput');
       const name = (input.value || '').trim() || input.placeholder;
-      const cover = currentCover();
+      const bg = coverBg();
       closeWizard();
       showScreen(ibScreen, false); // 목록 화면이 오른쪽으로 빠지며 홈이 드러난다
       input.value = '';
@@ -8056,7 +8186,7 @@
       // 홈 목록에도 새 노트를 꽂아준다 — 표지 색은 방금 고른 값을 그대로 쓴다
       const note = {
         name, date: '방금 전', icon: 'notebook-pen',
-        color: cover ? cover.bg : '#f2f2f2',
+        color: bg || '#f2f2f2',
         pattern: null,
         noteType: 'scroll'
       };
