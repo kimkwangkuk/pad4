@@ -2820,9 +2820,10 @@
     }
     .ids-popup.show { opacity: 1; pointer-events: auto; transform: translate(-50%, -50%); }
     /* 표지 선택 · 노트 생성 단계는 속지 상세(1120px, 좌우 분할)만큼 넓을 필요가 없어
-       팝업 폭도 함께 줄인다. 표지 목록은 4열로 고정해 가로로 너무 늘어놓지 않는다. */
-    .ids-popup.step-covers { width: min(760px, calc(100vw - 64px)); }
-    .ids-popup.step-name   { width: min(600px, calc(100vw - 64px)); }
+       팝업 폭도 함께 줄인다. 표지 선택부터는 마지막(노트 생성)까지 같은 폭(700px)을
+       유지해, 그 사이를 오갈 때 폭이 다시 늘었다 줄지 않는다. */
+    .ids-popup.step-covers,
+    .ids-popup.step-name { width: min(700px, calc(100vw - 64px)); }
     /* 속지 상세 → 표지 선택 → 노트 생성: 같은 팝업 안에서 3단계가 옆으로 밀린다.
        실제 위치(translateX)는 JS(setIdsStep)가 단계 인덱스로 계산해 인라인으로 준다. */
     .ids-pages { position: relative; width: 100%; height: 100%; overflow: hidden; }
