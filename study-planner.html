@@ -2818,55 +2818,41 @@
       transition: opacity 0.2s ease, transform 0.22s cubic-bezier(0.34,1.1,0.64,1);
     }
     .ids-popup.show { opacity: 1; pointer-events: auto; transform: translate(-50%, -50%); }
-    /* 속지 상세 ↔ 노트 생성 — 같은 팝업 안에서 옆으로 밀린다 */
+    /* 속지 상세 → 표지 선택 → 노트 생성: 같은 팝업 안에서 3단계가 옆으로 밀린다.
+       실제 위치(translateX)는 JS(setIdsStep)가 단계 인덱스로 계산해 인라인으로 준다. */
     .ids-pages { position: relative; width: 100%; height: 100%; overflow: hidden; }
     .ids-page {
       position: absolute; inset: 0;
       transition: transform 0.36s cubic-bezier(0.32, 0.72, 0, 1);
     }
     .ids-page-detail { display: flex; align-items: stretch; }
+    .ids-page-covers,
     .ids-page-make { display: flex; flex-direction: column; background: #fff; transform: translateX(100%); }
-    .ids-popup.step-make .ids-page-detail { transform: translateX(-100%); }
-    .ids-popup.step-make .ids-page-make   { transform: translateX(0); }
-    .ids-popup.no-anim .ids-page { transition: none; }
     /* 넓은 팝업 안에서는 표지·설정을 가운데에 모은다 */
     .ids-page-make .nwz-make { justify-content: center; padding-bottom: 72px; }
 
-    /* 표지 목록 — 버튼 위에 뜨는 오버레이 팝업 */
-    .cvl-backdrop { position: fixed; inset: 0; z-index: 5600; display: none; }
-    .cvl-backdrop.show { display: block; }
-    .cvl-pop {
-      position: fixed; z-index: 5601; width: 336px; max-height: 440px;
-      display: flex; flex-direction: column;
-      padding: 16px 16px 18px; border-radius: 28px;
-      background: rgba(255,255,255,0.92);
-      backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
-      border: 1px solid #fff; box-shadow: 0 4px 25px rgba(0,0,0,0.14);
-      opacity: 0; transform: translateY(8px) scale(0.98); transform-origin: bottom right;
-      pointer-events: none; transition: opacity 0.18s ease, transform 0.2s cubic-bezier(0.32, 0.72, 0, 1);
-    }
-    .cvl-pop.show { opacity: 1; transform: none; pointer-events: auto; }
-    .cvl-title {
-      padding: 2px 4px 12px;
-      font-family: 'Pretendard', sans-serif; font-size: 14px; font-weight: 600;
-      color: rgba(0,0,0,0.86); letter-spacing: -0.042px;
+    /* 표지 선택 페이지 — 팝업 안 한 단계로, 오버레이가 아니다 */
+    .cvl-body {
+      flex: 1 1 0; min-height: 0; overflow: hidden;
+      display: flex; flex-direction: column; padding: 8px 40px 32px;
     }
     .cvl-grid {
-      display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px 14px;
-      overflow-y: auto; padding: 10px 6px 4px; scrollbar-width: none;
+      flex: 1 1 0; min-height: 0; overflow-y: auto; scrollbar-width: none;
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 28px 20px; padding: 6px 2px 12px; align-content: start;
     }
     .cvl-grid::-webkit-scrollbar { display: none; }
-    .cvl-grid .nwz-cover-none { font-size: 11px; }
+    .cvl-grid .nwz-cover-none { font-size: 12px; }
+    .cvl-grid .nwz-cover-label { font-size: 11px; }
     /* 목록 아래 — 지금 표지를 화면 전체 편집으로 */
     .cvl-edit {
-      flex-shrink: 0; margin-top: 14px; height: 42px; width: 100%;
+      flex-shrink: 0; margin: 4px auto 0; height: 44px; width: min(260px, 100%);
       display: flex; align-items: center; justify-content: center; gap: 6px;
       border: none; border-radius: 100px; background: rgba(0,0,0,0.06); cursor: pointer;
       font-family: 'Pretendard', sans-serif; font-size: 14px; font-weight: 600;
       color: rgba(0,0,0,0.86); letter-spacing: -0.042px; -webkit-tap-highlight-color: transparent;
     }
     .cvl-edit:hover { background: rgba(0,0,0,0.09); }
-    .cvl-grid .nwz-cover-label { font-size: 8px; }
 
     /* 왼쪽 — 미리보기 */
     .ids-preview {
@@ -4020,12 +4006,13 @@
     <div class="ib-grid" id="ibGrid"></div>
   </div>
 
-  <!-- 3) 속지 상세 팝업 (Figma 7271:1137456) -->
+  <!-- 3) 속지 상세 팝업 (Figma 7271:1137456) — 한 팝업 안에서 세 단계가 옆으로 밀린다:
+       속지 상세 → 표지 선택 → 노트 생성 (이름) -->
   <div class="ids-backdrop" id="idsBackdrop"></div>
   <div class="ids-popup" id="idsSheet">
    <div class="ids-pages">
-    <!-- 페이지 1: 속지 상세 -->
-    <div class="ids-page ids-page-detail">
+    <!-- 1단계: 속지 상세 -->
+    <div class="ids-page ids-page-detail" id="idsPageDetail">
     <div class="ids-preview"><div class="ids-hero-page" id="idsHeroPage"></div></div>
     <div class="ids-side">
       <div class="ids-side-top">
@@ -4064,8 +4051,23 @@
       <div class="ids-cta-wrap"><button class="ids-cta" id="idsUse">이 템플릿으로 노트 생성</button></div>
     </div>
     </div>
-    <!-- 페이지 2: 노트 생성 — 표지 선택 없이 바로 여기로 밀려 들어온다 -->
-    <div class="ids-page ids-page-make">
+    <!-- 2단계: 표지 선택 — [이 템플릿으로 노트 생성]을 누르면 여기로 밀려 들어온다 -->
+    <div class="ids-page ids-page-covers" id="idsPageCovers">
+      <div class="nwz-header">
+        <button class="nwz-nav" id="idsCoversBack" type="button" aria-label="뒤로">
+          <i data-lucide="chevron-left" style="width:22px;height:22px;color:rgba(0,0,0,0.86);"></i>
+        </button>
+        <span class="nwz-title">표지 선택</span>
+      </div>
+      <div class="cvl-body">
+        <div class="cvl-grid" id="cvlGrid"></div>
+        <button class="cvl-edit" id="cvlEditBtn" type="button">
+          <i data-lucide="palette" style="width:17px;height:17px;"></i>세부 설정
+        </button>
+      </div>
+    </div>
+    <!-- 3단계: 노트 생성 — 표지 목록에서 하나를 고르면 여기로 밀려 들어온다 -->
+    <div class="ids-page ids-page-make" id="idsPageName">
       <div class="nwz-header">
         <button class="nwz-nav" id="idsMakeBack" type="button" aria-label="뒤로">
           <i data-lucide="chevron-left" style="width:22px;height:22px;color:rgba(0,0,0,0.86);"></i>
@@ -4082,25 +4084,14 @@
             <span>이름</span>
             <input id="nwzNameInput" type="text" placeholder="내 데일리 플래너">
           </label>
-          <button class="nwz-set-row" id="nwzCoverListBtn" type="button">
+          <button class="nwz-set-row" id="idsBackToCovers" type="button">
             <span>표지</span>
-            <em>표지 설정<i data-lucide="chevron-right" style="width:18px;height:18px;"></i></em>
+            <em>변경<i data-lucide="chevron-right" style="width:18px;height:18px;"></i></em>
           </button>
         </div>
       </div>
     </div>
    </div>
-  </div>
-
-  <!-- 4·5) 색상 선택 → 표지 선택 팝업 (Figma 5843:412452 / 404056) -->
-  <!-- 표지 목록 — 노트 생성 페이지의 [표지 목록]을 누르면 그 위에 뜨는 오버레이 팝업 -->
-  <div class="cvl-backdrop" id="cvlBackdrop"></div>
-  <div class="cvl-pop" id="cvlPop" role="dialog" aria-label="표지 목록">
-    <div class="cvl-title">표지 목록</div>
-    <div class="cvl-grid" id="cvlGrid"></div>
-    <button class="cvl-edit" id="cvlEditBtn" type="button">
-      <i data-lucide="palette" style="width:17px;height:17px;"></i>세부 설정
-    </button>
   </div>
 
   <!-- 표지 편집 — 화면 전체를 덮으며 아래에서 올라온다. 지금 표지의 색상만 바꾼다.
@@ -8024,7 +8015,7 @@
       // 열 때마다 속지 상세부터 — 표지/이름 선택도 새로 시작한다
       st.cover = 'none'; st.coverColor = null;
       $('nwzNameInput').value = '';
-      setDetailStep('detail', true);
+      setIdsStep('detail', true);
       $('idsName').textContent = item.name;
       $('idsOrient').textContent = item.orient === 'landscape' ? '가로형' : '세로형';
       $('idsDesc').textContent = item.plain ? PLAIN_DESC : INSERT_DESC;
@@ -8071,14 +8062,14 @@
     idsSheet.addEventListener('click', () => { $('idsModeMenu').hidden = true; });
 
     function closeInsertDetail() {
-      closeCoverList(); closeCoverEdit();
+      closeCoverEdit();
       idsBackdrop.classList.remove('show');
       idsSheet.classList.remove('show');
     }
     $('idsClose').addEventListener('click', closeInsertDetail);
     idsBackdrop.addEventListener('click', closeInsertDetail);
 
-    // ── 속지 정보 팝업 → 노트 생성 (표지 선택 단계 없이 같은 팝업 안에서) ──
+    // ── 속지 상세 → 표지 선택 → 노트 생성: 한 팝업 안에서 세 단계가 옆으로 밀린다 ──
     const NWZ_CHECK = '<div class="nwz-check"><i data-lucide="check" style="width:14px;height:14px;color:#fff;"></i></div>';
     // 고른 표지 (표지 없음이면 null)
     function currentCover() { return st.cover === 'none' ? null : (NW_COVERS.find(c => c.id === st.cover) || null); }
@@ -8098,24 +8089,40 @@
         : '<div class="nwz-cover-none">표지 없음</div>';
     }
 
-    // 속지 상세(detail) ↔ 노트 생성(make) — 같은 팝업 안에서 옆으로 밀린다
-    function setDetailStep(step, instant) {
-      if (instant) idsSheet.classList.add('no-anim');
-      idsSheet.classList.toggle('step-make', step === 'make');
-      if (step === 'make') renderMakePage();
-      if (instant) { void idsSheet.offsetWidth; idsSheet.classList.remove('no-anim'); }
+    // 세 단계가 이 순서로 옆에 나란히 놓여 있다고 보고, 단계 인덱스 차이만큼 옆으로 민다
+    const IDS_STEPS = ['detail', 'covers', 'name'];
+    const idsPageEl = { detail: $('idsPageDetail'), covers: $('idsPageCovers'), name: $('idsPageName') };
+    let idsStep = 'detail';
+    function setIdsStep(step, instant) {
+      idsStep = step;
+      const idx = IDS_STEPS.indexOf(step);
+      IDS_STEPS.forEach((s, i) => {
+        const el = idsPageEl[s];
+        if (instant) el.style.transition = 'none';
+        el.style.transform = `translateX(${(i - idx) * 100}%)`;
+      });
+      if (instant) {
+        void idsSheet.offsetWidth; // 리플로우 — 시작 위치 확정
+        IDS_STEPS.forEach(s => { idsPageEl[s].style.transition = ''; });
+      }
+      if (step === 'covers') renderCoverList();
+      if (step === 'name') renderMakePage();
     }
     function renderMakePage() {
       $('nwzMakeCover').innerHTML = coverFaceHTML(coverBg());
       $('nwzNameInput').placeholder = st.type ? `내 ${st.type.name}` : '내 데일리 플래너';
     }
 
-    // "이 템플릿으로 노트 생성" → 표지 선택을 건너뛰고 노트 생성 페이지가 밀려 들어온다
-    $('idsUse').addEventListener('click', () => setDetailStep('make'));
-    // 뒤로 → 다시 속지 상세
-    $('idsMakeBack').addEventListener('click', () => { closeCoverList(); setDetailStep('detail'); });
+    // "이 템플릿으로 노트 생성" → 표지 선택 페이지가 밀려 들어온다
+    $('idsUse').addEventListener('click', () => setIdsStep('covers'));
+    // 표지 선택의 뒤로 → 다시 속지 상세
+    $('idsCoversBack').addEventListener('click', () => setIdsStep('detail'));
+    // 노트 생성의 뒤로 → 다시 표지 선택
+    $('idsMakeBack').addEventListener('click', () => setIdsStep('covers'));
+    // 노트 생성 안의 "표지 · 변경" → 표지 선택으로 돌아간다
+    $('idsBackToCovers').addEventListener('click', () => setIdsStep('covers'));
 
-    // ── 표지 목록 — [표지 설정]을 누르면 그 위에 뜨는 오버레이 팝업 (목록 + 세부 설정) ──
+    // ── 표지 선택 페이지 — 목록에서 고르면 바로 다음 단계(노트 생성)로 넘어간다 ──
     function renderCoverList() {
       const grid = $('cvlGrid');
       grid.innerHTML = '';
@@ -8125,35 +8132,16 @@
         cell.innerHTML = `<div class="nwz-thumbwrap">${inner}${NWZ_CHECK}</div>`;
         cell.addEventListener('click', () => {
           st.cover = id; st.coverColor = null; // 다른 표지를 고르면 편집한 색은 초기화
-          renderMakePage();
-          closeCoverList();
+          setIdsStep('name');
         });
         grid.appendChild(cell);
       };
       add('none', '<div class="nwz-cover-none">표지 없음</div>');
       NW_COVERS.forEach(c => add(c.id, coverFaceHTML(c.bg)));
-      if (window.lucide) lucide.createIcons({ nodes: [$('cvlPop')] });
+      if (window.lucide) lucide.createIcons({ nodes: [$('idsPageCovers')] });
     }
-    function openCoverList(btn) {
-      renderCoverList();
-      const pop = $('cvlPop');
-      pop.classList.add('show');
-      $('cvlBackdrop').classList.add('show');
-      // 버튼 위쪽(자리가 없으면 아래쪽)에 오른쪽 끝을 맞춰 띄운다
-      const r = btn.getBoundingClientRect();
-      const pw = pop.offsetWidth, ph = pop.offsetHeight;
-      const left = Math.max(12, Math.min(r.right - pw, window.innerWidth - pw - 12));
-      let top = r.top - ph - 10;
-      if (top < 12) top = Math.min(r.bottom + 10, window.innerHeight - ph - 12);
-      pop.style.left = left + 'px';
-      pop.style.top = top + 'px';
-    }
-    function closeCoverList() {
-      $('cvlPop').classList.remove('show');
-      $('cvlBackdrop').classList.remove('show');
-    }
-    $('nwzCoverListBtn').addEventListener('click', e => openCoverList(e.currentTarget));
-    $('cvlBackdrop').addEventListener('click', closeCoverList);
+    // 목록 아래 "세부 설정" — 지금 고른(또는 기본) 표지의 색상을 화면 전체 편집으로 바꾼다
+    $('cvlEditBtn').addEventListener('click', openCoverEdit);
 
     // ── 표지 편집 — 화면 전체를 덮으며 올라온다. 지금 표지의 색상만 바꾼다 ──
     let editDraft = null;
@@ -8176,15 +8164,14 @@
       editDraft = sw.dataset.c;
       renderCoverEdit();
     });
-    // 체크 → 색을 확정하고 편집 화면이 내려가며 닫힌다. ×는 적용하지 않고 닫는다
+    // 체크 → 색을 확정하고 편집 화면이 내려가며 닫힌다. 표지 선택 페이지로 돌아와 반영된다.
+    // ×는 적용하지 않고 닫는다
     $('nwzEditOk').addEventListener('click', () => {
       st.coverColor = editDraft;
       closeCoverEdit();
-      renderMakePage();
+      if (idsStep === 'name') renderMakePage(); else renderCoverList();
     });
     $('nwzEditCancel').addEventListener('click', closeCoverEdit);
-    // 목록 팝업의 세부 설정 → 목록을 닫고 화면 전체 편집으로
-    $('cvlEditBtn').addEventListener('click', () => { closeCoverList(); openCoverEdit(); });
     $('nwzNameInput').addEventListener('keydown', e => { if (e.key === 'Enter') $('idsMakeOk').click(); });
 
     // 받침 유무로 이/가
