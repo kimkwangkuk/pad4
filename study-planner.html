@@ -2818,6 +2818,46 @@
       transition: opacity 0.2s ease, transform 0.22s cubic-bezier(0.34,1.1,0.64,1);
     }
     .ids-popup.show { opacity: 1; pointer-events: auto; transform: translate(-50%, -50%); }
+    /* 속지 상세 ↔ 노트 생성 — 같은 팝업 안에서 옆으로 밀린다 */
+    .ids-pages { position: relative; width: 100%; height: 100%; overflow: hidden; }
+    .ids-page {
+      position: absolute; inset: 0;
+      transition: transform 0.36s cubic-bezier(0.32, 0.72, 0, 1);
+    }
+    .ids-page-detail { display: flex; align-items: stretch; }
+    .ids-page-make { display: flex; flex-direction: column; background: #fff; transform: translateX(100%); }
+    .ids-popup.step-make .ids-page-detail { transform: translateX(-100%); }
+    .ids-popup.step-make .ids-page-make   { transform: translateX(0); }
+    .ids-popup.no-anim .ids-page { transition: none; }
+    /* 넓은 팝업 안에서는 표지·설정을 가운데에 모은다 */
+    .ids-page-make .nwz-make { justify-content: center; padding-bottom: 72px; }
+
+    /* 표지 목록 — 버튼 위에 뜨는 오버레이 팝업 */
+    .cvl-backdrop { position: fixed; inset: 0; z-index: 5600; display: none; }
+    .cvl-backdrop.show { display: block; }
+    .cvl-pop {
+      position: fixed; z-index: 5601; width: 336px; max-height: 440px;
+      display: flex; flex-direction: column;
+      padding: 16px 16px 18px; border-radius: 28px;
+      background: rgba(255,255,255,0.92);
+      backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+      border: 1px solid #fff; box-shadow: 0 4px 25px rgba(0,0,0,0.14);
+      opacity: 0; transform: translateY(8px) scale(0.98); transform-origin: bottom right;
+      pointer-events: none; transition: opacity 0.18s ease, transform 0.2s cubic-bezier(0.32, 0.72, 0, 1);
+    }
+    .cvl-pop.show { opacity: 1; transform: none; pointer-events: auto; }
+    .cvl-title {
+      padding: 2px 4px 12px;
+      font-family: 'Pretendard', sans-serif; font-size: 14px; font-weight: 600;
+      color: rgba(0,0,0,0.86); letter-spacing: -0.042px;
+    }
+    .cvl-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px 14px;
+      overflow-y: auto; padding: 10px 6px 4px; scrollbar-width: none;
+    }
+    .cvl-grid::-webkit-scrollbar { display: none; }
+    .cvl-grid .nwz-cover-none { font-size: 11px; }
+    .cvl-grid .nwz-cover-label { font-size: 8px; }
 
     /* 왼쪽 — 미리보기 */
     .ids-preview {
@@ -3974,6 +4014,9 @@
   <!-- 3) 속지 상세 팝업 (Figma 7271:1137456) -->
   <div class="ids-backdrop" id="idsBackdrop"></div>
   <div class="ids-popup" id="idsSheet">
+   <div class="ids-pages">
+    <!-- 페이지 1: 속지 상세 -->
+    <div class="ids-page ids-page-detail">
     <div class="ids-preview"><div class="ids-hero-page" id="idsHeroPage"></div></div>
     <div class="ids-side">
       <div class="ids-side-top">
@@ -4011,42 +4054,45 @@
       </div>
       <div class="ids-cta-wrap"><button class="ids-cta" id="idsUse">이 템플릿으로 노트 생성</button></div>
     </div>
+    </div>
+    <!-- 페이지 2: 노트 생성 — 표지 선택 없이 바로 여기로 밀려 들어온다 -->
+    <div class="ids-page ids-page-make">
+      <div class="nwz-header">
+        <button class="nwz-nav" id="idsMakeBack" type="button" aria-label="뒤로">
+          <i data-lucide="chevron-left" style="width:22px;height:22px;color:rgba(0,0,0,0.86);"></i>
+        </button>
+        <span class="nwz-title">노트 생성</span>
+        <button class="nwz-nav nwz-next" id="idsMakeOk" type="button" aria-label="만들기">
+          <i data-lucide="check" style="width:20px;height:20px;color:#fff;"></i>
+        </button>
+      </div>
+      <div class="nwz-make">
+        <div class="nwz-make-hero" id="nwzMakeCover"></div>
+        <div class="nwz-set">
+          <label class="nwz-set-row">
+            <span>이름</span>
+            <input id="nwzNameInput" type="text" placeholder="내 데일리 플래너">
+          </label>
+          <button class="nwz-set-row" id="nwzCoverListBtn" type="button">
+            <span>표지</span>
+            <em>표지 목록<i data-lucide="chevron-right" style="width:18px;height:18px;"></i></em>
+          </button>
+          <button class="nwz-set-row" id="nwzEditBtn" type="button">
+            <span>표지 디자인</span>
+            <em>세부 편집<i data-lucide="chevron-right" style="width:18px;height:18px;"></i></em>
+          </button>
+        </div>
+      </div>
+    </div>
+   </div>
   </div>
 
   <!-- 4·5) 색상 선택 → 표지 선택 팝업 (Figma 5843:412452 / 404056) -->
-  <div class="nwz-backdrop" id="nwzBackdrop"></div>
-  <div class="nwz-popup" id="nwzPopup">
-    <div class="nwz-header">
-      <button class="nwz-nav" id="nwzPrev" aria-label="이전"></button>
-      <span class="nwz-title" id="nwzTitle"></span>
-      <button class="nwz-nav nwz-next" id="nwzNext" aria-label="다음"></button>
-    </div>
-    <!-- 표지 선택 → 노트 생성: 한 팝업 안에서 두 페이지가 옆으로 밀린다 -->
-    <div class="nwz-pages">
-      <div class="nwz-page" id="nwzPageCover">
-        <div class="nwz-chips" id="nwzChips"></div>
-        <div class="nwz-body">
-          <div class="nwz-grid" id="nwzGrid"></div>
-          <div class="nwz-custom" id="nwzCustom" style="display:none;"></div>
-        </div>
-      </div>
-      <div class="nwz-page" id="nwzPageMake">
-        <div class="nwz-make">
-          <div class="nwz-make-hero" id="nwzMakeCover"></div>
-          <div class="nwz-set">
-            <label class="nwz-set-row">
-              <span>이름</span>
-              <input id="nwzNameInput" type="text" placeholder="내 데일리 플래너">
-            </label>
-            <button class="nwz-set-row" id="nwzEditBtn" type="button">
-              <span>표지 디자인</span>
-              <em>세부 편집<i data-lucide="chevron-right" style="width:18px;height:18px;"></i></em>
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
+  <!-- 표지 목록 — 노트 생성 페이지의 [표지 목록]을 누르면 그 위에 뜨는 오버레이 팝업 -->
+  <div class="cvl-backdrop" id="cvlBackdrop"></div>
+  <div class="cvl-pop" id="cvlPop" role="dialog" aria-label="표지 목록">
+    <div class="cvl-title">표지 목록</div>
+    <div class="cvl-grid" id="cvlGrid"></div>
   </div>
 
   <!-- 표지 편집 — 화면 전체를 덮으며 아래에서 올라온다. 지금 표지의 색상만 바꾼다.
@@ -7807,7 +7853,6 @@
       { id: 'yellow', name: '옐로우', color: '#fff3a4' },
       { id: 'pink',   name: '핑크',   color: '#fbcfe8' },
     ];
-    const COVER_TABS = ['기본', '직접 설정'];
 
     // ── 상태 ──────────────────────────────────────────────────
     const st = { type: null, group: '일간', orient: '전체', insert: null, color: 'base', mode: '자동', cover: 'none' };
@@ -7817,7 +7862,6 @@
     const addMenu = $('hsAddMenu');
     const ibScreen = $('insertBrowseScreen');
     const idsSheet = $('idsSheet'), idsBackdrop = $('idsBackdrop');
-    const nwzPopup = $('nwzPopup'), nwzBackdrop = $('nwzBackdrop');
 
     // 속지 미리보기는 기존 스터디 카드 템플릿을 축소해 그린다
     function paintPage(el, item, tintColor) {
@@ -7966,6 +8010,10 @@
     // ── 3) 속지 상세 팝업 ─────────────────────────────────────
     function openInsertDetail(item) {
       st.insert = item;
+      // 열 때마다 속지 상세부터 — 표지/이름 선택도 새로 시작한다
+      st.cover = 'none'; st.coverColor = null;
+      $('nwzNameInput').value = '';
+      setDetailStep('detail', true);
       $('idsName').textContent = item.name;
       $('idsOrient').textContent = item.orient === 'landscape' ? '가로형' : '세로형';
       $('idsDesc').textContent = item.plain ? PLAIN_DESC : INSERT_DESC;
@@ -8011,27 +8059,19 @@
     });
     idsSheet.addEventListener('click', () => { $('idsModeMenu').hidden = true; });
 
-    function closeInsertDetail() { idsBackdrop.classList.remove('show'); idsSheet.classList.remove('show'); }
+    function closeInsertDetail() {
+      closeCoverList(); closeCoverEdit();
+      idsBackdrop.classList.remove('show');
+      idsSheet.classList.remove('show');
+    }
     $('idsClose').addEventListener('click', closeInsertDetail);
     idsBackdrop.addEventListener('click', closeInsertDetail);
 
-    // "이 템플릿으로 노트 생성" → 팝업을 닫고, 닫힌 뒤 표지 선택으로 넘어간다
-    // (색상은 상세 팝업 안에서 이미 골랐으므로 별도 색상 선택 단계는 없다)
-    $('idsUse').addEventListener('click', () => {
-      closeInsertDetail();
-      setTimeout(() => openWizard(), 240);
-    });
-
-    // ── 4) 표지 선택 → 5) 노트 이름 ───────────────────────────
-    let coverTab = '기본';
+    // ── 속지 정보 팝업 → 노트 생성 (표지 선택 단계 없이 같은 팝업 안에서) ──
     const NWZ_CHECK = '<div class="nwz-check"><i data-lucide="check" style="width:14px;height:14px;color:#fff;"></i></div>';
     // 고른 표지 (표지 없음이면 null)
     function currentCover() { return st.cover === 'none' ? null : (NW_COVERS.find(c => c.id === st.cover) || null); }
-    function coverHTML(c) {
-      return `<div class="nwz-cover" style="background:${c.bg};"><div class="nwz-cover-spine"></div>` +
-             '<div class="nwz-cover-label">DAILY<br>PLANNER</div></div>';
-    }
-    // 표지 색 — 편집 시트에서 바꾼 색이 있으면 그걸, 없으면 고른 표지의 색 (표지 없음 = null)
+    // 표지 색 — 편집 화면에서 바꾼 색이 있으면 그걸, 없으면 고른 표지의 색 (표지 없음 = null)
     const COVER_COLORS = ['#35a31b', '#1e7f00', '#0f9d8a', '#5a8dee', '#1d4ed8', '#452c83',
                           '#a855f7', '#ec4899', '#f34c18', '#ff6b1a', '#f5b700', '#8b5e3c',
                           '#6b7280', '#1f2937'];
@@ -8047,53 +8087,64 @@
         : '<div class="nwz-cover-none">표지 없음</div>';
     }
 
-    // 표지 선택(cover) ↔ 노트 생성(make) — 같은 팝업 안에서 옆으로 밀린다
-    let wizStep = 'cover';
-    function setWizStep(step) {
-      wizStep = step;
-      nwzPopup.classList.toggle('step-make', step === 'make');
-      renderWizardHeader();
+    // 속지 상세(detail) ↔ 노트 생성(make) — 같은 팝업 안에서 옆으로 밀린다
+    function setDetailStep(step, instant) {
+      if (instant) idsSheet.classList.add('no-anim');
+      idsSheet.classList.toggle('step-make', step === 'make');
       if (step === 'make') renderMakePage();
-    }
-    function renderWizardHeader() {
-      const prev = $('nwzPrev'), next = $('nwzNext');
-      next.innerHTML = '<i data-lucide="check" style="width:20px;height:20px;color:#fff;"></i>';
-      if (wizStep === 'make') {
-        $('nwzTitle').textContent = '노트 생성';
-        prev.innerHTML = '<i data-lucide="chevron-left" style="width:22px;height:22px;color:rgba(0,0,0,0.86);"></i>';
-        prev.onclick = () => setWizStep('cover');
-      } else {
-        $('nwzTitle').textContent = '노트 표지';
-        prev.innerHTML = '<i data-lucide="x" style="width:20px;height:20px;color:rgba(0,0,0,0.6);"></i>';
-        prev.onclick = closeWizard;
-      }
-      if (window.lucide) lucide.createIcons({ nodes: [$('nwzPrev'), $('nwzNext')] });
+      if (instant) { void idsSheet.offsetWidth; idsSheet.classList.remove('no-anim'); }
     }
     function renderMakePage() {
       $('nwzMakeCover').innerHTML = coverFaceHTML(coverBg());
       $('nwzNameInput').placeholder = st.type ? `내 ${st.type.name}` : '내 데일리 플래너';
     }
 
-    function openWizard() {
-      st.coverColor = null;
-      $('nwzNameInput').value = '';
-      // 다시 열 때는 표지 선택부터 — 페이지가 미끄러지지 않게 즉시 되돌린다
-      nwzPopup.classList.add('no-anim');
-      setWizStep('cover');
-      renderWizard();
-      void nwzPopup.offsetWidth;
-      nwzPopup.classList.remove('no-anim');
-      nwzBackdrop.classList.add('show');
-      nwzPopup.classList.add('show');
-    }
-    function closeWizard() {
-      closeCoverEdit();
-      nwzBackdrop.classList.remove('show');
-      nwzPopup.classList.remove('show');
-    }
-    nwzBackdrop.addEventListener('click', closeWizard);
+    // "이 템플릿으로 노트 생성" → 표지 선택을 건너뛰고 노트 생성 페이지가 밀려 들어온다
+    $('idsUse').addEventListener('click', () => setDetailStep('make'));
+    // 뒤로 → 다시 속지 상세
+    $('idsMakeBack').addEventListener('click', () => { closeCoverList(); setDetailStep('detail'); });
 
-    // ── 표지 편집 시트 — 지금 표지의 색상만 바꾼다 ──
+    // ── 표지 목록 — [표지 목록]을 누르면 그 위에 뜨는 오버레이 팝업 ──
+    function renderCoverList() {
+      const grid = $('cvlGrid');
+      grid.innerHTML = '';
+      const add = (id, inner) => {
+        const cell = document.createElement('div');
+        cell.className = 'nwz-cell' + (st.cover === id ? ' sel' : '');
+        cell.innerHTML = `<div class="nwz-thumbwrap">${inner}${NWZ_CHECK}</div>`;
+        cell.addEventListener('click', () => {
+          st.cover = id; st.coverColor = null; // 다른 표지를 고르면 편집한 색은 초기화
+          renderMakePage();
+          closeCoverList();
+        });
+        grid.appendChild(cell);
+      };
+      add('none', '<div class="nwz-cover-none">표지 없음</div>');
+      NW_COVERS.forEach(c => add(c.id, coverFaceHTML(c.bg)));
+      if (window.lucide) lucide.createIcons({ nodes: [grid] });
+    }
+    function openCoverList(btn) {
+      renderCoverList();
+      const pop = $('cvlPop');
+      pop.classList.add('show');
+      $('cvlBackdrop').classList.add('show');
+      // 버튼 위쪽(자리가 없으면 아래쪽)에 오른쪽 끝을 맞춰 띄운다
+      const r = btn.getBoundingClientRect();
+      const pw = pop.offsetWidth, ph = pop.offsetHeight;
+      const left = Math.max(12, Math.min(r.right - pw, window.innerWidth - pw - 12));
+      let top = r.top - ph - 10;
+      if (top < 12) top = Math.min(r.bottom + 10, window.innerHeight - ph - 12);
+      pop.style.left = left + 'px';
+      pop.style.top = top + 'px';
+    }
+    function closeCoverList() {
+      $('cvlPop').classList.remove('show');
+      $('cvlBackdrop').classList.remove('show');
+    }
+    $('nwzCoverListBtn').addEventListener('click', e => openCoverList(e.currentTarget));
+    $('cvlBackdrop').addEventListener('click', closeCoverList);
+
+    // ── 표지 편집 — 화면 전체를 덮으며 올라온다. 지금 표지의 색상만 바꾼다 ──
     let editDraft = null;
     function renderCoverEdit() {
       $('nwzEditCover').innerHTML = coverFaceHTML(editDraft);
@@ -8118,63 +8169,11 @@
     $('nwzEditOk').addEventListener('click', () => {
       st.coverColor = editDraft;
       closeCoverEdit();
-      if (wizStep === 'make') renderMakePage(); else renderWizard();
+      renderMakePage();
     });
     $('nwzEditCancel').addEventListener('click', closeCoverEdit);
     $('nwzEditBtn').addEventListener('click', openCoverEdit);
-    $('nwzNameInput').addEventListener('keydown', e => { if (e.key === 'Enter') $('nwzNext').click(); });
-
-    function renderWizard() {
-      const prev = $('nwzPrev'), grid = $('nwzGrid'), chips = $('nwzChips');
-      const next = $('nwzNext'), custom = $('nwzCustom');
-      grid.innerHTML = ''; chips.innerHTML = ''; custom.innerHTML = '';
-      // 표지 선택 화면 — 확인(체크)을 누르면 노트 생성 페이지가 옆에서 밀려 들어온다
-      renderWizardHeader();
-      {
-        // 기본 / 직접 설정 세그먼트 탭
-        const seg = document.createElement('div');
-        seg.className = 'nwz-seg';
-        COVER_TABS.forEach(t => {
-          const b = document.createElement('button');
-          b.type = 'button';
-          b.className = 'nwz-seg-btn' + (coverTab === t ? ' on' : '');
-          b.textContent = t;
-          b.addEventListener('click', () => { coverTab = t; renderWizard(); });
-          seg.appendChild(b);
-        });
-        chips.appendChild(seg);
-
-        const isBasic = coverTab === '기본';
-        grid.style.display   = isBasic ? '' : 'none';
-        custom.style.display = isBasic ? 'none' : 'flex';
-
-        if (isBasic) {
-          // 첫 칸은 "표지 없음", 그 뒤로 표지들
-          const none = document.createElement('div');
-          none.className = 'nwz-cell' + (st.cover === 'none' ? ' sel' : '');
-          none.innerHTML = `<div class="nwz-thumbwrap"><div class="nwz-cover-none">표지 없음</div>${NWZ_CHECK}</div>`;
-          none.addEventListener('click', () => { st.cover = 'none'; st.coverColor = null; renderWizard(); });
-          grid.appendChild(none);
-          NW_COVERS.forEach(c => {
-            const cell = document.createElement('div');
-            cell.className = 'nwz-cell' + (st.cover === c.id ? ' sel' : '');
-            cell.innerHTML = `<div class="nwz-thumbwrap">${coverHTML(c)}${NWZ_CHECK}</div>`;
-            cell.addEventListener('click', () => { st.cover = c.id; st.coverColor = null; renderWizard(); });
-            grid.appendChild(cell);
-          });
-        } else {
-          // 직접 설정 — 고른 표지를 크게 보여주고 편집 버튼
-          custom.innerHTML = coverFaceHTML(coverBg());
-          const edit = document.createElement('button');
-          edit.type = 'button';
-          edit.className = 'nwz-edit-btn';
-          edit.textContent = '편집하기';
-          edit.addEventListener('click', openCoverEdit);
-          custom.appendChild(edit);
-        }
-      }
-      if (window.lucide) lucide.createIcons({ nodes: [nwzPopup] });
-    }
+    $('nwzNameInput').addEventListener('keydown', e => { if (e.key === 'Enter') $('idsMakeOk').click(); });
 
     // 받침 유무로 이/가
     function josaIGa(word) {
@@ -8194,10 +8193,8 @@
       }, 200);
     }
 
-    // 체크 — 표지 단계면 노트 생성 페이지로 밀고, 생성 단계면 노트를 만든다.
-    // 노트 생성 팝업을 먼저 내리고, 내려간 다음에 생성 완료 안내를 띄운다.
-    $('nwzNext').addEventListener('click', () => {
-      if (wizStep === 'cover') { setWizStep('make'); return; }
+    // 노트 생성 체크 — 노트를 만들고, 팝업을 먼저 내린 다음 생성 완료 안내를 띄운다
+    $('idsMakeOk').addEventListener('click', () => {
       const input = $('nwzNameInput');
       const name = (input.value || '').trim() || input.placeholder;
       const bg = coverBg();
@@ -8218,7 +8215,7 @@
       listEl.insertBefore(cardEl, listEl.firstChild);
       if (window.lucide) lucide.createIcons({ nodes: [cardEl] });
 
-      closeWizard();
+      closeInsertDetail();
       setTimeout(() => {
         createdDialog.update({
           message: `‘${name}’${josaIGa(name)} 홈에 추가되었습니다.`,
