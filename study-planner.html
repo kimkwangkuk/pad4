@@ -8185,12 +8185,11 @@
     // 생성 완료 안내 — [확인]은 안내만 닫고, [지금 사용]은 그 노트 탭을 열어 포커스한다
     const createdDialog = new Dialog({ title: '생성 완료', message: ' ', cancelLabel: '확인', confirmLabel: '지금 사용' });
 
-    // 지금 사용 — 안내가 닫힌 뒤, 목록 화면이 빠지면서 그 노트 탭이 열리고 포커스된다
+    // 지금 사용 — 안내가 닫힌 뒤 목록 화면이 빠지며 홈으로 돌아가고,
+    // 홈(새 노트가 들어간 모습)을 잠깐 보여준 다음 그 노트 탭이 열리며 포커스된다
     function useNoteNow(note) {
-      setTimeout(() => {
-        showScreen(ibScreen, false);
-        openTabFromHome(note.name, note.icon, 'note', note.noteType);
-      }, 200);
+      setTimeout(() => showScreen(ibScreen, false), 200);                     // 목록 화면이 빠진다 (0.38s)
+      setTimeout(() => openTabFromHome(note.name, note.icon, 'note', note.noteType), 200 + 380 + 700);
     }
 
     // 노트 생성 체크 — 노트를 만들고, 팝업을 먼저 내린 다음 생성 완료 안내를 띄운다
