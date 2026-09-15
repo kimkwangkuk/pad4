@@ -2837,7 +2837,9 @@
     .ids-page-covers,
     .ids-page-make { display: flex; flex-direction: column; background: #fff; }
     /* 아직 JS가 붙기 전 기본 상태 — 표지 선택은 살짝 가라앉아 숨어 있고, 노트 생성은 오른쪽 밖 */
-    .ids-page-covers { opacity: 0; transform: translateY(20px); }
+    /* 숨어 있는 동안은 투명해도 자리는 그대로라(가로 오프셋이 아니라 세로로만
+       살짝 가라앉혀 둔 것) pointer-events도 꺼둬야 속지 상세 쪽 클릭을 가로채지 않는다 */
+    .ids-page-covers { opacity: 0; transform: translateY(20px); pointer-events: none; }
     .ids-page-make { transform: translateX(100%); }
     /* 넓은 팝업 안에서는 표지·설정을 가운데에 모은다 */
     .ids-page-make .nwz-make { justify-content: center; padding-bottom: 72px; }
@@ -8125,6 +8127,7 @@
         idsPageCovers.style.transition = 'none';
         idsPageCovers.style.opacity = '0';
         idsPageCovers.style.transform = 'translateY(20px)';
+        idsPageCovers.style.pointerEvents = 'none'; // 숨어 있는 동안 속지 상세 클릭을 가로채지 않게
         layoutCoversName('covers', false);
         void idsSheet.offsetWidth; // 리플로우 — 시작 상태 확정
         idsPageDetail.style.transition = '';
@@ -8142,17 +8145,20 @@
         idsPageCovers.style.transition = 'none';
         idsPageCovers.style.opacity = '0';
         idsPageCovers.style.transform = 'translateY(20px)';
+        idsPageCovers.style.pointerEvents = 'none'; // 아직 안 보이는 동안은 클릭도 막아둔다
         layoutCoversName('covers', false);
         idsStepT = setTimeout(() => {
           idsPageCovers.style.transition = 'opacity 0.32s ease, transform 0.42s cubic-bezier(0.22, 1, 0.36, 1)';
           idsPageCovers.style.opacity = '1';
           idsPageCovers.style.transform = 'translateY(0)';
+          idsPageCovers.style.pointerEvents = 'auto'; // 떠오르는 시점부터 클릭 가능 (CSS 기본값은 none이라 명시해야 한다)
         }, WIDTH_MS);
       } else if (prev !== 'detail' && step === 'detail') {
         // 표지 목록이 살짝 가라앉으며 옅어지고, 팝업은 다시 넓어지며 속지 상세가 되돌아온다
         idsPageCovers.style.transition = 'opacity 0.2s ease, transform 0.26s cubic-bezier(0.4, 0, 0.2, 1)';
         idsPageCovers.style.opacity = '0';
         idsPageCovers.style.transform = 'translateY(14px)';
+        idsPageCovers.style.pointerEvents = 'none'; // 떠나는 즉시 속지 상세 클릭을 가로채지 않게
         idsPageDetail.style.pointerEvents = '';
         idsPageDetail.style.transition = 'opacity 0.28s ease';
         idsPageDetail.style.opacity = '1';
