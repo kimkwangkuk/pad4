@@ -3038,8 +3038,7 @@
     }
     .nwz-make-hero .nwz-cover,
     .nwz-make-hero .nwz-cover-none { width: 210px; box-shadow: 0 6px 18px rgba(0,0,0,0.14); }
-    .nwz-make-hero .nwz-cover-label,
-    .nwz-edit-hero .nwz-cover-label { font-size: 15px; }
+    .nwz-make-hero .nwz-cover-label { font-size: 15px; }
     .nwz-set { width: min(400px, 100%); padding: 0 22px; border-radius: 22px; background: rgba(0,0,0,0.05); }
     .nwz-set-row {
       display: flex; align-items: center; gap: 12px;
@@ -3061,39 +3060,39 @@
       font-size: 16px; font-weight: 400; color: rgba(0,0,0,0.45);
     }
 
-    /* 표지 편집 — 팝업 아래에서 올라오는 시트 */
-    .nwz-edit-dim {
-      position: absolute; inset: 0; z-index: 4; background: rgba(0,0,0,0.18);
-      opacity: 0; pointer-events: none; transition: opacity 0.24s ease;
-    }
-    .nwz-edit-dim.show { opacity: 1; pointer-events: auto; }
+    /* 표지 편집 — 화면 전체를 덮으며 아래에서 올라온다 */
     .nwz-edit {
-      position: absolute; left: 0; right: 0; bottom: 0; z-index: 5; height: 78%;
-      display: flex; flex-direction: column;
-      background: #fff; border-radius: 26px 26px 0 0;
-      box-shadow: 0 -10px 40px rgba(0,0,0,0.14);
-      transform: translateY(100%); transition: transform 0.36s cubic-bezier(0.32, 0.72, 0, 1);
+      position: fixed; inset: 0; z-index: 5500;
+      display: flex; flex-direction: column; background: #fff;
+      transform: translateY(100%); pointer-events: none;
+      transition: transform 0.38s cubic-bezier(0.32, 0.72, 0, 1);
     }
-    .nwz-edit.show { transform: translateY(0); }
+    .nwz-edit.show { transform: translateY(0); pointer-events: auto; }
     .nwz-edit-head {
       position: relative; flex-shrink: 0; height: 64px;
-      display: flex; align-items: center; justify-content: flex-end; padding: 0 20px;
+      display: flex; align-items: center; justify-content: space-between; padding: 0 20px;
     }
     .nwz-edit-title {
       position: absolute; left: 50%; transform: translateX(-50%);
       font-family: 'Pretendard', sans-serif; font-size: 15px; font-weight: 600;
       color: rgba(0,0,0,0.86); letter-spacing: -0.045px;
     }
-    .nwz-edit-hero { display: flex; justify-content: center; padding: 4px 0 26px; }
-    .nwz-edit-hero .nwz-cover { width: 150px; box-shadow: 0 6px 18px rgba(0,0,0,0.14); }
+    .nwz-edit-main {
+      flex: 1 1 0; min-height: 0; overflow-y: auto;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 44px; padding: 0 24px 64px;
+    }
+    .nwz-edit-hero .nwz-cover { width: 260px; box-shadow: 0 10px 30px rgba(0,0,0,0.16); }
+    .nwz-edit-hero .nwz-cover-label { font-size: 18px; }
+    .nwz-edit-panel { width: min(520px, 100%); }
     .nwz-edit-label {
-      padding: 0 40px 12px;
+      margin-bottom: 14px; text-align: center;
       font-family: 'Pretendard', sans-serif; font-size: 13px; font-weight: 600;
       color: rgba(0,0,0,0.45); letter-spacing: -0.039px;
     }
-    .nwz-edit-colors { display: flex; flex-wrap: wrap; gap: 14px; padding: 0 40px 30px; }
+    .nwz-edit-colors { display: flex; flex-wrap: wrap; justify-content: center; gap: 16px; }
     .nwz-sw {
-      width: 34px; height: 34px; padding: 0; border: none; border-radius: 50%; cursor: pointer;
+      width: 40px; height: 40px; padding: 0; border: none; border-radius: 50%; cursor: pointer;
       box-shadow: inset 0 0 0 1px rgba(0,0,0,0.08); -webkit-tap-highlight-color: transparent;
     }
     .nwz-sw.sel { outline: 2px solid rgba(0,0,0,0.86); outline-offset: 3px; }
@@ -4048,18 +4047,26 @@
       </div>
     </div>
 
-    <!-- 표지 편집 — 아래에서 올라오는 시트. 지금 표지의 색상만 바꾼다 -->
-    <div class="nwz-edit-dim" id="nwzEditDim"></div>
-    <div class="nwz-edit" id="nwzEdit">
-      <div class="nwz-edit-head">
-        <span class="nwz-edit-title">표지 편집</span>
-        <button class="nwz-nav nwz-next" id="nwzEditOk" type="button" aria-label="적용">
-          <i data-lucide="check" style="width:20px;height:20px;color:#fff;"></i>
-        </button>
-      </div>
+  </div>
+
+  <!-- 표지 편집 — 화면 전체를 덮으며 아래에서 올라온다. 지금 표지의 색상만 바꾼다.
+       체크하면 내려가면서 닫히고 뒤에 있던 노트 생성 팝업이 다시 보인다 -->
+  <div class="nwz-edit" id="nwzEdit">
+    <div class="nwz-edit-head">
+      <button class="nwz-nav" id="nwzEditCancel" type="button" aria-label="닫기">
+        <i data-lucide="x" style="width:20px;height:20px;color:rgba(0,0,0,0.6);"></i>
+      </button>
+      <span class="nwz-edit-title">표지 편집</span>
+      <button class="nwz-nav nwz-next" id="nwzEditOk" type="button" aria-label="적용">
+        <i data-lucide="check" style="width:20px;height:20px;color:#fff;"></i>
+      </button>
+    </div>
+    <div class="nwz-edit-main">
       <div class="nwz-edit-hero" id="nwzEditCover"></div>
-      <div class="nwz-edit-label">색상</div>
-      <div class="nwz-edit-colors" id="nwzEditColors"></div>
+      <div class="nwz-edit-panel">
+        <div class="nwz-edit-label">색상</div>
+        <div class="nwz-edit-colors" id="nwzEditColors"></div>
+      </div>
     </div>
   </div>
 
@@ -8097,26 +8104,23 @@
     function openCoverEdit() {
       editDraft = coverBg() || COVER_COLORS[0]; // 표지 없음이면 첫 색에서 시작
       renderCoverEdit();
-      $('nwzEditDim').classList.add('show');
+      if (window.lucide) lucide.createIcons({ nodes: [$('nwzEdit')] });
       $('nwzEdit').classList.add('show');
     }
-    function closeCoverEdit() {
-      $('nwzEditDim').classList.remove('show');
-      $('nwzEdit').classList.remove('show');
-    }
+    function closeCoverEdit() { $('nwzEdit').classList.remove('show'); }
     $('nwzEditColors').addEventListener('click', e => {
       const sw = e.target.closest('.nwz-sw');
       if (!sw) return;
       editDraft = sw.dataset.c;
       renderCoverEdit();
     });
-    // 체크 → 색을 확정하고 시트를 내린다. 바깥(딤)을 누르면 적용하지 않고 닫는다
+    // 체크 → 색을 확정하고 편집 화면이 내려가며 닫힌다. ×는 적용하지 않고 닫는다
     $('nwzEditOk').addEventListener('click', () => {
       st.coverColor = editDraft;
       closeCoverEdit();
       if (wizStep === 'make') renderMakePage(); else renderWizard();
     });
-    $('nwzEditDim').addEventListener('click', closeCoverEdit);
+    $('nwzEditCancel').addEventListener('click', closeCoverEdit);
     $('nwzEditBtn').addEventListener('click', openCoverEdit);
     $('nwzNameInput').addEventListener('keydown', e => { if (e.key === 'Enter') $('nwzNext').click(); });
 
