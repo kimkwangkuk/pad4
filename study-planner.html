@@ -2815,9 +2815,13 @@
       box-shadow: 0 15px 75px rgba(0,0,0,0.18);
       display: flex; align-items: stretch; overflow: hidden;
       opacity: 0; pointer-events: none;
-      transition: opacity 0.2s ease, transform 0.22s cubic-bezier(0.34,1.1,0.64,1);
+      transition: opacity 0.2s ease, transform 0.22s cubic-bezier(0.34,1.1,0.64,1),
+                  width 0.36s cubic-bezier(0.32, 0.72, 0, 1);
     }
     .ids-popup.show { opacity: 1; pointer-events: auto; transform: translate(-50%, -50%); }
+    /* 노트 생성(이름) 단계는 내용이 좁아 팝업 폭도 함께 줄인다.
+       .nwz-make의 내용(카드 폭 400px)이 넘치면 overflow-y:auto로 세로 스크롤된다. */
+    .ids-popup.step-name { width: min(600px, calc(100vw - 64px)); }
     /* 속지 상세 → 표지 선택 → 노트 생성: 같은 팝업 안에서 3단계가 옆으로 밀린다.
        실제 위치(translateX)는 JS(setIdsStep)가 단계 인덱스로 계산해 인라인으로 준다. */
     .ids-pages { position: relative; width: 100%; height: 100%; overflow: hidden; }
@@ -2844,7 +2848,7 @@
     .cvl-grid::-webkit-scrollbar { display: none; }
     .cvl-grid .nwz-cover-none { font-size: 12px; }
     .cvl-grid .nwz-cover-label { font-size: 11px; }
-    /* 목록 아래 — 지금 표지를 화면 전체 편집으로 */
+    /* 이름 설정 카드 아래 — 지금 표지를 화면 전체 편집으로 */
     .cvl-edit {
       flex-shrink: 0; margin: 4px auto 0; height: 44px; width: min(260px, 100%);
       display: flex; align-items: center; justify-content: center; gap: 6px;
@@ -4061,9 +4065,6 @@
       </div>
       <div class="cvl-body">
         <div class="cvl-grid" id="cvlGrid"></div>
-        <button class="cvl-edit" id="cvlEditBtn" type="button">
-          <i data-lucide="palette" style="width:17px;height:17px;"></i>세부 설정
-        </button>
       </div>
     </div>
     <!-- 3단계: 노트 생성 — 표지 목록에서 하나를 고르면 여기로 밀려 들어온다 -->
@@ -4089,6 +4090,9 @@
             <em>변경<i data-lucide="chevron-right" style="width:18px;height:18px;"></i></em>
           </button>
         </div>
+        <button class="cvl-edit" id="idsEditBtn" type="button">
+          <i data-lucide="palette" style="width:17px;height:17px;"></i>세부 설정
+        </button>
       </div>
     </div>
    </div>
@@ -8101,6 +8105,8 @@
         if (instant) el.style.transition = 'none';
         el.style.transform = `translateX(${(i - idx) * 100}%)`;
       });
+      // 노트 생성(이름) 단계는 내용이 좁으니 팝업 폭도 함께 줄인다 (width 트랜지션은 CSS가 맡는다)
+      idsSheet.classList.toggle('step-name', step === 'name');
       if (instant) {
         void idsSheet.offsetWidth; // 리플로우 — 시작 위치 확정
         IDS_STEPS.forEach(s => { idsPageEl[s].style.transition = ''; });
@@ -8140,8 +8146,8 @@
       NW_COVERS.forEach(c => add(c.id, coverFaceHTML(c.bg)));
       if (window.lucide) lucide.createIcons({ nodes: [$('idsPageCovers')] });
     }
-    // 목록 아래 "세부 설정" — 지금 고른(또는 기본) 표지의 색상을 화면 전체 편집으로 바꾼다
-    $('cvlEditBtn').addEventListener('click', openCoverEdit);
+    // 이름 설정 카드 아래 "세부 설정" — 지금 고른(또는 기본) 표지의 색상을 화면 전체 편집으로 바꾼다
+    $('idsEditBtn').addEventListener('click', openCoverEdit);
 
     // ── 표지 편집 — 화면 전체를 덮으며 올라온다. 지금 표지의 색상만 바꾼다 ──
     let editDraft = null;
